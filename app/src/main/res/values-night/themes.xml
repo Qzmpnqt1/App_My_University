@@ -4,4 +4,9 @@
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
     </style>
+    
+    <!-- Splash Screen theme -->
+    <style name="Theme.App_My_University.SplashScreen" parent="Theme.App_My_University">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
 </resources>
