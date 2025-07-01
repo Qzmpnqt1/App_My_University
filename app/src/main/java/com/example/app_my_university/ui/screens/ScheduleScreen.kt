@@ -100,39 +100,39 @@ fun ScheduleScreen(
     // Текущая дата и день недели
     val today = remember { LocalDate.now() }
     val formatter = remember { DateTimeFormatter.ofPattern("dd.MM") }
-    
+
     // Список дней недели для отображения
     val daysOfWeek = remember {
         DayOfWeek.values().map { it to it.getDisplayName(TextStyle.SHORT, Locale("ru")) }
     }
-    
+
     // Текущая выбранная неделя: 1 или 2 (нечетная/четная)
     var selectedWeek by remember { mutableIntStateOf(if (today.dayOfYear % 2 == 0) 2 else 1) }
-    
+
     // Текущий выбранный день недели
     var selectedDayOfWeek by remember { mutableStateOf(today.dayOfWeek) }
-    
+
     // Для сравнения с другой группой/преподавателем
     var isComparingEnabled by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var comparisonType by remember { mutableStateOf("Группа") } // "Группа" или "Преподаватель"
     var isSearchMenuOpen by remember { mutableStateOf(false) }
     var selectedComparisonTarget by remember { mutableStateOf<String?>(null) }
-    
+
     // Пример списка групп
     val groups = remember { listOf("БПИ21-01", "БПИ21-02", "ПИН23-01", "ИВТ22-01") }
-    
+
     // Пример списка преподавателей
-    val teachers = remember { 
+    val teachers = remember {
         listOf(
-            "Иванов И.И.", 
-            "Петров П.П.", 
+            "Иванов И.И.",
+            "Петров П.П.",
             "Сидорова А.А.",
             "Кузнецов В.В.",
             "Смирнова Е.А."
-        ) 
+        )
     }
-    
+
     // Фильтрованный список в зависимости от критерия поиска и запроса
     val filteredSearchResults = remember(searchQuery, comparisonType) {
         when (comparisonType) {
@@ -140,7 +140,7 @@ fun ScheduleScreen(
             else -> teachers.filter { it.contains(searchQuery, ignoreCase = true) }
         }
     }
-    
+
     // Пример занятий (в реальном приложении будут загружаться из базы данных)
     val lessons = remember {
         mutableStateListOf(
@@ -218,7 +218,7 @@ fun ScheduleScreen(
             )
         )
     }
-    
+
     // Пример занятий для сравнения (в реальном приложении будут загружаться динамически)
     val comparisonLessons = remember(selectedComparisonTarget) {
         if (selectedComparisonTarget == null) {
@@ -269,12 +269,12 @@ fun ScheduleScreen(
             )
         }
     }
-    
+
     // Фильтрация занятий по выбранной неделе и дню
-    val filteredLessons = lessons.filter { 
+    val filteredLessons = lessons.filter {
         it.week == selectedWeek && it.dayOfWeek == selectedDayOfWeek && it.groupName == "БПИ21-01"
     }.sortedBy { it.startTime }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -291,7 +291,7 @@ fun ScheduleScreen(
                             tint = if (isComparingEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
-                    
+
                     Box {
                         IconButton(onClick = { isSearchMenuOpen = true }) {
                             Icon(
@@ -299,14 +299,14 @@ fun ScheduleScreen(
                                 contentDescription = "Меню"
                             )
                         }
-                        
+
                         DropdownMenu(
                             expanded = isSearchMenuOpen,
                             onDismissRequest = { isSearchMenuOpen = false }
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Моя группа (БПИ21-01)") },
-                                onClick = { 
+                                onClick = {
                                     selectedComparisonTarget = null
                                     isComparingEnabled = false
                                     isSearchMenuOpen = false
@@ -314,14 +314,14 @@ fun ScheduleScreen(
                             )
                             DropdownMenuItem(
                                 text = { Text("Четная неделя") },
-                                onClick = { 
+                                onClick = {
                                     selectedWeek = 2
                                     isSearchMenuOpen = false
                                 }
                             )
                             DropdownMenuItem(
                                 text = { Text("Нечетная неделя") },
-                                onClick = { 
+                                onClick = {
                                     selectedWeek = 1
                                     isSearchMenuOpen = false
                                 }
@@ -349,16 +349,16 @@ fun ScheduleScreen(
                     onClick = { selectedWeek = 1 },
                     label = { Text("Нечетная неделя") }
                 )
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
                 FilterChip(
                     selected = selectedWeek == 2,
                     onClick = { selectedWeek = 2 },
                     label = { Text("Четная неделя") }
                 )
             }
-            
+
             // Выбор дня недели
             LazyRow(
                 modifier = Modifier
@@ -368,7 +368,7 @@ fun ScheduleScreen(
                 items(daysOfWeek) { (dayOfWeek, shortName) ->
                     val isSelectedDay = dayOfWeek == selectedDayOfWeek
                     val isToday = dayOfWeek == today.dayOfWeek
-                    
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
@@ -387,7 +387,7 @@ fun ScheduleScreen(
                         } else {
                             Spacer(modifier = Modifier.height(10.dp))
                         }
-                        
+
                         // День недели
                         Text(
                             text = shortName,
@@ -395,7 +395,7 @@ fun ScheduleScreen(
                             fontWeight = if (isSelectedDay) FontWeight.Bold else FontWeight.Normal,
                             color = if (isSelectedDay) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
-                        
+
                         // Индикатор количества пар
                         val lessonsCount = lessons.count { it.dayOfWeek == dayOfWeek && it.week == selectedWeek }
                         if (lessonsCount > 0) {
@@ -422,7 +422,7 @@ fun ScheduleScreen(
                     }
                 }
             }
-            
+
             // Блок для сравнения расписаний
             AnimatedVisibility(
                 visible = isComparingEnabled,
@@ -455,9 +455,9 @@ fun ScheduleScreen(
                             text = { Text("Преподаватель") }
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     // Поле поиска
                     OutlinedTextField(
                         value = searchQuery,
@@ -472,9 +472,9 @@ fun ScheduleScreen(
                         },
                         singleLine = true
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     // Результаты поиска
                     if (searchQuery.isNotEmpty()) {
                         LazyColumn(
@@ -498,21 +498,21 @@ fun ScheduleScreen(
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary
                                     )
-                                    
+
                                     Spacer(modifier = Modifier.width(16.dp))
-                                    
+
                                     Text(text = result)
                                 }
-                                
+
                                 Divider()
                             }
                         }
                     }
-                    
+
                     // Выбранная цель для сравнения
                     selectedComparisonTarget?.let { target ->
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -531,10 +531,10 @@ fun ScheduleScreen(
                     }
                 }
             }
-            
+
             // Разделитель
             Divider(modifier = Modifier.padding(vertical = 4.dp))
-            
+
             // Заголовок с датой
             Text(
                 text = "Расписание на ${selectedDayOfWeek.getDisplayName(TextStyle.FULL, Locale("ru"))}",
@@ -542,7 +542,7 @@ fun ScheduleScreen(
                 modifier = Modifier.padding(16.dp),
                 fontWeight = FontWeight.Bold
             )
-            
+
             // Список занятий для выбранного дня
             if (filteredLessons.isEmpty()) {
                 // Если нет занятий
@@ -570,22 +570,22 @@ fun ScheduleScreen(
                         LessonCard(lesson)
                         Spacer(modifier = Modifier.height(8.dp))
                     }
-                    
+
                     // Отображаем занятия для сравнения, если выбрана цель
                     if (selectedComparisonTarget != null && isComparingEnabled && comparisonLessons.isNotEmpty()) {
                         item {
                             Divider(modifier = Modifier.padding(vertical = 8.dp))
-                            
+
                             Text(
                                 text = "Расписание ${if (comparisonType == "Группа") "группы" else ""} $selectedComparisonTarget",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
-                            
+
                             Spacer(modifier = Modifier.height(8.dp))
                         }
-                        
+
                         items(comparisonLessons) { lesson ->
                             LessonCard(lesson)
                             Spacer(modifier = Modifier.height(8.dp))
@@ -619,15 +619,15 @@ fun LessonCard(lesson: Lesson) {
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
-                    
+
                     Spacer(modifier = Modifier.width(4.dp))
-                    
+
                     Text(
                         text = "${lesson.startTime} - ${lesson.endTime}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                
+
                 // Тип занятия
                 Box(
                     modifier = Modifier
@@ -644,9 +644,9 @@ fun LessonCard(lesson: Lesson) {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Название предмета
             Text(
                 text = lesson.subject,
@@ -655,9 +655,9 @@ fun LessonCard(lesson: Lesson) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Аудитория
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -667,17 +667,17 @@ fun LessonCard(lesson: Lesson) {
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.secondary
                 )
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
                 Text(
                     text = "Аудитория: ${lesson.classRoom}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Преподаватель
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -687,17 +687,17 @@ fun LessonCard(lesson: Lesson) {
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.secondary
                 )
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
                 Text(
                     text = "Преподаватель: ${lesson.teacherName}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Группа (показываем, только если это не текущая группа)
             if (lesson.groupName != "БПИ21-01") {
                 Row(
@@ -708,9 +708,9 @@ fun LessonCard(lesson: Lesson) {
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.secondary
                     )
-                    
+
                     Spacer(modifier = Modifier.width(8.dp))
-                    
+
                     Text(
                         text = "Группа: ${lesson.groupName}",
                         style = MaterialTheme.typography.bodyMedium

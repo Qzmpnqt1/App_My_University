@@ -27,15 +27,14 @@ import androidx.navigation.compose.rememberNavController
 import com.example.app_my_university.ui.navigation.AppNavigation
 import com.example.app_my_university.ui.theme.AppMyUniversityTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Improve window insets handling for better performance
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        
         super.onCreate(savedInstanceState)
         
         setContent {
@@ -48,44 +47,27 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SplashScreenWithDelay() {
-    // Используем простой boolean вместо MutableTransitionState
     var showSplash by remember { mutableStateOf(true) }
-    
-    // Устанавливаем таймер для задержки
+
     LaunchedEffect(Unit) {
-        // Показываем экран загрузки 1.5 секунды
-        delay(1500)
+        // Переносим тяжелые инициализации в фон
+        withContext(Dispatchers.IO) {
+            // Имитация загрузки/инициализации данных
+            delay(1500)
+        }
         showSplash = false
     }
-    
-    // Простое переключение между экранами без анимации
-    Surface(modifier = Modifier.fillMaxSize()) {
+
+    Surface {
         if (showSplash) {
-            // Экран загрузки
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                contentAlignment = Alignment.Center
-            ) {
-                // Цветной круг вместо изображения логотипа
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-                
-                // Индикатор загрузки
+            // Упрощенный сплеш-скрин
+            Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
                 CircularProgressIndicator(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 64.dp),
-                    color = MaterialTheme.colorScheme.secondary
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         } else {
-            // Основной контент
             AppNavigation()
         }
     }

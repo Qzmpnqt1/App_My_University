@@ -14,6 +14,5 @@ class MyUniversityApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        // Инициализация может быть добавлена здесь при необходимости
     }
 }
