@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.app_my_university.model.LessonType
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -81,14 +82,6 @@ data class Lesson(
     val dayOfWeek: DayOfWeek,
     val groupName: String
 )
-
-// Тип занятия
-enum class LessonType(val displayName: String, val color: Color) {
-    LECTURE("Лекция", Color(0xFF2196F3)),
-    SEMINAR("Семинар", Color(0xFF4CAF50)),
-    LABORATORY("Лабораторная", Color(0xFFF44336)),
-    PRACTICE("Практика", Color(0xFFFF9800))
-}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable

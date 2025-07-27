@@ -25,11 +25,11 @@ import androidx.compose.ui.unit.sp
 data class Semester(
     val id: String,
     val name: String,
-    val subjects: List<Subject>
+    val subjects: List<GradeBookSubject>
 )
 
 // Данные о предмете
-data class Subject(
+data class GradeBookSubject(
     val id: String,
     val name: String,
     val examGrade: Int? = null, // Оценка за экзамен (если есть)
@@ -48,25 +48,25 @@ fun GradeBookScreen(
                 id = "1",
                 name = "Семестр 1",
                 subjects = listOf(
-                    Subject(
+                    GradeBookSubject(
                         id = "1",
                         name = "Математический анализ",
                         examGrade = 4,
                         creditStatus = null
                     ),
-                    Subject(
+                    GradeBookSubject(
                         id = "2",
                         name = "Информатика",
                         examGrade = 5,
                         creditStatus = null
                     ),
-                    Subject(
+                    GradeBookSubject(
                         id = "3",
                         name = "Иностранный язык",
                         examGrade = null,
                         creditStatus = true
                     ),
-                    Subject(
+                    GradeBookSubject(
                         id = "4",
                         name = "Введение в программирование",
                         examGrade = 5,
@@ -78,25 +78,25 @@ fun GradeBookScreen(
                 id = "2",
                 name = "Семестр 2",
                 subjects = listOf(
-                    Subject(
+                    GradeBookSubject(
                         id = "5",
                         name = "Дискретная математика",
                         examGrade = 3,
                         creditStatus = null
                     ),
-                    Subject(
+                    GradeBookSubject(
                         id = "6",
                         name = "Математическая логика",
                         examGrade = 4,
                         creditStatus = null
                     ),
-                    Subject(
+                    GradeBookSubject(
                         id = "7",
                         name = "Физическая культура",
                         examGrade = null,
                         creditStatus = true
                     ),
-                    Subject(
+                    GradeBookSubject(
                         id = "8",
                         name = "Объектно-ориентированное программирование",
                         examGrade = 5,
@@ -108,25 +108,25 @@ fun GradeBookScreen(
                 id = "3",
                 name = "Семестр 3",
                 subjects = listOf(
-                    Subject(
+                    GradeBookSubject(
                         id = "9",
                         name = "Теория вероятностей",
                         examGrade = 4,
                         creditStatus = null
                     ),
-                    Subject(
+                    GradeBookSubject(
                         id = "10",
                         name = "Базы данных",
                         examGrade = 5,
                         creditStatus = null
                     ),
-                    Subject(
+                    GradeBookSubject(
                         id = "11",
                         name = "Компьютерные сети",
                         examGrade = null,
                         creditStatus = true
                     ),
-                    Subject(
+                    GradeBookSubject(
                         id = "12",
                         name = "Алгоритмы и структуры данных",
                         examGrade = 4,

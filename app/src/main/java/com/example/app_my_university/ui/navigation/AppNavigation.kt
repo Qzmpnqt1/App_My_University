@@ -1,181 +1,347 @@
 package com.example.app_my_university.ui.navigation
 
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Message
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
-import com.example.app_my_university.ui.screens.*
+import com.example.app_my_university.ui.components.AdminBottomBar
+import com.example.app_my_university.ui.screens.AdminDashboardScreen
+import com.example.app_my_university.ui.screens.ChatScreen
+import com.example.app_my_university.ui.screens.GradeBookScreen
+import com.example.app_my_university.ui.screens.HomeScreen
+import com.example.app_my_university.ui.screens.LoginScreen
+import com.example.app_my_university.ui.screens.MessagesScreen
+import com.example.app_my_university.ui.screens.NewsScreen
+import com.example.app_my_university.ui.screens.OnboardingWelcomeScreen
+import com.example.app_my_university.ui.screens.ProfileScreen
+import com.example.app_my_university.ui.screens.RegistrationRequestsScreen
+import com.example.app_my_university.ui.screens.RegistrationScreen
+import com.example.app_my_university.ui.screens.ScheduleManagementScreen
+import com.example.app_my_university.ui.screens.ScheduleScreen
+import com.example.app_my_university.ui.screens.UniversityManagementScreen
+import com.example.app_my_university.ui.screens.UniversitySelectionScreen
 
-sealed class Screen(val route: String, val icon: ImageVector, val label: String) {
-    object Onboarding : Screen("onboarding", Icons.Default.Home, "Онбординг")
-    object UniversitySelection : Screen("university_selection", Icons.Default.Home, "Выбор ВУЗа")
-    object News : Screen("news", Icons.Default.Home, "Новости")
-    object Schedule : Screen("schedule", Icons.Default.CalendarToday, "Расписание")
-    object Messages : Screen("messages", Icons.AutoMirrored.Filled.Message, "Сообщения")
-    object Chat : Screen("chat/{chatId}", Icons.AutoMirrored.Filled.Message, "Чат") {
+// Define the navigation routes
+sealed class Screen(val route: String) {
+    object OnboardingWelcome : Screen("onboarding_welcome")
+    object UniversitySelection : Screen("university_selection")
+    object Login : Screen("login/{universityId}/{universityName}") {
+        fun createRoute(universityId: String, universityName: String): String =
+            "login/$universityId/$universityName"
+    }
+    object Registration : Screen("registration/{universityId}/{universityName}") {
+        fun createRoute(universityId: String, universityName: String): String =
+            "registration/$universityId/$universityName"
+    }
+    object Home : Screen("home")
+    object Schedule : Screen("schedule")
+    object GradeBook : Screen("gradebook")
+    object News : Screen("news")
+    object Messages : Screen("messages")
+    object Chat : Screen("chat/{chatId}") {
         fun createRoute(chatId: String): String = "chat/$chatId"
     }
-    object GradeBook : Screen("gradebook", Icons.Default.Book, "Зачетка")
-    object Profile : Screen("profile", Icons.Default.Person, "Профиль")
-    object Login : Screen("login", Icons.Default.AccountCircle, "Вход")
-    object Register : Screen("register", Icons.Default.AccountCircle, "Регистрация")
+    object Profile : Screen("profile")
+    
+    // Экраны администратора
+    object AdminDashboard : Screen("admin_dashboard")
+    object UniversityManagement : Screen("university_management")
+    object RegistrationRequests : Screen("registration_requests")
+    object ScheduleManagement : Screen("schedule_management")
+    object SubjectManagement : Screen("subject_management")
+    object UserManagement : Screen("user_management")
+    object AdminProfile : Screen("admin_profile")
 }
 
-/** Нижняя навигационная панель для основных экранов */
 @Composable
-fun BottomNavigationBar(navController: NavHostController) {
-    val mainScreens = listOf(
-        Screen.News,
-        Screen.Schedule,
-        Screen.Messages,
-        Screen.GradeBook,
-        Screen.Profile
-    )
-    val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = currentBackStackEntry?.destination
-
-    NavigationBar(
-        modifier = Modifier.height(70.dp) // Устанавливаем желаемую высоту
-    ) {
-        mainScreens.forEach { screen ->
-            val selected = currentDestination?.hierarchy?.any {
-                it.route?.startsWith(screen.route.substringBefore("{")) == true
-            } == true
-
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        screen.icon,
-                        contentDescription = screen.label,
-                        modifier = Modifier.size(24.dp)
-                    )
-                },
-                selected = selected,
-                onClick = {
-                    navController.navigate(screen.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+fun AppNavigation(navController: NavHostController, startDestination: String) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route ?: ""
+    
+    // Проверка, является ли текущий экран экраном администратора
+    val isAdminScreen = currentRoute.startsWith("admin_") ||
+                       currentRoute == Screen.UniversityManagement.route || 
+                       currentRoute == Screen.RegistrationRequests.route || 
+                       currentRoute == Screen.ScheduleManagement.route ||
+                       currentRoute == Screen.SubjectManagement.route ||
+                       currentRoute == Screen.UserManagement.route ||
+                       (currentRoute == Screen.Messages.route && startDestination == Screen.AdminDashboard.route)
+    
+    // Если это экран администратора, показываем нижнюю панель навигации
+    if (isAdminScreen) {
+        // Используем одну общую Scaffold для всех экранов администратора
+        Scaffold(
+            bottomBar = {
+                AdminBottomBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
-                },
-                modifier = Modifier.padding(vertical = 8.dp) // Отступы элементов
-            )
+                )
+            }
+        ) { paddingValues ->
+            // Внутри Box с правильным padding помещаем NavHost для экранов администратора
+            Box(modifier = Modifier.padding(paddingValues)) {
+                AdminNavHost(navController, startDestination, currentRoute)
+            }
         }
-    }
-}
-
-/** Основная навигация приложения */
-@Composable
-fun AppNavigation(
-    navController: NavHostController = rememberNavController(),
-    startDestination: String = Screen.Login.route
-) {
-    // Определяем, когда показывать нижнюю навигационную панель
-    val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = currentBackStackEntry?.destination?.route
-    val showBottomBar = listOf(
-        Screen.News.route,
-        Screen.Schedule.route,
-        Screen.Messages.route,
-        Screen.GradeBook.route,
-        Screen.Profile.route
-    ).any { currentRoute?.startsWith(it.substringBefore("{")) == true }
-
-    Scaffold(
-        bottomBar = { if (showBottomBar) BottomNavigationBar(navController) }
-    ) { paddingValues ->
+    } else {
+        // Обычная навигация для неадминистративных экранов
         NavHost(
             navController = navController,
-            startDestination = startDestination,
-            modifier = androidx.compose.ui.Modifier.padding(paddingValues)
+            startDestination = startDestination
         ) {
-            composable(Screen.Login.route) {
+            composable(Screen.OnboardingWelcome.route) {
+                OnboardingWelcomeScreen(
+                    onNavigateToUniversitySelection = {
+                        navController.navigate(Screen.UniversitySelection.route)
+                    }
+                )
+            }
+            
+            composable(Screen.UniversitySelection.route) {
+                UniversitySelectionScreen(
+                    onUniversitySelected = { universityId, universityName ->
+                        navController.navigate(Screen.Registration.createRoute(universityId, universityName))
+                    },
+                    onNavigateToLogin = { universityId, universityName ->
+                        navController.navigate(Screen.Login.createRoute(universityId, universityName))
+                    }
+                )
+            }
+            
+            composable(
+                route = Screen.Login.route,
+                arguments = listOf(
+                    navArgument("universityId") { type = NavType.StringType },
+                    navArgument("universityName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val universityId = backStackEntry.arguments?.getString("universityId") ?: ""
+                val universityName = backStackEntry.arguments?.getString("universityName") ?: ""
+                
                 LoginScreen(
-                    onLoginSuccess = {
-                        navController.navigate(Screen.Schedule.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
+                    universityId = universityId,
+                    universityName = universityName,
+                    onLoginAsStudent = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.OnboardingWelcome.route) { inclusive = true }
                         }
                     },
-                    onNavigateToRegister = {
-                        navController.navigate(Screen.Register.route)
+                    onLoginAsTeacher = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.OnboardingWelcome.route) { inclusive = true }
+                        }
+                    },
+                    onLoginAsAdmin = {
+                        navController.navigate(Screen.AdminDashboard.route) {
+                            popUpTo(Screen.OnboardingWelcome.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateBack = {
+                        navController.navigateUp()
                     }
                 )
             }
-            composable(Screen.Register.route) {
-                RegisterScreen(
-                    onRegisterSuccess = {
-                        // После регистрации можно перейти, например, на экран входа
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Register.route) { inclusive = true }
-                        }
+            
+            composable(
+                route = Screen.Registration.route,
+                arguments = listOf(
+                    navArgument("universityId") { type = NavType.StringType },
+                    navArgument("universityName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val universityId = backStackEntry.arguments?.getString("universityId") ?: ""
+                val universityName = backStackEntry.arguments?.getString("universityName") ?: ""
+                
+                RegistrationScreen(
+                    universityId = universityId,
+                    universityName = universityName,
+                    onRegistrationComplete = {
+                        navController.navigate(Screen.Login.createRoute(universityId, universityName))
                     },
-                    onNavigateToLogin = {
-                        navController.popBackStack()
+                    onChangeUniversity = {
+                        navController.navigate(Screen.UniversitySelection.route) {
+                            popUpTo(Screen.UniversitySelection.route) { inclusive = true }
+                        }
                     }
                 )
             }
+            
+            composable(Screen.Home.route) {
+                HomeScreen()
+            }
+            
             composable(Screen.Schedule.route) {
-                ScheduleScreen(
-                    onNavigateToMessages = { navController.navigate(Screen.Messages.route) },
-                    onNavigateToGradeBook = { navController.navigate(Screen.GradeBook.route) },
-                    onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
-                )
+                ScheduleScreen()
             }
+            
+            composable(Screen.GradeBook.route) {
+                GradeBookScreen()
+            }
+            
             composable(Screen.News.route) {
                 NewsScreen()
             }
-            composable(Screen.GradeBook.route) {
-                GradeBookScreen(
-                    onBackPressed = { navController.popBackStack() }
+            
+            composable(
+                route = Screen.Chat.route,
+                arguments = listOf(
+                    navArgument("chatId") { type = NavType.StringType }
                 )
-            }
-            composable(Screen.Messages.route) {
-                MessagesScreen(
-                    navigateToChat = { chatId ->
-                        navController.navigate(Screen.Chat.createRoute(chatId))
+            ) { backStackEntry ->
+                val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
+                
+                ChatScreen(
+                    chatId = chatId,
+                    onNavigateBack = {
+                        navController.navigateUp()
                     }
                 )
             }
-            composable(
-                route = Screen.Chat.route,
-                arguments = listOf(navArgument("chatId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val chatId = backStackEntry.arguments?.getString("chatId") ?: "default"
-                ChatScreen(
-                    chatId = chatId,
-                    onBackPressed = { navController.popBackStack() }
-                )
-            }
+            
             composable(Screen.Profile.route) {
                 ProfileScreen(
-                    onBackPressed = { navController.popBackStack() }
+                    onBackPressed = {
+                        navController.navigateUp()
+                    }
                 )
+            }
+            
+            // Переход к экранам администратора
+            composable(Screen.AdminDashboard.route) {
+                // Перенаправляем на экран с нижней панелью навигации
+                navController.navigate(Screen.AdminDashboard.route) {
+                    popUpTo(Screen.OnboardingWelcome.route) { inclusive = true }
+                }
             }
         }
     }
 }
 
 @Composable
-fun NewsScreen() {
-    TODO("Not yet implemented")
+fun AdminNavHost(
+    navController: NavHostController, 
+    startDestination: String,
+    currentRoute: String
+) {
+    NavHost(
+        navController = navController,
+        startDestination = if (startDestination == Screen.AdminDashboard.route) 
+                           startDestination else Screen.AdminDashboard.route
+    ) {
+        // Экраны администратора
+        composable(Screen.AdminDashboard.route) {
+            AdminDashboardScreen(
+                currentRoute = currentRoute,
+                onNavigate = { route ->
+                    navController.navigate(route)
+                },
+                onNavigateToUniversityManagement = {
+                    navController.navigate(Screen.UniversityManagement.route)
+                },
+                onNavigateToRegistrationRequests = {
+                    navController.navigate(Screen.RegistrationRequests.route)
+                },
+                onNavigateToScheduleManagement = {
+                    navController.navigate(Screen.ScheduleManagement.route)
+                },
+                onNavigateToMessages = {
+                    navController.navigate(Screen.Messages.route)
+                },
+                onLogout = {
+                    navController.navigate(Screen.OnboardingWelcome.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        composable(Screen.UniversityManagement.route) {
+            UniversityManagementScreen(
+                onNavigateBack = {
+                    navController.navigateUp()
+                }
+            )
+        }
+        
+        composable(Screen.RegistrationRequests.route) {
+            RegistrationRequestsScreen(
+                onNavigateBack = {
+                    navController.navigateUp()
+                }
+            )
+        }
+        
+        composable(Screen.ScheduleManagement.route) {
+            ScheduleManagementScreen(
+                onNavigateBack = {
+                    navController.navigateUp()
+                }
+            )
+        }
+        
+        composable(Screen.Messages.route) {
+            MessagesScreen(
+                onNavigateBack = {
+                    navController.navigateUp()
+                },
+                onNavigateToChat = { chatId ->
+                    navController.navigate(Screen.Chat.createRoute(chatId))
+                }
+            )
+        }
+        
+        // Добавляем недостающие экраны администратора
+        composable(Screen.SubjectManagement.route) {
+            // Временная заглушка для экрана управления предметами
+            Box(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Управление предметами",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+        
+        
+        composable(Screen.UserManagement.route) {
+            // Временная заглушка для экрана управления пользователями
+            Box(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Управление пользователями",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+        
+        composable(Screen.AdminProfile.route) {
+            // Временная заглушка для экрана профиля администратора
+            Box(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Профиль администратора",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
 }

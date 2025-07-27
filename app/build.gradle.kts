@@ -113,7 +113,7 @@ dependencies {
 
     // Retrofit и OkHttp для работы с REST API
     implementation(libs.retrofit)
-    implementation(libs.converter.moshi)
+    implementation(libs.converter.gson)  // Используем Gson вместо Moshi для совместимости с API
     implementation(libs.logging.interceptor)
 
     // Kotlin Coroutines для асинхронных операций

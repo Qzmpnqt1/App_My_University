@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Divider
@@ -19,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +46,8 @@ data class ChatPreview(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessagesScreen(
-    navigateToChat: (String) -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToChat: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -52,7 +55,7 @@ fun MessagesScreen(
     val chats = remember {
         listOf(
             ChatPreview(
-                id = "1",
+                id = "student1",
                 name = "Иванов Иван Иванович",
                 lastMessage = "Экзамен состоится 15 июня в 10:00 в аудитории 302.",
                 timestamp = System.currentTimeMillis() - 1200000,
@@ -60,7 +63,7 @@ fun MessagesScreen(
                 isOnline = true
             ),
             ChatPreview(
-                id = "2",
+                id = "teacher1",
                 name = "Петров Петр Петрович",
                 lastMessage = "Пожалуйста, ознакомьтесь с материалами перед следующей лекцией.",
                 timestamp = System.currentTimeMillis() - 86400000,
@@ -68,7 +71,7 @@ fun MessagesScreen(
                 isOnline = false
             ),
             ChatPreview(
-                id = "3",
+                id = "admin1",
                 name = "Учебный отдел",
                 lastMessage = "Расписание на следующий семестр будет доступно в личном кабинете.",
                 timestamp = System.currentTimeMillis() - 172800000,
@@ -84,22 +87,28 @@ fun MessagesScreen(
         chats.filter { it.name.contains(searchQuery, ignoreCase = true) }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Сообщения") })
-        }
-    ) { paddingValues ->
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Топ-бар с учетом системных инсетов
+        TopAppBar(
+            title = { Text("Сообщения") },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                titleContentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            modifier = Modifier.height(48.dp)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
         ) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(vertical = 8.dp),
                 placeholder = { Text("Поиск по контактам...") },
                 leadingIcon = {
                     Icon(
@@ -129,7 +138,7 @@ fun MessagesScreen(
                     items(filteredChats) { chat ->
                         ChatItem(
                             chat = chat,
-                            onClick = { navigateToChat(chat.id) }
+                            onClick = { onNavigateToChat(chat.id) }
                         )
                         Divider(
                             modifier = Modifier.padding(start = 72.dp),
@@ -248,6 +257,8 @@ fun ChatItem(
 private fun isToday(timestamp: Long): Boolean {
     val today = Calendar.getInstance()
     val messageDate = Calendar.getInstance().apply { timeInMillis = timestamp }
+    
     return today.get(Calendar.YEAR) == messageDate.get(Calendar.YEAR) &&
-            today.get(Calendar.DAY_OF_YEAR) == messageDate.get(Calendar.DAY_OF_YEAR)
+           today.get(Calendar.DAY_OF_YEAR) == messageDate.get(Calendar.DAY_OF_YEAR)
 }
+ 
