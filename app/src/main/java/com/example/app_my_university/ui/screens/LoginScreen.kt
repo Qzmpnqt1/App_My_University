@@ -12,19 +12,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,6 +41,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,7 +58,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.app_my_university.model.UserType
+import com.example.app_my_university.ui.viewmodel.LoginViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun LoginScreen(
@@ -61,54 +70,31 @@ fun LoginScreen(
     onLoginAsStudent: () -> Unit,
     onLoginAsTeacher: () -> Unit,
     onLoginAsAdmin: () -> Unit,
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     
-    // Валидация полей
-    var emailError by remember { mutableStateOf<String?>(null) }
-    var passwordError by remember { mutableStateOf<String?>(null) }
+    val uiState by viewModel.uiState.collectAsState()
     
-    // Функция для проверки валидности email
-    fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    // Обработка успешного входа
+    LaunchedEffect(uiState.userData) {
+        if (uiState.userData != null) {
+            delay(1000) // Показываем сообщение 1 секунду
+            when (uiState.userData!!.userType) {
+                "STUDENT" -> onLoginAsStudent()
+                "TEACHER" -> onLoginAsTeacher()
+                "ADMIN" -> onLoginAsAdmin()
+                else -> onLoginAsStudent() // По умолчанию
+            }
+        }
     }
     
     // Функция для входа в систему
     fun login() {
-        // Сбросить ошибки
-        emailError = null
-        passwordError = null
-        
-        // Проверить email
-        if (email.isBlank()) {
-            emailError = "Email не может быть пустым"
-            return
-        }
-        
-        if (!isValidEmail(email)) {
-            emailError = "Неверный формат email"
-            return
-        }
-        
-        // Проверить пароль
-        if (password.isBlank()) {
-            passwordError = "Пароль не может быть пустым"
-            return
-        }
-        
-        if (password.length < 6) {
-            passwordError = "Пароль должен содержать не менее 6 символов"
-            return
-        }
-        
-        // В реальном приложении здесь будет логика аутентификации с сервером
-        // и определение типа пользователя
-        
-        // Для демонстрации используем админа
-        onLoginAsAdmin()
+        viewModel.login(email, password)
     }
     
     Box(
@@ -140,13 +126,11 @@ fun LoginScreen(
                 value = email,
                 onValueChange = { 
                     email = it
-                    emailError = null
+                    viewModel.clearLoginState()
                 },
                 label = { Text("Email") },
                 placeholder = { Text("Введите email") },
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-                isError = emailError != null,
-                supportingText = emailError?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
@@ -161,7 +145,7 @@ fun LoginScreen(
                 value = password,
                 onValueChange = { 
                     password = it
-                    passwordError = null
+                    viewModel.clearLoginState()
                 },
                 label = { Text("Пароль") },
                 placeholder = { Text("Введите пароль") },
@@ -175,8 +159,6 @@ fun LoginScreen(
                     }
                 },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                isError = passwordError != null,
-                supportingText = passwordError?.let { { Text(it) } },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
@@ -185,15 +167,88 @@ fun LoginScreen(
                 )
             )
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Отображение ошибки входа
+            if (uiState.loginError != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = "Ошибка",
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = uiState.loginError ?: "",
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // Отображение успешного входа
+            if (uiState.loginSuccess != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Успех",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = uiState.loginSuccess ?: "",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
             
             Button(
                 onClick = { login() },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(50.dp),
+                enabled = !uiState.isLoading
             ) {
-                Text("Войти")
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .width(20.dp)
+                            .height(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Вход...")
+                } else {
+                    Text("Войти")
+                }
             }
             
             Spacer(modifier = Modifier.height(24.dp))

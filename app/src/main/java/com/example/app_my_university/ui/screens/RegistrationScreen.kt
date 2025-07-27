@@ -52,6 +52,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -136,6 +137,14 @@ fun RegistrationScreen(
     
     LaunchedEffect(subjectSearchQuery) {
         viewModel.searchSubjects(subjectSearchQuery)
+    }
+
+    // Обработка успешной регистрации
+    LaunchedEffect(uiState.registrationSuccess) {
+        if (uiState.registrationSuccess != null) {
+            delay(2000) // Показываем сообщение 2 секунды
+            onRegistrationComplete()
+        }
     }
     
     // Валидация полей
@@ -866,13 +875,97 @@ fun RegistrationScreen(
                 )
             }
             
+            // Отображение ошибки регистрации
+            if (uiState.registrationError != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = "Ошибка",
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = uiState.registrationError ?: "",
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            // Отображение успешной регистрации
+            if (uiState.registrationSuccess != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Успех",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = uiState.registrationSuccess ?: "",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
             // Кнопка регистрации
             Button(
-                onClick = { onRegistrationComplete() },
+                onClick = { 
+                    viewModel.registerUser(
+                        userType = userType,
+                        lastName = lastName,
+                        firstName = firstName,
+                        middleName = middleName,
+                        email = email,
+                        password = password,
+                        selectedInstitute = selectedInstitute,
+                        selectedDirection = selectedDirection,
+                        selectedGroup = selectedGroup,
+                        courseYear = courseYear,
+                        selectedSubjects = selectedSubjects.toList()
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = isFormValid
+                enabled = isFormValid && !uiState.isRegistering
             ) {
-                Text("Зарегистрироваться")
+                if (uiState.isRegistering) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .width(20.dp)
+                            .height(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Регистрация...")
+                } else {
+                    Text("Зарегистрироваться")
+                }
             }
             
             Spacer(modifier = Modifier.height(16.dp))

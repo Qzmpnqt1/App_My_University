@@ -2,7 +2,12 @@ package com.example.app_my_university.data.repository
 
 import com.example.app_my_university.data.api.UniversityApiService
 import com.example.app_my_university.data.api.model.AcademicGroupDTO
+import com.example.app_my_university.data.api.model.AuthRequest
+import com.example.app_my_university.data.api.model.AuthResponse
 import com.example.app_my_university.data.api.model.InstituteDTO
+import com.example.app_my_university.data.api.model.LoginResponse
+import com.example.app_my_university.data.api.model.RegistrationRequest
+import com.example.app_my_university.data.api.model.RegistrationResponse
 import com.example.app_my_university.data.api.model.StudyDirectionDTO
 import com.example.app_my_university.data.api.model.SubjectDTO
 import com.example.app_my_university.data.api.model.UniversityDTO
@@ -110,6 +115,45 @@ class UniversityRepository @Inject constructor(
     suspend fun searchSubjects(query: String): Flow<Result<List<SubjectDTO>>> = flow {
         try {
             val response = apiService.searchSubjects(query)
+            if (response.success && response.data != null) {
+                emit(Result.success(response.data))
+            } else {
+                emit(Result.failure(Exception(response.message)))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    suspend fun registerUser(request: RegistrationRequest): Flow<Result<RegistrationResponse>> = flow {
+        try {
+            val response = apiService.registerUser(request)
+            if (response.success) {
+                emit(Result.success(response))
+            } else {
+                emit(Result.failure(Exception(response.message)))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    suspend fun registerUserAlternative(request: RegistrationRequest): Flow<Result<RegistrationResponse>> = flow {
+        try {
+            val response = apiService.registerUserAlternative(request)
+            if (response.success) {
+                emit(Result.success(response))
+            } else {
+                emit(Result.failure(Exception(response.message)))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    suspend fun login(request: AuthRequest): Flow<Result<AuthResponse>> = flow {
+        try {
+            val response = apiService.login(request)
             if (response.success && response.data != null) {
                 emit(Result.success(response.data))
             } else {

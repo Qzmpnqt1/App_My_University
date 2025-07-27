@@ -2,6 +2,8 @@ package com.example.app_my_university.data.api
 
 import com.example.app_my_university.data.api.model.*
 import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Body
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -33,4 +35,13 @@ interface UniversityApiService {
 
     @GET("/api/universities/subjects/search")
     suspend fun searchSubjects(@Query("query") query: String): ApiResponse<List<SubjectDTO>>
+
+    @POST("/api/auth/register")
+    suspend fun registerUser(@Body request: RegistrationRequest): RegistrationResponse
+
+    @POST("/api/registration/submit")
+    suspend fun registerUserAlternative(@Body request: RegistrationRequest): RegistrationResponse
+
+    @POST("/api/auth/login")
+    suspend fun login(@Body request: AuthRequest): LoginResponse
 } 

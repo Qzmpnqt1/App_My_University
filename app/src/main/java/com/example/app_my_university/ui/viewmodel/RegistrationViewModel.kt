@@ -5,10 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_my_university.data.api.model.AcademicGroupDTO
 import com.example.app_my_university.data.api.model.InstituteDTO
+import com.example.app_my_university.data.api.model.RegistrationRequest
+import com.example.app_my_university.data.api.model.RegistrationResponse
 import com.example.app_my_university.data.api.model.StudyDirectionDTO
 import com.example.app_my_university.data.api.model.SubjectDTO
 import com.example.app_my_university.data.repository.UniversityRepository
 import com.example.app_my_university.model.Subject
+import com.example.app_my_university.model.UserType
 import com.example.app_my_university.ui.screens.Direction
 import com.example.app_my_university.ui.screens.Group
 import com.example.app_my_university.ui.screens.Institute
@@ -218,6 +221,143 @@ class RegistrationViewModel @Inject constructor(
             it.copy(searchSubjectsResults = filteredSubjects)
         }
     }
+
+    fun registerUser(
+        userType: UserType,
+        lastName: String,
+        firstName: String,
+        middleName: String,
+        email: String,
+        password: String,
+        selectedInstitute: Institute?,
+        selectedDirection: Direction?,
+        selectedGroup: Group?,
+        courseYear: String?,
+        selectedSubjects: List<Subject>
+    ) {
+        // Валидация на клиенте
+        val validationError = validateRegistrationData(
+            userType, lastName, firstName, middleName, email, password,
+            selectedInstitute, selectedDirection, selectedGroup, courseYear, selectedSubjects
+        )
+        
+        if (validationError != null) {
+            _uiState.update {
+                it.copy(registrationError = validationError)
+            }
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { 
+                it.copy(
+                    isRegistering = true,
+                    registrationError = null,
+                    registrationSuccess = null
+                )
+            }
+
+            try {
+                val request = RegistrationRequest(
+                    lastName = lastName,
+                    firstName = firstName,
+                    middleName = middleName,
+                    email = email,
+                    password = password,
+                    userType = userType.name,
+                    universityId = universityId.toInt(),
+                    instituteId = selectedInstitute?.id?.toInt(),
+                    directionId = selectedDirection?.id?.toInt(),
+                    groupId = selectedGroup?.id?.toInt(),
+                    courseYear = courseYear?.toIntOrNull(),
+                    subjectIds = if (userType == UserType.TEACHER) {
+                        selectedSubjects.map { it.id.toInt() }
+                    } else null
+                )
+
+                repository.registerUser(request)
+                    .collect { result ->
+                        result.fold(
+                            onSuccess = { response ->
+                                _uiState.update {
+                                    it.copy(
+                                        isRegistering = false,
+                                        registrationSuccess = response.message
+                                    )
+                                }
+                            },
+                            onFailure = { e ->
+                                _uiState.update {
+                                    it.copy(
+                                        isRegistering = false,
+                                        registrationError = e.message
+                                    )
+                                }
+                            }
+                        )
+                    }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isRegistering = false,
+                        registrationError = e.message ?: "Неизвестная ошибка"
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearRegistrationState() {
+        _uiState.update {
+            it.copy(
+                registrationError = null,
+                registrationSuccess = null
+            )
+        }
+    }
+
+    private fun validateRegistrationData(
+        userType: UserType,
+        lastName: String,
+        firstName: String,
+        middleName: String,
+        email: String,
+        password: String,
+        selectedInstitute: Institute?,
+        selectedDirection: Direction?,
+        selectedGroup: Group?,
+        courseYear: String?,
+        selectedSubjects: List<Subject>
+    ): String? {
+        // Общие проверки
+        if (lastName.isBlank()) return "Фамилия обязательна"
+        if (firstName.isBlank()) return "Имя обязательно"
+        if (middleName.isBlank()) return "Отчество обязательно"
+        if (email.isBlank()) return "Email обязателен"
+        if (!email.endsWith("@gmail.com")) return "Email должен заканчиваться на @gmail.com"
+        if (password.length < 6) return "Пароль должен содержать не менее 6 символов"
+
+        // Проверки для студентов
+        if (userType == UserType.STUDENT) {
+            if (selectedInstitute == null) return "Необходимо выбрать институт"
+            if (selectedDirection == null) return "Необходимо выбрать направление обучения"
+            if (selectedGroup == null) return "Необходимо выбрать группу"
+            if (courseYear.isNullOrBlank()) return "Необходимо указать курс обучения"
+            
+            val course = courseYear.toIntOrNull()
+            if (course == null || course !in 1..5) {
+                return "Курс должен быть от 1 до 5"
+            }
+        }
+
+        // Проверки для преподавателей
+        if (userType == UserType.TEACHER) {
+            if (selectedSubjects.isEmpty()) {
+                return "Необходимо выбрать хотя бы один преподаваемый предмет"
+            }
+        }
+
+        return null
+    }
 }
 
 data class RegistrationUiState(
@@ -230,8 +370,11 @@ data class RegistrationUiState(
     val isLoadingDirections: Boolean = false,
     val isLoadingGroups: Boolean = false,
     val isLoadingSubjects: Boolean = false,
+    val isRegistering: Boolean = false,
     val instituteError: String? = null,
     val directionError: String? = null,
     val groupError: String? = null,
-    val subjectError: String? = null
+    val subjectError: String? = null,
+    val registrationError: String? = null,
+    val registrationSuccess: String? = null
 ) 
