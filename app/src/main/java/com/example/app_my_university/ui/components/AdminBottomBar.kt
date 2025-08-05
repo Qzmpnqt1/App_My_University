@@ -77,10 +77,11 @@ fun AdminBottomBar(
         )
     )
 
+    // Увеличиваем высоту BottomBar на 15% (с 65.dp до 75.dp)
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.height(65.dp)
+        modifier = Modifier.height(75.dp)
     ) {
         items.forEach { item ->
             val selected = currentRoute.startsWith(item.route)
@@ -124,4 +125,4 @@ private fun RowScope.AdminBottomBarItem(
             indicatorColor = MaterialTheme.colorScheme.primaryContainer
         )
     )
-} 
+}

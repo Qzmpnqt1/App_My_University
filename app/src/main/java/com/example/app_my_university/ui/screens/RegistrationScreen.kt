@@ -188,7 +188,7 @@ fun RegistrationScreen(
                 text = "Регистрация",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(vertical = 16.dp)
+                modifier = Modifier.padding(top = 36.dp, bottom = 16.dp)
             )
             
             // Карточка с информацией о выбранном университете

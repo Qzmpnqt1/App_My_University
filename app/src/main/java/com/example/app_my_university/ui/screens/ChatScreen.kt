@@ -1,6 +1,7 @@
 package com.example.app_my_university.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,28 +10,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,82 +40,64 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 data class ChatMessage(
     val id: String,
-    val senderId: String,
-    val senderName: String,
     val content: String,
-    val timestamp: Long,
-    val isFromCurrentUser: Boolean
+    val isFromMe: Boolean,
+    val timestamp: Long
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     chatId: String,
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit
 ) {
-    // В реальном приложении эти данные будут загружаться из базы данных
-    val chatName = remember { "Чат #$chatId" }
-    val currentUserId = remember { "current_user_id" }
+    var newMessage by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
     
     // Пример сообщений для демонстрации
     val messages = remember {
         listOf(
             ChatMessage(
                 id = "1",
-                senderId = "user1",
-                senderName = "Иванов Иван",
-                content = "Здравствуйте! У меня вопрос по расписанию.",
-                timestamp = System.currentTimeMillis() - 3600000,
-                isFromCurrentUser = false
+                content = "Добрый день! Когда будет доступен материал по следующей теме?",
+                isFromMe = false,
+                timestamp = System.currentTimeMillis() - 3600000
             ),
             ChatMessage(
                 id = "2",
-                senderId = currentUserId,
-                senderName = "Вы",
-                content = "Добрый день! Какой именно вопрос вас интересует?",
-                timestamp = System.currentTimeMillis() - 3500000,
-                isFromCurrentUser = true
+                content = "Здравствуйте! Материалы будут доступны завтра после 14:00",
+                isFromMe = true,
+                timestamp = System.currentTimeMillis() - 3500000
             ),
             ChatMessage(
                 id = "3",
-                senderId = "user1",
-                senderName = "Иванов Иван",
-                content = "Будет ли перенос занятий на следующей неделе в связи с праздниками?",
-                timestamp = System.currentTimeMillis() - 3400000,
-                isFromCurrentUser = false
+                content = "Отлично, спасибо за информацию!",
+                isFromMe = false,
+                timestamp = System.currentTimeMillis() - 3400000
             ),
             ChatMessage(
                 id = "4",
-                senderId = currentUserId,
-                senderName = "Вы",
-                content = "Да, занятия со вторника переносятся на субботу. Подробное расписание будет опубликовано завтра.",
-                timestamp = System.currentTimeMillis() - 3300000,
-                isFromCurrentUser = true
-            ),
-            ChatMessage(
-                id = "5",
-                senderId = "user1",
-                senderName = "Иванов Иван",
-                content = "Спасибо за информацию!",
-                timestamp = System.currentTimeMillis() - 3200000,
-                isFromCurrentUser = false
+                content = "Не за что! Если будут вопросы, обращайтесь",
+                isFromMe = true,
+                timestamp = System.currentTimeMillis() - 3300000
             )
         )
     }
     
-    var newMessage by remember { mutableStateOf("") }
-    val listState = rememberLazyListState()
+    // Название чата для демонстрации
+    val chatName = "Студент Иванов Иван"
+    
+    var isMoreMenuExpanded by remember { mutableStateOf(false) }
     
     // Прокрутка к последнему сообщению при открытии чата
     LaunchedEffect(Unit) {
@@ -123,28 +106,59 @@ fun ChatScreen(
         }
     }
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(chatName) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Заголовок чата с отступом 36dp сверху
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(top = 36.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Назад",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                
+                Text(
+                    text = chatName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.weight(1f)
                 )
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+                
+                IconButton(onClick = { isMoreMenuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Ещё",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                
+                DropdownMenu(
+                    expanded = isMoreMenuExpanded,
+                    onDismissRequest = { isMoreMenuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Очистить историю") },
+                        onClick = {
+                            isMoreMenuExpanded = false
+                            // Логика очистки истории
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.DeleteSweep,
+                                contentDescription = null
+                            )
+                        }
+                    )
+                }
+            }
+            
             // Список сообщений
             LazyColumn(
                 modifier = Modifier
@@ -155,11 +169,10 @@ fun ChatScreen(
             ) {
                 items(messages) { message ->
                     MessageItem(message = message)
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
             
-            // Поле для ввода нового сообщения
+            // Поле ввода сообщения
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -206,52 +219,52 @@ fun ChatScreen(
 
 @Composable
 fun MessageItem(message: ChatMessage) {
-    val alignment = if (message.isFromCurrentUser) Alignment.End else Alignment.Start
-    val backgroundColor = if (message.isFromCurrentUser) 
-        MaterialTheme.colorScheme.primaryContainer 
-    else 
-        MaterialTheme.colorScheme.surfaceVariant
-    
-    val textColor = if (message.isFromCurrentUser) 
-        MaterialTheme.colorScheme.onPrimaryContainer 
-    else 
-        MaterialTheme.colorScheme.onSurfaceVariant
-    
-    val dateFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
-    val timeString = dateFormatter.format(Date(message.timestamp))
-    
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = alignment
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalAlignment = if (message.isFromMe) Alignment.End else Alignment.Start
     ) {
-        if (!message.isFromCurrentUser) {
-            Text(
-                text = message.senderName,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 8.dp, bottom = 2.dp)
-            )
-        }
-        
         Card(
-            modifier = Modifier.padding(vertical = 2.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = backgroundColor)
+            colors = CardDefaults.cardColors(
+                containerColor = if (message.isFromMe) 
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                else 
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
+            ),
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = if (message.isFromMe) 16.dp else 4.dp,
+                bottomEnd = if (message.isFromMe) 4.dp else 16.dp
+            )
         ) {
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
                 Text(
                     text = message.content,
-                    color = textColor
+                    color = if (message.isFromMe) 
+                        MaterialTheme.colorScheme.onPrimary
+                    else 
+                        MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                val formattedTime = SimpleDateFormat("HH:mm", Locale.getDefault())
+                    .format(Date(message.timestamp))
+                
                 Text(
-                    text = timeString,
+                    text = formattedTime,
                     style = MaterialTheme.typography.bodySmall,
-                    color = textColor.copy(alpha = 0.7f),
+                    color = if (message.isFromMe) 
+                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                    else 
+                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
                     modifier = Modifier.align(Alignment.End)
                 )
             }
         }
     }
 }
- 

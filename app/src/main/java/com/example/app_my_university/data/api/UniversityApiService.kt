@@ -3,6 +3,7 @@ package com.example.app_my_university.data.api
 import com.example.app_my_university.data.api.model.*
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Body
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -44,4 +45,14 @@ interface UniversityApiService {
 
     @POST("/api/auth/login")
     suspend fun login(@Body request: AuthRequest): LoginResponse
+
+    // Профиль пользователя
+    @GET("/api/profile/user")
+    suspend fun getUserProfile(): ProfileResponse
+
+    @PUT("/api/profile/user")
+    suspend fun updateUserProfile(@Body request: UpdateProfileRequest): ProfileResponse
+
+    @POST("/api/profile/user/change-password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): ChangePasswordResponse
 } 

@@ -8,4 +8,8 @@ object Dimens {
     val spaceM  = 16.dp
     val spaceL  = 24.dp
     val spaceXL = 32.dp
+    
+    // UI элементы
+    val topAppBarHeight = 56.dp  // Стандартная высота для всех TopAppBar
+    val topAppBarIconSize = 24.dp // Размер иконок в TopAppBar
 }

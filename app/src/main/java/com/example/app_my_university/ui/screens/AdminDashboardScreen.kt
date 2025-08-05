@@ -69,6 +69,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app_my_university.ui.components.AdminBottomBar
+import com.example.app_my_university.ui.components.UniformTopAppBar
 import kotlinx.coroutines.launch
 
 data class AdminMenuItem(
@@ -171,14 +172,7 @@ fun AdminDashboardScreen(
         modifier = Modifier.fillMaxSize()
     ) {
         // Топ-бар с учетом системных инсетов
-        TopAppBar(
-            title = { Text("Панель администратора") },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            modifier = Modifier.height(48.dp)
-        )
+        UniformTopAppBar(title = "Панель администратора")
         
         // Отображаем содержимое
         AdminDashboardContent(

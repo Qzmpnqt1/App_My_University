@@ -29,10 +29,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,40 +59,23 @@ fun UniversitySelectionScreen(
     
     val filteredUniversities = when (uiState) {
         is UniversitySelectionUiState.Success -> {
-        if (searchQuery.isEmpty()) {
+            if (searchQuery.isEmpty()) {
                 (uiState as UniversitySelectionUiState.Success).universities
-        } else {
+            } else {
                 (uiState as UniversitySelectionUiState.Success).universities.filter { 
-                it.name.contains(searchQuery, ignoreCase = true) ||
-                it.shortName.contains(searchQuery, ignoreCase = true) ||
-                it.city.contains(searchQuery, ignoreCase = true)
+                    it.name.contains(searchQuery, ignoreCase = true) ||
+                    it.shortName.contains(searchQuery, ignoreCase = true) ||
+                    it.city.contains(searchQuery, ignoreCase = true)
+                }
             }
-        }
         }
         else -> emptyList()
     }
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Выбор учебного заведения") },
-                actions = {
-                    if (uiState is UniversitySelectionUiState.Error) {
-                        IconButton(onClick = { viewModel.loadUniversities() }) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Обновить"
-                            )
-                        }
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -102,23 +83,40 @@ fun UniversitySelectionScreen(
                 text = "Выберите ваш университет",
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier.padding(top = 36.dp, bottom = 24.dp)
             )
             
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("Поиск университета") },
+            // Строка поиска с кнопкой обновления при ошибке
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Поиск"
-                    )
-                },
-                singleLine = true,
-                enabled = uiState is UniversitySelectionUiState.Success
-            )
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Поиск университета") },
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Поиск"
+                        )
+                    },
+                    singleLine = true,
+                    enabled = uiState is UniversitySelectionUiState.Success
+                )
+                
+                if (uiState is UniversitySelectionUiState.Error) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = { viewModel.loadUniversities() }) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Обновить",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -188,17 +186,17 @@ fun UniversitySelectionScreen(
                             )
                         }
                     } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                items(filteredUniversities) { university ->
-                    UniversityItem(
-                        university = university,
-                        isSelected = university == selectedUniversity,
-                        onClick = { selectedUniversity = university }
-                    )
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            items(filteredUniversities) { university ->
+                                UniversityItem(
+                                    university = university,
+                                    isSelected = university == selectedUniversity,
+                                    onClick = { selectedUniversity = university }
+                                )
                             }
                         }
                     }
@@ -296,4 +294,4 @@ fun UniversityItem(
             }
         }
     }
-} 
+}

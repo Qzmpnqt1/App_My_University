@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_my_university.data.api.model.AuthRequest
 import com.example.app_my_university.data.api.model.AuthResponse
+import com.example.app_my_university.data.auth.TokenManager
 import com.example.app_my_university.data.repository.UniversityRepository
 import com.example.app_my_university.model.UserType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val repository: UniversityRepository
+    private val repository: UniversityRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -46,15 +48,17 @@ class LoginViewModel @Inject constructor(
                 repository.login(request)
                     .collect { result ->
                         result.fold(
-                            onSuccess = { authResponse ->
-                                _uiState.update {
-                                    it.copy(
-                                        isLoading = false,
-                                        loginSuccess = "Вход выполнен успешно",
-                                        userData = authResponse
-                                    )
-                                }
-                            },
+                                                                    onSuccess = { authResponse ->
+                                            // Сохраняем токен
+                                            tokenManager.setToken(authResponse.token)
+                                            _uiState.update {
+                                                it.copy(
+                                                    isLoading = false,
+                                                    loginSuccess = "Вход выполнен успешно",
+                                                    userData = authResponse
+                                                )
+                                            }
+                                        },
                             onFailure = { e ->
                                 _uiState.update {
                                     it.copy(

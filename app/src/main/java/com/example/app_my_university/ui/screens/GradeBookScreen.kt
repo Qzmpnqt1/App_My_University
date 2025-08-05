@@ -1,327 +1,282 @@
 package com.example.app_my_university.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
-// Данные о семестре
-data class Semester(
+data class GradeItem(
     val id: String,
-    val name: String,
-    val subjects: List<GradeBookSubject>
+    val subject: String,
+    val professor: String,
+    val grade: String?,
+    val semester: Int
 )
 
-// Данные о предмете
-data class GradeBookSubject(
-    val id: String,
-    val name: String,
-    val examGrade: Int? = null, // Оценка за экзамен (если есть)
-    val creditStatus: Boolean? = null // Статус зачета (если есть)
-)
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GradeBookScreen(
-    onBackPressed: () -> Unit = {}
-) {
-    // Пример данных о семестрах и предметах
-    val semesters = remember {
-        listOf(
-            Semester(
-                id = "1",
-                name = "Семестр 1",
-                subjects = listOf(
-                    GradeBookSubject(
-                        id = "1",
-                        name = "Математический анализ",
-                        examGrade = 4,
-                        creditStatus = null
-                    ),
-                    GradeBookSubject(
-                        id = "2",
-                        name = "Информатика",
-                        examGrade = 5,
-                        creditStatus = null
-                    ),
-                    GradeBookSubject(
-                        id = "3",
-                        name = "Иностранный язык",
-                        examGrade = null,
-                        creditStatus = true
-                    ),
-                    GradeBookSubject(
-                        id = "4",
-                        name = "Введение в программирование",
-                        examGrade = 5,
-                        creditStatus = null
-                    )
+fun GradeBookScreen() {
+    var selectedSemester by remember { mutableStateOf(1) }
+    val semesters = listOf(1, 2, 3, 4, 5, 6, 7, 8)
+    
+    val allGrades = remember {
+        mapOf(
+            1 to listOf(
+                GradeItem(
+                    id = "1",
+                    subject = "Математический анализ",
+                    professor = "Петров В.А.",
+                    grade = "Отлично",
+                    semester = 1
+                ),
+                GradeItem(
+                    id = "2",
+                    subject = "Программирование",
+                    professor = "Сидорова Е.П.",
+                    grade = "Хорошо",
+                    semester = 1
+                ),
+                GradeItem(
+                    id = "3",
+                    subject = "Английский язык",
+                    professor = "Иванова А.И.",
+                    grade = "Отлично",
+                    semester = 1
                 )
             ),
-            Semester(
-                id = "2",
-                name = "Семестр 2",
-                subjects = listOf(
-                    GradeBookSubject(
-                        id = "5",
-                        name = "Дискретная математика",
-                        examGrade = 3,
-                        creditStatus = null
-                    ),
-                    GradeBookSubject(
-                        id = "6",
-                        name = "Математическая логика",
-                        examGrade = 4,
-                        creditStatus = null
-                    ),
-                    GradeBookSubject(
-                        id = "7",
-                        name = "Физическая культура",
-                        examGrade = null,
-                        creditStatus = true
-                    ),
-                    GradeBookSubject(
-                        id = "8",
-                        name = "Объектно-ориентированное программирование",
-                        examGrade = 5,
-                        creditStatus = null
-                    )
+            2 to listOf(
+                GradeItem(
+                    id = "4",
+                    subject = "Дискретная математика",
+                    professor = "Кузнецов И.И.",
+                    grade = "Хорошо",
+                    semester = 2
+                ),
+                GradeItem(
+                    id = "5",
+                    subject = "Алгоритмы и структуры данных",
+                    professor = "Петрова О.С.",
+                    grade = "Отлично",
+                    semester = 2
                 )
             ),
-            Semester(
-                id = "3",
-                name = "Семестр 3",
-                subjects = listOf(
-                    GradeBookSubject(
-                        id = "9",
-                        name = "Теория вероятностей",
-                        examGrade = 4,
-                        creditStatus = null
-                    ),
-                    GradeBookSubject(
-                        id = "10",
-                        name = "Базы данных",
-                        examGrade = 5,
-                        creditStatus = null
-                    ),
-                    GradeBookSubject(
-                        id = "11",
-                        name = "Компьютерные сети",
-                        examGrade = null,
-                        creditStatus = true
-                    ),
-                    GradeBookSubject(
-                        id = "12",
-                        name = "Алгоритмы и структуры данных",
-                        examGrade = 4,
-                        creditStatus = null
-                    )
+            3 to listOf(
+                GradeItem(
+                    id = "6",
+                    subject = "Базы данных",
+                    professor = "Смирнов А.Б.",
+                    grade = null,
+                    semester = 3
                 )
             )
         )
     }
     
-    // Состояние для хранения развернутых семестров
-    val expandedSemesterIds = remember { mutableStateOf(setOf<String>()) }
+    val currentGrades = allGrades[selectedSemester] ?: emptyList()
+    val averageGrade = calculateAverageGrade(currentGrades)
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Зачетная книжка") },
-                navigationIcon = {
-                    IconButton(onClick = onBackPressed) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Назад"
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Заголовок экрана с отступом 36dp сверху
+            Text(
+                text = "Зачетная книжка",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 36.dp, bottom = 16.dp, start = 16.dp, end = 16.dp)
+            )
+            
+            // Вкладки семестров
+            TabRow(selectedTabIndex = selectedSemester - 1) {
+                semesters.forEach { semester ->
+                    Tab(
+                        selected = selectedSemester == semester,
+                        onClick = { selectedSemester = semester },
+                        text = {
+                            Text(
+                                text = "Семестр $semester",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    )
+                }
+            }
+            
+            // Статистика
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "Статистика за $selectedSemester семестр",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        StatItem(
+                            title = "Средний балл",
+                            value = averageGrade?.let { String.format("%.1f", it) } ?: "-"
+                        )
+                        
+                        StatItem(
+                            title = "Предметов",
+                            value = currentGrades.size.toString()
                         )
                     }
                 }
-            )
-        }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-        ) {
-            items(semesters) { semester ->
-                SemesterCard(
-                    semester = semester,
-                    isExpanded = expandedSemesterIds.value.contains(semester.id),
-                    onExpandToggle = {
-                        expandedSemesterIds.value = if (expandedSemesterIds.value.contains(semester.id)) {
-                            expandedSemesterIds.value - semester.id
-                        } else {
-                            expandedSemesterIds.value + semester.id
-                        }
+            }
+            
+            if (currentGrades.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Оценок за $selectedSemester семестр пока нет",
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(currentGrades) { grade ->
+                        GradeItemCard(grade = grade)
                     }
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SemesterCard(
-    semester: Semester,
-    isExpanded: Boolean,
-    onExpandToggle: () -> Unit
-) {
-    val rotationState by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "rotation"
-    )
-    
+fun StatItem(title: String, value: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+        )
+    }
+}
+
+@Composable
+fun GradeItemCard(grade: GradeItem) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Заголовок семестра с кнопкой разворачивания
+            Text(
+                text = grade.subject,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Text(
+                text = "Преподаватель: ${grade.professor}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(8.dp))
+            
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onExpandToggle() },
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = semester.name,
+                    text = grade.grade ?: "Не сдан",
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    color = if (grade.grade != null) 
+                        MaterialTheme.colorScheme.primary
+                    else 
+                        MaterialTheme.colorScheme.error
                 )
-                
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (isExpanded) "Свернуть" else "Развернуть",
-                    modifier = Modifier.rotate(rotationState)
-                )
-            }
-            
-            // Содержимое семестра (отображается только когда семестр развернут)
-            AnimatedVisibility(visible = isExpanded) {
-                Column(
-                    modifier = Modifier.padding(top = 16.dp)
-                ) {
-                    // Разделяем предметы на экзамены и зачеты
-                    val exams = semester.subjects.filter { it.examGrade != null }
-                    val credits = semester.subjects.filter { it.creditStatus != null }
-                    
-                    if (exams.isNotEmpty()) {
-                        Text(
-                            text = "Экзамены",
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        
-                        exams.forEach { subject ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = subject.name,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                
-                                // Индикатор оценки
-                                val grade = subject.examGrade ?: 0
-                                val gradeColor = when (grade) {
-                                    5 -> Color(0xFF4CAF50) // Зеленый для отлично
-                                    4 -> Color(0xFF2196F3) // Синий для хорошо
-                                    3 -> Color(0xFFFF9800) // Оранжевый для удовлетворительно
-                                    else -> Color.Gray
-                                }
-                                
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .padding(start = 8.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = grade.toString(),
-                                        color = gradeColor,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 18.sp
-                                    )
-                                }
-                            }
-                            
-                            if (subject != exams.last() || credits.isNotEmpty()) {
-                                Divider(modifier = Modifier.padding(vertical = 4.dp))
-                            }
-                        }
-                    }
-                    
-                    if (credits.isNotEmpty()) {
-                        if (exams.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
-                        
-                        Text(
-                            text = "Зачеты",
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        
-                        credits.forEach { subject ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = subject.name,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                
-                                // Индикатор зачета
-                                val creditStatus = subject.creditStatus ?: false
-                                val statusText = if (creditStatus) "Зачет" else "Незачет"
-                                val statusColor = if (creditStatus) Color(0xFF4CAF50) else Color(0xFFF44336)
-                                
-                                Text(
-                                    text = statusText,
-                                    color = statusColor,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
-                            
-                            if (subject != credits.last()) {
-                                Divider(modifier = Modifier.padding(vertical = 4.dp))
-                            }
-                        }
-                    }
-                }
             }
         }
     }
-} 
+}
+
+fun calculateAverageGrade(grades: List<GradeItem>): Double? {
+    val gradeValues = grades.mapNotNull { 
+        when (it.grade) {
+            "Отлично" -> 5.0
+            "Хорошо" -> 4.0
+            "Удовлетворительно" -> 3.0
+            "Неудовлетворительно" -> 2.0
+            else -> null
+        }
+    }
+    
+    return if (gradeValues.isNotEmpty()) {
+        gradeValues.sum() / gradeValues.size
+    } else {
+        null
+    }
+}

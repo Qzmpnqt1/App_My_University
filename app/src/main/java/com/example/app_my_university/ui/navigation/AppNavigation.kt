@@ -21,10 +21,8 @@ import com.example.app_my_university.ui.components.TeacherBottomBar
 import com.example.app_my_university.ui.screens.AdminDashboardScreen
 import com.example.app_my_university.ui.screens.ChatScreen
 import com.example.app_my_university.ui.screens.GradeBookScreen
-import com.example.app_my_university.ui.screens.HomeScreen
 import com.example.app_my_university.ui.screens.LoginScreen
 import com.example.app_my_university.ui.screens.MessagesScreen
-import com.example.app_my_university.ui.screens.NewsScreen
 import com.example.app_my_university.ui.screens.OnboardingWelcomeScreen
 import com.example.app_my_university.ui.screens.ProfileScreen
 import com.example.app_my_university.ui.screens.RegistrationRequestsScreen
@@ -56,13 +54,13 @@ sealed class Screen(val route: String) {
         fun createRoute(chatId: String): String = "chat/$chatId"
     }
     object Profile : Screen("profile")
-    
+
     // Экраны преподавателя
     object TeacherSchedule : Screen("teacher_schedule")
     object TeacherGrades : Screen("teacher_grades")
     object TeacherMessages : Screen("teacher_messages")
     object TeacherProfile : Screen("teacher_profile")
-    
+
     // Экраны администратора
     object AdminDashboard : Screen("admin_dashboard")
     object UniversityManagement : Screen("university_management")
@@ -77,100 +75,107 @@ sealed class Screen(val route: String) {
 fun AppNavigation(navController: NavHostController, startDestination: String) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: ""
-    
+
     // Проверка, является ли текущий экран экраном администратора
     val isAdminScreen = currentRoute.startsWith("admin_") ||
-                       currentRoute == Screen.UniversityManagement.route || 
-                       currentRoute == Screen.RegistrationRequests.route || 
-                       currentRoute == Screen.ScheduleManagement.route ||
-                       currentRoute == Screen.SubjectManagement.route ||
-                       currentRoute == Screen.UserManagement.route ||
-                       (currentRoute == Screen.Messages.route && startDestination == Screen.AdminDashboard.route)
-    
+            currentRoute == Screen.UniversityManagement.route ||
+            currentRoute == Screen.RegistrationRequests.route ||
+            currentRoute == Screen.ScheduleManagement.route ||
+            currentRoute == Screen.SubjectManagement.route ||
+            currentRoute == Screen.UserManagement.route ||
+            (currentRoute == Screen.Messages.route && startDestination == Screen.AdminDashboard.route)
+
     // Проверка, является ли текущий экран экраном студента
     val isStudentScreen = currentRoute == Screen.Schedule.route ||
-                         currentRoute == Screen.GradeBook.route ||
-                         currentRoute == Screen.Messages.route ||
-                         currentRoute == Screen.Profile.route
-    
+            currentRoute == Screen.GradeBook.route ||
+            currentRoute == Screen.Messages.route ||
+            currentRoute == Screen.Profile.route
+
     // Проверка, является ли текущий экран экраном преподавателя
     val isTeacherScreen = currentRoute == Screen.TeacherSchedule.route ||
-                         currentRoute == Screen.TeacherGrades.route ||
-                         currentRoute == Screen.TeacherMessages.route ||
-                         currentRoute == Screen.TeacherProfile.route
-    
-    // Если это экран администратора, показываем нижнюю панель навигации администратора
-    if (isAdminScreen) {
-        // Используем одну общую Scaffold для всех экранов администратора
-        Scaffold(
-            bottomBar = {
-                AdminBottomBar(
-                    currentRoute = currentRoute,
-                    onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                )
-            }
-        ) { paddingValues ->
-            // Внутри Box с правильным padding помещаем NavHost для экранов администратора
-            Box(modifier = Modifier.padding(paddingValues)) {
-                AdminNavHost(navController, startDestination, currentRoute)
-            }
+            currentRoute == Screen.TeacherGrades.route ||
+            currentRoute == Screen.TeacherMessages.route ||
+            currentRoute == Screen.TeacherProfile.route
+
+    // Функция для выхода из аккаунта
+    val navigateToOnboarding = {
+        navController.navigate(Screen.OnboardingWelcome.route) {
+            // Очищаем весь стек навигации
+            popUpTo(0) { inclusive = true }
         }
-    } else if (isStudentScreen) {
-        // Если это экран студента, показываем нижнюю панель навигации студента
+    }
+
+    // В зависимости от типа пользователя, показываем соответствующий Scaffold с нижней панелью навигации
+    if (isStudentScreen) {
         Scaffold(
             bottomBar = {
                 StudentBottomBar(
                     currentRoute = currentRoute,
                     onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
+                        if (route != currentRoute) {
+                            navController.navigate(route) {
+                                // Предотвращаем построение стека навигации при переключении между экранами нижней панели
+                                popUpTo(Screen.Schedule.route) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 )
             }
-        ) { paddingValues ->
-            // Внутри Box с правильным padding помещаем NavHost для экранов студента
-            Box(modifier = Modifier.padding(paddingValues)) {
-                StudentNavHost(navController, currentRoute)
-            }
+        ) { innerPadding ->
+            StudentNavHost(
+                navController = navController,
+                onLogout = navigateToOnboarding
+            )
         }
     } else if (isTeacherScreen) {
-        // Если это экран преподавателя, показываем нижнюю панель навигации преподавателя
         Scaffold(
             bottomBar = {
                 TeacherBottomBar(
                     currentRoute = currentRoute,
                     onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
+                        if (route != currentRoute) {
+                            navController.navigate(route) {
+                                // Предотвращаем построение стека навигации при переключении между экранами нижней панели
+                                popUpTo(Screen.TeacherSchedule.route) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 )
             }
-        ) { paddingValues ->
-            // Внутри Box с правильным padding помещаем NavHost для экранов преподавателя
-            Box(modifier = Modifier.padding(paddingValues)) {
-                TeacherNavHost(navController, currentRoute)
+        ) { innerPadding ->
+            TeacherNavHost(
+                navController = navController,
+                onLogout = navigateToOnboarding
+            )
+        }
+    } else if (isAdminScreen) {
+        Scaffold(
+            bottomBar = {
+                AdminBottomBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        if (route != currentRoute) {
+                            navController.navigate(route) {
+                                // Предотвращаем построение стека навигации при переключении между экранами нижней панели
+                                popUpTo(Screen.AdminDashboard.route) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    }
+                )
             }
+        ) { innerPadding ->
+            AdminNavHost(
+                navController = navController,
+                onLogout = navigateToOnboarding
+            )
         }
     } else {
-        // Обычная навигация для неадминистративных экранов
         NavHost(
             navController = navController,
             startDestination = startDestination
@@ -182,7 +187,7 @@ fun AppNavigation(navController: NavHostController, startDestination: String) {
                     }
                 )
             }
-            
+
             composable(Screen.UniversitySelection.route) {
                 UniversitySelectionScreen(
                     onUniversitySelected = { universityId, universityName ->
@@ -193,7 +198,7 @@ fun AppNavigation(navController: NavHostController, startDestination: String) {
                     }
                 )
             }
-            
+
             composable(
                 route = Screen.Login.route,
                 arguments = listOf(
@@ -203,10 +208,13 @@ fun AppNavigation(navController: NavHostController, startDestination: String) {
             ) { backStackEntry ->
                 val universityId = backStackEntry.arguments?.getString("universityId") ?: ""
                 val universityName = backStackEntry.arguments?.getString("universityName") ?: ""
-                
+
                 LoginScreen(
                     universityId = universityId,
                     universityName = universityName,
+                    onNavigateBack = {
+                        navController.navigateUp()
+                    },
                     onLoginAsStudent = {
                         navController.navigate(Screen.Schedule.route) {
                             popUpTo(Screen.OnboardingWelcome.route) { inclusive = true }
@@ -221,13 +229,10 @@ fun AppNavigation(navController: NavHostController, startDestination: String) {
                         navController.navigate(Screen.AdminDashboard.route) {
                             popUpTo(Screen.OnboardingWelcome.route) { inclusive = true }
                         }
-                    },
-                    onNavigateBack = {
-                        navController.navigateUp()
                     }
                 )
             }
-            
+
             composable(
                 route = Screen.Registration.route,
                 arguments = listOf(
@@ -237,42 +242,31 @@ fun AppNavigation(navController: NavHostController, startDestination: String) {
             ) { backStackEntry ->
                 val universityId = backStackEntry.arguments?.getString("universityId") ?: ""
                 val universityName = backStackEntry.arguments?.getString("universityName") ?: ""
-                
+
                 RegistrationScreen(
                     universityId = universityId,
                     universityName = universityName,
                     onRegistrationComplete = {
-                        navController.navigate(Screen.Login.createRoute(universityId, universityName))
+                        navController.navigate(Screen.Login.createRoute(universityId, universityName)) {
+                            popUpTo(Screen.Registration.route) { inclusive = true }
+                        }
                     },
                     onChangeUniversity = {
-                        navController.navigate(Screen.UniversitySelection.route) {
-                            popUpTo(Screen.UniversitySelection.route) { inclusive = true }
-                        }
+                        navController.navigateUp()
                     }
                 )
             }
-            
-            composable(Screen.Home.route) {
-                HomeScreen()
-            }
-            
+
+            // Экраны студента для первоначальной навигации
             composable(Screen.Schedule.route) {
                 ScheduleScreen()
             }
-            
-            composable(Screen.GradeBook.route) {
-                GradeBookScreen()
-            }
-            
-            composable(Screen.News.route) {
-                NewsScreen()
-            }
-            
-            // Экраны преподавателя в основном графе навигации
+
+            // Экраны преподавателя для первоначальной навигации
             composable(Screen.TeacherSchedule.route) {
                 ScheduleScreen()
             }
-            
+
             composable(Screen.TeacherGrades.route) {
                 TeacherGradesScreen(
                     onNavigateBack = {
@@ -280,34 +274,110 @@ fun AppNavigation(navController: NavHostController, startDestination: String) {
                     }
                 )
             }
-            
+
             composable(Screen.TeacherMessages.route) {
                 MessagesScreen(
-                    onNavigateBack = {
-                        navController.navigateUp()
-                    },
-                    onNavigateToChat = { chatId ->
+                    onChatSelected = { chatId ->
                         navController.navigate(Screen.Chat.createRoute(chatId))
                     }
                 )
             }
-            
+
             composable(Screen.TeacherProfile.route) {
                 ProfileScreen(
-                    onBackPressed = {
+                    onLogout = navigateToOnboarding
+                )
+            }
+
+            // Переход к экранам администратора
+            composable(Screen.AdminDashboard.route) {
+                AdminDashboardScreen(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        navController.navigate(route)
+                    },
+                    onNavigateToUniversityManagement = {
+                        navController.navigate(Screen.UniversityManagement.route)
+                    },
+                    onNavigateToRegistrationRequests = {
+                        navController.navigate(Screen.RegistrationRequests.route)
+                    },
+                    onNavigateToScheduleManagement = {
+                        navController.navigate(Screen.ScheduleManagement.route)
+                    },
+                    onNavigateToMessages = {
+                        navController.navigate(Screen.Messages.route)
+                    },
+                    onLogout = navigateToOnboarding
+                )
+            }
+
+            composable(Screen.UniversityManagement.route) {
+                UniversityManagementScreen(
+                    onNavigateBack = {
                         navController.navigateUp()
                     }
                 )
             }
-            
+
+            composable(Screen.RegistrationRequests.route) {
+                RegistrationRequestsScreen(
+                    onNavigateBack = {
+                        navController.navigateUp()
+                    }
+                )
+            }
+
+            composable(Screen.ScheduleManagement.route) {
+                ScheduleManagementScreen(
+                    onNavigateBack = {
+                        navController.navigateUp()
+                    }
+                )
+            }
+
+            composable(Screen.Messages.route) {
+                MessagesScreen(
+                    onChatSelected = { chatId ->
+                        navController.navigate(Screen.Chat.createRoute(chatId))
+                    }
+                )
+            }
+
+            // Добавляем недостающие экраны администратора
+            composable(Screen.SubjectManagement.route) {
+                // Временная заглушка для экрана управления предметами
+                Box(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Управление предметами",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            composable(Screen.UserManagement.route) {
+                // Временная заглушка для экрана управления пользователями
+                Box(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Управление пользователями",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            composable(Screen.AdminProfile.route) {
+                ProfileScreen(
+                    onLogout = navigateToOnboarding
+                )
+            }
+
             composable(
                 route = Screen.Chat.route,
-                arguments = listOf(
-                    navArgument("chatId") { type = NavType.StringType }
-                )
+                arguments = listOf(navArgument("chatId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
-                
                 ChatScreen(
                     chatId = chatId,
                     onNavigateBack = {
@@ -315,71 +385,40 @@ fun AppNavigation(navController: NavHostController, startDestination: String) {
                     }
                 )
             }
-            
-            composable(Screen.Profile.route) {
-                ProfileScreen(
-                    onBackPressed = {
-                        navController.navigateUp()
-                    }
-                )
-            }
-            
-            // Переход к экранам администратора
-            composable(Screen.AdminDashboard.route) {
-                // Перенаправляем на экран с нижней панелью навигации
-                navController.navigate(Screen.AdminDashboard.route) {
-                    popUpTo(Screen.OnboardingWelcome.route) { inclusive = true }
-                }
-            }
         }
     }
 }
 
 @Composable
 fun StudentNavHost(
-    navController: NavHostController, 
-    currentRoute: String
+    navController: NavHostController,
+    onLogout: () -> Unit
 ) {
     NavHost(
         navController = navController,
         startDestination = Screen.Schedule.route
     ) {
-        // Экраны студента
         composable(Screen.Schedule.route) {
             ScheduleScreen()
         }
-        
+
         composable(Screen.GradeBook.route) {
             GradeBookScreen()
         }
-        
+
         composable(Screen.Messages.route) {
             MessagesScreen(
-                onNavigateBack = {
-                    navController.navigateUp()
-                },
-                onNavigateToChat = { chatId ->
+                onChatSelected = { chatId ->
                     navController.navigate(Screen.Chat.createRoute(chatId))
                 }
             )
         }
-        
-        composable(Screen.Profile.route) {
-            ProfileScreen(
-                onBackPressed = {
-                    navController.navigateUp()
-                }
-            )
-        }
-        
+
         composable(
             route = Screen.Chat.route,
-            arguments = listOf(
-                navArgument("chatId") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("chatId") { type = NavType.StringType })
         ) { backStackEntry ->
             val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
-            
             ChatScreen(
                 chatId = chatId,
                 onNavigateBack = {
@@ -387,24 +426,78 @@ fun StudentNavHost(
                 }
             )
         }
+
+        composable(Screen.Profile.route) {
+            ProfileScreen(
+                onLogout = onLogout
+            )
+        }
+    }
+}
+
+@Composable
+fun TeacherNavHost(
+    navController: NavHostController,
+    onLogout: () -> Unit
+) {
+    NavHost(
+        navController = navController,
+        startDestination = Screen.TeacherSchedule.route
+    ) {
+        // Экраны преподавателя
+        composable(Screen.TeacherSchedule.route) {
+            ScheduleScreen()
+        }
+
+        composable(Screen.TeacherGrades.route) {
+            TeacherGradesScreen(
+                onNavigateBack = {
+                    navController.navigateUp()
+                }
+            )
+        }
+
+        composable(Screen.TeacherMessages.route) {
+            MessagesScreen(
+                onChatSelected = { chatId ->
+                    navController.navigate(Screen.Chat.createRoute(chatId))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.Chat.route,
+            arguments = listOf(navArgument("chatId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
+            ChatScreen(
+                chatId = chatId,
+                onNavigateBack = {
+                    navController.navigateUp()
+                }
+            )
+        }
+
+        composable(Screen.TeacherProfile.route) {
+            ProfileScreen(
+                onLogout = onLogout
+            )
+        }
     }
 }
 
 @Composable
 fun AdminNavHost(
-    navController: NavHostController, 
-    startDestination: String,
-    currentRoute: String
+    navController: NavHostController,
+    onLogout: () -> Unit
 ) {
     NavHost(
         navController = navController,
-        startDestination = if (startDestination == Screen.AdminDashboard.route) 
-                           startDestination else Screen.AdminDashboard.route
+        startDestination = Screen.AdminDashboard.route
     ) {
-        // Экраны администратора
         composable(Screen.AdminDashboard.route) {
             AdminDashboardScreen(
-                currentRoute = currentRoute,
+                currentRoute = Screen.AdminDashboard.route,
                 onNavigate = { route ->
                     navController.navigate(route)
                 },
@@ -420,14 +513,10 @@ fun AdminNavHost(
                 onNavigateToMessages = {
                     navController.navigate(Screen.Messages.route)
                 },
-                onLogout = {
-                    navController.navigate(Screen.OnboardingWelcome.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
+                onLogout = onLogout
             )
         }
-        
+
         composable(Screen.UniversityManagement.route) {
             UniversityManagementScreen(
                 onNavigateBack = {
@@ -435,7 +524,7 @@ fun AdminNavHost(
                 }
             )
         }
-        
+
         composable(Screen.RegistrationRequests.route) {
             RegistrationRequestsScreen(
                 onNavigateBack = {
@@ -443,7 +532,7 @@ fun AdminNavHost(
                 }
             )
         }
-        
+
         composable(Screen.ScheduleManagement.route) {
             ScheduleManagementScreen(
                 onNavigateBack = {
@@ -451,18 +540,15 @@ fun AdminNavHost(
                 }
             )
         }
-        
+
         composable(Screen.Messages.route) {
             MessagesScreen(
-                onNavigateBack = {
-                    navController.navigateUp()
-                },
-                onNavigateToChat = { chatId ->
+                onChatSelected = { chatId ->
                     navController.navigate(Screen.Chat.createRoute(chatId))
                 }
             )
         }
-        
+
         // Добавляем недостающие экраны администратора
         composable(Screen.SubjectManagement.route) {
             // Временная заглушка для экрана управления предметами
@@ -474,8 +560,7 @@ fun AdminNavHost(
                 )
             }
         }
-        
-        
+
         composable(Screen.UserManagement.route) {
             // Временная заглушка для экрана управления пользователями
             Box(modifier = Modifier.padding(16.dp)) {
@@ -486,62 +571,13 @@ fun AdminNavHost(
                 )
             }
         }
-        
-        composable(Screen.AdminProfile.route) {
-            // Временная заглушка для экрана профиля администратора
-            Box(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Профиль администратора",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
-    }
-}
 
-@Composable
-fun TeacherNavHost(
-    navController: NavHostController,
-    currentRoute: String
-) {
-    NavHost(
-        navController = navController,
-        startDestination = Screen.TeacherSchedule.route
-    ) {
-        // Экраны преподавателя
-        composable(Screen.TeacherSchedule.route) {
-            ScheduleScreen()
-        }
-        
-        composable(Screen.TeacherGrades.route) {
-            TeacherGradesScreen(
-                onNavigateBack = {
-                    navController.navigateUp()
-                }
-            )
-        }
-        
-        composable(Screen.TeacherMessages.route) {
-            MessagesScreen(
-                onNavigateBack = {
-                    navController.navigateUp()
-                },
-                onNavigateToChat = { chatId ->
-                    navController.navigate(Screen.Chat.createRoute(chatId))
-                }
-            )
-        }
-        
-        composable(Screen.TeacherProfile.route) {
+        composable(Screen.AdminProfile.route) {
             ProfileScreen(
-                onBackPressed = {
-                    navController.navigateUp()
-                }
+                onLogout = onLogout
             )
         }
-        
-        // Общий экран чата для преподавателя
+
         composable(
             route = Screen.Chat.route,
             arguments = listOf(navArgument("chatId") { type = NavType.StringType })

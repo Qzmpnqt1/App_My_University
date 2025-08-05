@@ -8,9 +8,14 @@ import com.example.app_my_university.data.api.model.InstituteDTO
 import com.example.app_my_university.data.api.model.LoginResponse
 import com.example.app_my_university.data.api.model.RegistrationRequest
 import com.example.app_my_university.data.api.model.RegistrationResponse
+import com.example.app_my_university.data.api.model.ChangePasswordRequest
+import com.example.app_my_university.data.api.model.ChangePasswordResponse
+import com.example.app_my_university.data.api.model.ProfileResponse
 import com.example.app_my_university.data.api.model.StudyDirectionDTO
 import com.example.app_my_university.data.api.model.SubjectDTO
+import com.example.app_my_university.data.api.model.UpdateProfileRequest
 import com.example.app_my_university.data.api.model.UniversityDTO
+import com.example.app_my_university.data.api.model.UserProfile
 import com.example.app_my_university.model.University
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -156,6 +161,46 @@ class UniversityRepository @Inject constructor(
             val response = apiService.login(request)
             if (response.success && response.data != null) {
                 emit(Result.success(response.data))
+            } else {
+                emit(Result.failure(Exception(response.message)))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    // Методы для работы с профилем пользователя
+    suspend fun getUserProfile(): Flow<Result<UserProfile>> = flow {
+        try {
+            val response = apiService.getUserProfile()
+            if (response.success && response.data != null) {
+                emit(Result.success(response.data))
+            } else {
+                emit(Result.failure(Exception(response.message)))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    suspend fun updateUserProfile(request: UpdateProfileRequest): Flow<Result<UserProfile>> = flow {
+        try {
+            val response = apiService.updateUserProfile(request)
+            if (response.success && response.data != null) {
+                emit(Result.success(response.data))
+            } else {
+                emit(Result.failure(Exception(response.message)))
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    suspend fun changePassword(request: ChangePasswordRequest): Flow<Result<ChangePasswordResponse>> = flow {
+        try {
+            val response = apiService.changePassword(request)
+            if (response.success) {
+                emit(Result.success(response))
             } else {
                 emit(Result.failure(Exception(response.message)))
             }

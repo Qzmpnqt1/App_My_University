@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,24 +32,23 @@ fun TeacherGradesScreen(
     val groups = listOf("ИС-21-1", "ИС-21-2", "ИС-22-1", "ИС-22-2")
     val students = listOf("Иванов И.И.", "Петров П.П.", "Сидоров С.С.", "Козлов К.К.")
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Выставление оценок") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
                 .padding(16.dp)
         ) {
+            // Заголовок страницы с отступом 36dp сверху
+            Text(
+                text = "Выставление оценок",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 36.dp, bottom = 16.dp)
+            )
+            
             // Индикатор прогресса
             LinearProgressIndicator(
                 progress = currentStep / 4f,
@@ -66,7 +66,7 @@ fun TeacherGradesScreen(
                     4 -> "Выставьте оценку"
                     else -> ""
                 },
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -333,4 +333,4 @@ fun GradeSelectionScreen(
             Text("Выставить оценку")
         }
     }
-} 
+}

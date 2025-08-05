@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Разрешаем HTTP для локального сервера разработки -->
+    <!-- Разрешаем HTTP для локальной разработки -->
     <domain-config cleartextTrafficPermitted="true">
+        <!-- Для эмулятора Android -->
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">localhost</domain>
+        <!-- Для конкретных IP в локальной сети -->
+        <domain includeSubdomains="true">192.168.0.103</domain>
+        <!-- Добавьте здесь дополнительные IP-адреса при необходимости -->
     </domain-config>
-</network-security-config> 
+    <!-- Глобальное разрешение для HTTP трафика (использовать только для отладки) -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

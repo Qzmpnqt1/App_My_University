@@ -130,6 +130,12 @@ dependencies {
 
     // Coil для загрузки изображений в Compose
     implementation(libs.coil.compose)
+    
+    // System UI Controller для управления системными интерфейсами
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.33.2-alpha")
+    
+    // Core для работы с инсетами в Compose
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Тестовые зависимости
     testImplementation(libs.junit)

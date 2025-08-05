@@ -2,115 +2,119 @@ package com.example.app_my_university.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
-// Модель данных для предпросмотра чата
 data class ChatPreview(
     val id: String,
     val name: String,
     val lastMessage: String,
     val timestamp: Long,
-    val unreadCount: Int = 0,
-    val isOnline: Boolean = false
+    val unreadCount: Int = 0
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessagesScreen(
-    onNavigateBack: () -> Unit,
-    onNavigateToChat: (String) -> Unit
+    onChatSelected: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-
-    // Пример списка чатов
+    
     val chats = remember {
         listOf(
             ChatPreview(
-                id = "student1",
-                name = "Иванов Иван Иванович",
-                lastMessage = "Экзамен состоится 15 июня в 10:00 в аудитории 302.",
-                timestamp = System.currentTimeMillis() - 1200000,
-                unreadCount = 1,
-                isOnline = true
+                id = "1",
+                name = "Иванов Иван",
+                lastMessage = "Добрый день! Когда будет следующая лекция?",
+                timestamp = System.currentTimeMillis() - 3600000,
+                unreadCount = 2
             ),
             ChatPreview(
-                id = "teacher1",
-                name = "Петров Петр Петрович",
-                lastMessage = "Пожалуйста, ознакомьтесь с материалами перед следующей лекцией.",
-                timestamp = System.currentTimeMillis() - 86400000,
-                unreadCount = 0,
-                isOnline = false
+                id = "2",
+                name = "Петрова Мария",
+                lastMessage = "Спасибо за информацию",
+                timestamp = System.currentTimeMillis() - 86400000
             ),
             ChatPreview(
-                id = "admin1",
-                name = "Учебный отдел",
-                lastMessage = "Расписание на следующий семестр будет доступно в личном кабинете.",
-                timestamp = System.currentTimeMillis() - 172800000,
-                unreadCount = 0,
-                isOnline = true
+                id = "3",
+                name = "Сидоров Алексей",
+                lastMessage = "Я отправил вам материалы по следующей теме",
+                timestamp = System.currentTimeMillis() - 172800000
             )
         )
     }
-
+    
     val filteredChats = if (searchQuery.isBlank()) {
         chats
     } else {
-        chats.filter { it.name.contains(searchQuery, ignoreCase = true) }
+        chats.filter { 
+            it.name.contains(searchQuery, ignoreCase = true) || 
+            it.lastMessage.contains(searchQuery, ignoreCase = true) 
+        }
     }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Топ-бар с учетом системных инсетов
-        TopAppBar(
-            title = { Text("Сообщения") },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            modifier = Modifier.height(48.dp)
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-        ) {
+    
+    Surface(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Заголовок экрана с отступом 36dp сверху
+            Text(
+                text = "Сообщения",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 36.dp, bottom = 16.dp)
+            )
+            
+            // Поиск
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                placeholder = { Text("Поиск по контактам...") },
-                leadingIcon = {
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text("Поиск сообщений") },
+                leadingIcon = { 
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Поиск"
@@ -118,7 +122,7 @@ fun MessagesScreen(
                 },
                 singleLine = true
             )
-
+            
             if (filteredChats.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -127,7 +131,8 @@ fun MessagesScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Нет доступных чатов",
+                        text = "Сообщений не найдено",
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -138,11 +143,7 @@ fun MessagesScreen(
                     items(filteredChats) { chat ->
                         ChatItem(
                             chat = chat,
-                            onClick = { onNavigateToChat(chat.id) }
-                        )
-                        Divider(
-                            modifier = Modifier.padding(start = 72.dp),
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            onClick = { onChatSelected(chat.id) }
                         )
                     }
                 }
@@ -156,109 +157,128 @@ fun ChatItem(
     chat: ChatPreview,
     onClick: () -> Unit
 ) {
-    val dateFormat = if (isToday(chat.timestamp)) {
-        SimpleDateFormat("HH:mm", Locale.getDefault())
-    } else {
-        SimpleDateFormat("dd MMM", Locale.getDefault())
-    }
-    val formattedDate = dateFormat.format(Date(chat.timestamp))
-
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Box {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Аватар
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Person,
+                    imageVector = Icons.Default.AccountCircle,
                     contentDescription = null,
-                    modifier = Modifier.padding(12.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
                 )
             }
-            if (chat.isOnline) {
-                Surface(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .align(Alignment.BottomEnd),
-                    shape = CircleShape,
-                    color = Color.Green
-                ) {}
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(
+                modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = chat.name,
-                    fontWeight = if (chat.unreadCount > 0) FontWeight.Bold else FontWeight.Normal,
-                    color = if (chat.unreadCount > 0) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-                Text(
-                    text = formattedDate,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = chat.lastMessage,
-                    fontSize = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = if (chat.unreadCount > 0) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f, fill = false)
-                )
-                if (chat.unreadCount > 0) {
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = chat.unreadCount.toString(),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 12.sp
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = chat.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = if (chat.unreadCount > 0) FontWeight.Bold else FontWeight.Normal
+                    )
+                    
+                    Text(
+                        text = formatChatTime(chat.timestamp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = chat.lastMessage,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (chat.unreadCount > 0) 
+                            MaterialTheme.colorScheme.onSurface 
+                        else 
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    if (chat.unreadCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = chat.unreadCount.toString(),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
             }
         }
+        
+        Divider(
+            modifier = Modifier.padding(start = 72.dp, end = 16.dp),
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
     }
 }
 
-private fun isToday(timestamp: Long): Boolean {
-    val today = Calendar.getInstance()
-    val messageDate = Calendar.getInstance().apply { timeInMillis = timestamp }
+@Composable
+private fun formatChatTime(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
     
-    return today.get(Calendar.YEAR) == messageDate.get(Calendar.YEAR) &&
-           today.get(Calendar.DAY_OF_YEAR) == messageDate.get(Calendar.DAY_OF_YEAR)
+    return when {
+        diff < 24 * 60 * 60 * 1000 -> {
+            // Сегодня - показываем время
+            SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
+        }
+        diff < 48 * 60 * 60 * 1000 -> {
+            // Вчера
+            "Вчера"
+        }
+        else -> {
+            // Дата
+            SimpleDateFormat("dd.MM.yy", Locale.getDefault()).format(Date(timestamp))
+        }
+    }
 }
- 
