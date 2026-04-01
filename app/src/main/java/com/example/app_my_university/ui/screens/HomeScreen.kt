@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +51,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.ScheduleResponse
 import com.example.app_my_university.ui.components.StudentBottomBar
+import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
+import com.example.app_my_university.ui.components.analytics.MuDonutChart
+import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
+import com.example.app_my_university.ui.components.analytics.creditBreakdown
+import com.example.app_my_university.ui.components.analytics.creditDonutSegments
+import com.example.app_my_university.ui.components.analytics.examGradeBarEntries
 import com.example.app_my_university.ui.components.common.MuErrorState
 import com.example.app_my_university.ui.components.common.MuLoadingState
 import com.example.app_my_university.ui.components.common.MuSectionHeader
@@ -174,6 +181,11 @@ private fun StudentDashboardBody(
     val todayList = HomeDashboardTime.todayLessons(scheduleByDay)
     val avg = examAverage(dash.grades)
     val pending = pendingFinalCount(dash.grades)
+    val homeExamBars = remember(dash.grades) { examGradeBarEntries(dash.grades) }
+    val homeCreditBreakdown = remember(dash.grades) { creditBreakdown(dash.grades) }
+    val scheduleDayBars = remember(scheduleByDay) {
+        (1..7).map { dow -> dayShort[dow]!! to (scheduleByDay[dow]?.size ?: 0).toFloat() }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -215,6 +227,22 @@ private fun StudentDashboardBody(
 
         item {
             WeekStrip(scheduleByDay = scheduleByDay)
+        }
+
+        if (scheduleDayBars.any { it.second > 0f }) {
+            item {
+                MuAnalyticsCard(
+                    title = "Нагрузка по дням",
+                    subtitle = "Количество пар на выбранной неделе"
+                ) {
+                    MuVerticalBarChart(
+                        entries = scheduleDayBars,
+                        chartHeight = 88.dp,
+                        valueFormatter = { it.toInt().toString() },
+                        maxValueOverride = scheduleDayBars.maxOf { it.second }.coerceAtLeast(1f)
+                    )
+                }
+            }
         }
 
         item {
@@ -304,6 +332,36 @@ private fun StudentDashboardBody(
                     label = "Без итога",
                     modifier = Modifier.weight(1f)
                 )
+            }
+        }
+
+        if (homeExamBars.any { it.second > 0f }) {
+            item {
+                MuAnalyticsCard(
+                    title = "Оценки по экзаменам",
+                    subtitle = "Компактно по зачётной книжке"
+                ) {
+                    MuVerticalBarChart(
+                        entries = homeExamBars,
+                        chartHeight = 100.dp,
+                        maxValueOverride = homeExamBars.maxOf { it.second }.coerceAtLeast(1f)
+                    )
+                }
+            }
+        }
+
+        if (homeCreditBreakdown.passed + homeCreditBreakdown.failed + homeCreditBreakdown.pending > 0) {
+            item {
+                MuAnalyticsCard(
+                    title = "Зачёты",
+                    subtitle = "Доля закрытых зачётов"
+                ) {
+                    MuDonutChart(
+                        segments = creditDonutSegments(homeCreditBreakdown, MaterialTheme.colorScheme),
+                        donutSize = 108.dp,
+                        strokeWidth = 14.dp
+                    )
+                }
             }
         }
 

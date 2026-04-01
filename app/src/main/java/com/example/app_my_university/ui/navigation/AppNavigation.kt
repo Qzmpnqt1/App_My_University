@@ -42,6 +42,11 @@ sealed class Screen(val route: String) {
     object AdminAudit : Screen("admin_audit")
     object AdminStatistics : Screen("admin_statistics")
     object StudentPerformance : Screen("student_performance")
+    /** Хаб учебной структуры (вуз, группы, дисциплины, аудитории, назначения). */
+    object AdminStructure : Screen("admin_structure")
+    object AdminClassrooms : Screen("admin_classrooms")
+    object AdminTeacherSubjects : Screen("admin_teacher_subjects")
+    object AdminMore : Screen("admin_more")
 }
 
 @Composable
@@ -188,7 +193,10 @@ fun AppNavigation() {
         }
 
         composable(Screen.AdminRequests.route) {
-            RegistrationRequestsScreen(onNavigateBack = { navController.navigateUp() })
+            RegistrationRequestsScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() }
+            )
         }
 
         composable(Screen.AdminUsers.route) {
@@ -200,7 +208,26 @@ fun AppNavigation() {
         }
 
         composable(Screen.AdminSchedule.route) {
-            ScheduleManagementScreen(onNavigateBack = { navController.navigateUp() })
+            ScheduleManagementScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() }
+            )
+        }
+
+        composable(Screen.AdminStructure.route) {
+            AdminStructureHubScreen(navController = navController)
+        }
+
+        composable(Screen.AdminClassrooms.route) {
+            AdminClassroomManagementScreen(onNavigateBack = { navController.navigateUp() })
+        }
+
+        composable(Screen.AdminTeacherSubjects.route) {
+            AdminTeacherAssignmentScreen(onNavigateBack = { navController.navigateUp() })
+        }
+
+        composable(Screen.AdminMore.route) {
+            AdminMoreScreen(navController = navController)
         }
 
         composable(Screen.AdminSubjects.route) {

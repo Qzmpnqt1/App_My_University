@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.app_my_university.data.api.model.*
 import com.example.app_my_university.data.repository.ChatRepository
 import com.example.app_my_university.data.repository.EducationRepository
+import com.example.app_my_university.data.repository.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,10 +15,14 @@ import javax.inject.Inject
 data class AdminUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
+    /** Вуз текущего администратора (область видимости). */
+    val adminUniversityId: Long? = null,
+    val adminUniversityName: String? = null,
     val registrationRequests: List<RegistrationRequestResponse> = emptyList(),
     val users: List<UserProfileResponse> = emptyList(),
     val universities: List<UniversityResponse> = emptyList(),
     val institutes: List<InstituteResponse> = emptyList(),
+    val teacherSubjects: List<TeacherSubjectResponse> = emptyList(),
     val directions: List<StudyDirectionResponse> = emptyList(),
     val groups: List<AcademicGroupResponse> = emptyList(),
     val subjects: List<SubjectResponse> = emptyList(),
@@ -33,16 +38,35 @@ data class AdminUiState(
 @HiltViewModel
 class AdminViewModel @Inject constructor(
     private val educationRepository: EducationRepository,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val profileRepository: ProfileRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminUiState())
     val uiState: StateFlow<AdminUiState> = _uiState
 
+    /** Загрузить universityId администратора из профиля (для фильтрации и экранов). */
+    fun loadAdminContext() {
+        viewModelScope.launch {
+            profileRepository.getProfile().fold(
+                onSuccess = { p ->
+                    val uid = p.adminProfile?.universityId
+                    val uname = p.adminProfile?.universityName
+                    _uiState.value = _uiState.value.copy(
+                        adminUniversityId = uid,
+                        adminUniversityName = uname
+                    )
+                },
+                onFailure = { /* оставляем null */ }
+            )
+        }
+    }
+
     fun loadRegistrationRequests() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            educationRepository.getRegistrationRequests().fold(
+            val uni = _uiState.value.adminUniversityId
+            educationRepository.getRegistrationRequests(universityId = uni).fold(
                 onSuccess = {
                     val pending = it.count { r -> r.status.equals("PENDING", ignoreCase = true) }
                     _uiState.value = _uiState.value.copy(
@@ -60,7 +84,14 @@ class AdminViewModel @Inject constructor(
 
     fun refreshDashboardBadges() {
         viewModelScope.launch {
-            educationRepository.getRegistrationRequests().fold(
+            var uni = _uiState.value.adminUniversityId
+            if (uni == null) {
+                profileRepository.getProfile().getOrNull()?.adminProfile?.universityId?.let { u ->
+                    uni = u
+                    _uiState.value = _uiState.value.copy(adminUniversityId = u)
+                }
+            }
+            educationRepository.getRegistrationRequests(universityId = uni).fold(
                 onSuccess = {
                     val pending = it.count { r -> r.status.equals("PENDING", ignoreCase = true) }
                     _uiState.value = _uiState.value.copy(pendingRegistrationCount = pending)
@@ -118,7 +149,8 @@ class AdminViewModel @Inject constructor(
     fun loadUsers() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            educationRepository.getUsers().fold(
+            val uni = _uiState.value.adminUniversityId
+            educationRepository.getUsers(universityId = uni).fold(
                 onSuccess = {
                     _uiState.value = _uiState.value.copy(isLoading = false, users = it)
                 },
@@ -181,6 +213,118 @@ class AdminViewModel @Inject constructor(
         }
     }
 
+    /** Только вуз администратора + институты этого вуза (без списка всех вузов). */
+    fun loadMyUniversityAndInstitutes() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            profileRepository.getProfile().fold(
+                onSuccess = { p ->
+                    val uid = p.adminProfile?.universityId
+                    val uname = p.adminProfile?.universityName
+                    if (uid == null) {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = "В профиле не указан вуз",
+                            universities = emptyList(),
+                            institutes = emptyList()
+                        )
+                        return@launch
+                    }
+                    _uiState.value = _uiState.value.copy(
+                        adminUniversityId = uid,
+                        adminUniversityName = uname
+                    )
+                    educationRepository.getUniversity(uid).fold(
+                        onSuccess = { u ->
+                            educationRepository.getInstitutes(uid).fold(
+                                onSuccess = { inst ->
+                                    _uiState.value = _uiState.value.copy(
+                                        isLoading = false,
+                                        universities = listOf(u),
+                                        institutes = inst
+                                    )
+                                },
+                                onFailure = { e ->
+                                    _uiState.value = _uiState.value.copy(
+                                        isLoading = false,
+                                        universities = listOf(u),
+                                        error = e.message
+                                    )
+                                }
+                            )
+                        },
+                        onFailure = { e ->
+                            _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+                        }
+                    )
+                },
+                onFailure = { e ->
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+                }
+            )
+        }
+    }
+
+    fun loadTeacherSubjects() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            val uni = _uiState.value.adminUniversityId
+            val teacherIds = if (uni != null) {
+                educationRepository.getUsers(userType = "TEACHER", universityId = uni).getOrNull()
+                    ?.map { it.id }?.toSet()
+            } else null
+            educationRepository.getTeacherSubjects(teacherId = null).fold(
+                onSuccess = { list ->
+                    val filtered = if (teacherIds != null) {
+                        list.filter { it.teacherId in teacherIds }
+                    } else list
+                    _uiState.value = _uiState.value.copy(isLoading = false, teacherSubjects = filtered)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
+    fun createTeacherSubjectLink(teacherId: Long, subjectId: Long) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.createTeacherSubject(TeacherSubjectRequest(teacherId, subjectId)).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Преподаватель назначен на дисциплину"
+                    )
+                    loadTeacherSubjects()
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
+    fun deleteTeacherSubjectLink(id: Long) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.deleteTeacherSubject(id).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Назначение снято"
+                    )
+                    loadTeacherSubjects()
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
     fun createUniversity(request: UniversityRequest) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
@@ -229,7 +373,8 @@ class AdminViewModel @Inject constructor(
                         actionSuccess = true,
                         actionMessage = "Университет обновлён"
                     )
-                    loadUniversities()
+                    if (_uiState.value.adminUniversityId != null) loadMyUniversityAndInstitutes()
+                    else loadUniversities()
                 },
                 onFailure = {
                     _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
@@ -262,7 +407,7 @@ class AdminViewModel @Inject constructor(
                         actionSuccess = true,
                         actionMessage = "Институт создан"
                     )
-                    loadInstitutes()
+                    loadInstitutes(_uiState.value.adminUniversityId)
                 },
                 onFailure = {
                     _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
@@ -281,7 +426,7 @@ class AdminViewModel @Inject constructor(
                         actionSuccess = true,
                         actionMessage = "Институт удалён"
                     )
-                    loadInstitutes()
+                    loadInstitutes(_uiState.value.adminUniversityId)
                 },
                 onFailure = {
                     _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
@@ -467,6 +612,57 @@ class AdminViewModel @Inject constructor(
                 onFailure = {
                     _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
                 }
+            )
+        }
+    }
+
+    fun createClassroom(request: ClassroomRequest) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.createClassroom(request).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Аудитория добавлена"
+                    )
+                    loadClassrooms(_uiState.value.adminUniversityId)
+                },
+                onFailure = { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message) }
+            )
+        }
+    }
+
+    fun updateClassroom(id: Long, request: ClassroomRequest) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.updateClassroom(id, request).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Аудитория обновлена"
+                    )
+                    loadClassrooms(_uiState.value.adminUniversityId)
+                },
+                onFailure = { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message) }
+            )
+        }
+    }
+
+    fun deleteClassroom(id: Long) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.deleteClassroom(id).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Аудитория удалена"
+                    )
+                    loadClassrooms(_uiState.value.adminUniversityId)
+                },
+                onFailure = { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message) }
             )
         }
     }

@@ -30,10 +30,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.ScheduleRequest
 import com.example.app_my_university.data.api.model.ScheduleResponse
 import com.example.app_my_university.data.api.model.SubjectInDirectionResponse
 import com.example.app_my_university.data.api.model.UserProfileResponse
+import com.example.app_my_university.ui.components.AdminBottomBar
+import com.example.app_my_university.ui.navigation.Screen
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 import com.example.app_my_university.ui.viewmodel.ScheduleViewModel
 
@@ -50,12 +53,14 @@ private val adminDayNames = mapOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleManagementScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: ScheduleViewModel = hiltViewModel(),
     adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val adminState by adminViewModel.uiState.collectAsState()
+    val currentRoute = navController.currentDestination?.route
     var showAddDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deletingEntry by remember { mutableStateOf<ScheduleResponse?>(null) }
@@ -64,9 +69,12 @@ fun ScheduleManagementScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
+        adminViewModel.loadAdminContext()
+    }
+    LaunchedEffect(adminState.adminUniversityId) {
         adminViewModel.loadUsers()
         adminViewModel.loadGroups(null)
-        adminViewModel.loadClassrooms(null)
+        adminViewModel.loadClassrooms(adminState.adminUniversityId)
         adminViewModel.loadSubjectsInDirections()
     }
 
@@ -116,6 +124,18 @@ fun ScheduleManagementScreen(
                     Icon(Icons.Default.Add, contentDescription = "Добавить")
                 }
             }
+        },
+        bottomBar = {
+            AdminBottomBar(
+                currentRoute = currentRoute,
+                onNavigate = { route ->
+                    navController.navigate(route) {
+                        popUpTo(Screen.AdminHome.route) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->

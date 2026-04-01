@@ -25,6 +25,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    fun normalizedHttpsApiBaseUrl(raw: String, fallbackHttps: String): String {
+        val chosen = raw.trim().ifEmpty { fallbackHttps }
+        val baseUrl = when {
+            chosen.endsWith("/") -> chosen
+            else -> "$chosen/"
+        }
+        if (!baseUrl.startsWith("https://", ignoreCase = true)) {
+            throw GradleException("apiBaseUrl / apiBaseUrlRelease must use HTTPS only (HTTP cleartext is disabled). Got: $baseUrl")
+        }
+        return baseUrl
+    }
+
     // Настраиваем сборки
     buildTypes {
         // Релизная сборка (Release build)
@@ -39,13 +51,9 @@ android {
                 "proguard-rules.pro"
             )
 
-            // Базовый URL API (замените на боевой сервер или задайте -PapiBaseUrlRelease=...)
+            // Базовый URL API только HTTPS (-PapiBaseUrlRelease=https://api.example.com/)
             val raw = (project.findProperty("apiBaseUrlRelease") as String?)?.trim().orEmpty()
-            val baseUrl = when {
-                raw.isEmpty() -> "https://example.com/"
-                raw.endsWith("/") -> raw
-                else -> "$raw/"
-            }
+            val baseUrl = normalizedHttpsApiBaseUrl(raw, "https://example.com/")
             buildConfigField(
                 "String",
                 "API_BASE_URL",
@@ -55,16 +63,12 @@ android {
             // При необходимости можно добавить signingConfig signingConfigs.release
             // для автоматической подписи APK.
         }
-        // Debug: телефон в той же Wi‑Fi сети, что и ноутбук (см. ipconfig → IPv4 адаптера Wi‑Fi).
-        // Эмулятор: в gradle.properties раскомментируйте apiBaseUrl=http://10.0.2.2:8080/ или передайте -PapiBaseUrl=...
+        // Debug: сервер Spring Boot с TLS на 8443 (см. Server_My_University application.properties).
+        // Эмулятор: https://10.0.2.2:8443/  Телефон в Wi‑Fi: https://<IPv4_ПК>:8443/ (gradle.properties: apiBaseUrl=...)
         debug {
             isDebuggable = true
             val raw = (project.findProperty("apiBaseUrl") as String?)?.trim().orEmpty()
-            val baseUrl = when {
-                raw.isEmpty() -> "http://192.168.200.168:8080/"
-                raw.endsWith("/") -> raw
-                else -> "$raw/"
-            }
+            val baseUrl = normalizedHttpsApiBaseUrl(raw, "https://10.0.2.2:8443/")
             buildConfigField(
                 "String",
                 "API_BASE_URL",

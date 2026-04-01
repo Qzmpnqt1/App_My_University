@@ -38,7 +38,12 @@ fun ProfileScreen(
     var showNewPassword by remember { mutableStateOf(false) }
     var showEmailForm by remember { mutableStateOf(false) }
     var showPasswordForm by remember { mutableStateOf(false) }
+    var showLogoutConfirm by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    fun requestLogout() {
+        showLogoutConfirm = true
+    }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
@@ -78,7 +83,7 @@ fun ProfileScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onLogout) {
+                    IconButton(onClick = { requestLogout() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.Logout,
                             contentDescription = "Выйти из аккаунта"
@@ -122,7 +127,7 @@ fun ProfileScreen(
                             Text("Повторить")
                         }
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedButton(onClick = onLogout) {
+                        OutlinedButton(onClick = { requestLogout() }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.Logout,
                                 contentDescription = null,
@@ -311,7 +316,7 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = onLogout,
+                        onClick = { requestLogout() },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error
@@ -328,6 +333,41 @@ fun ProfileScreen(
                 }
             }
         }
+    }
+
+    if (showLogoutConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLogoutConfirm = false },
+            icon = {
+                Icon(
+                    Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = { Text("Выйти из аккаунта?") },
+            text = {
+                Text(
+                    "Вы действительно хотите завершить сеанс? Потребуется снова войти в систему.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutConfirm = false
+                        onLogout()
+                    }
+                ) {
+                    Text("Выйти", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutConfirm = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
     }
 }
 

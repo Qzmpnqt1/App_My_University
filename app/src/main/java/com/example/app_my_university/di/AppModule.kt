@@ -6,7 +6,9 @@ import com.example.app_my_university.BuildConfig
 import com.example.app_my_university.core.database.AppDatabase
 import com.example.app_my_university.core.database.CacheDao
 import com.example.app_my_university.data.api.ApiService
+import com.example.app_my_university.data.network.ApiBaseUrlValidator
 import com.example.app_my_university.data.network.AuthInterceptor
+import com.example.app_my_university.data.network.HttpsOnlyInterceptor
 import com.example.app_my_university.data.network.UnauthorizedResponseInterceptor
 import dagger.Module
 import dagger.Provides
@@ -61,6 +63,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        ApiBaseUrlValidator.requireHttpsBaseUrl(BuildConfig.API_BASE_URL)
         return Retrofit.Builder()
             .baseUrl(BuildConfig.API_BASE_URL)
             .client(okHttpClient)

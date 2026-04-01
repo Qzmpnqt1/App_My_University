@@ -78,7 +78,12 @@ fun UserManagementScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.loadUsers()
+        viewModel.loadAdminContext()
+    }
+    LaunchedEffect(uiState.adminUniversityId) {
+        if (uiState.adminUniversityId != null) {
+            viewModel.loadUsers()
+        }
     }
 
     LaunchedEffect(uiState.actionSuccess) {

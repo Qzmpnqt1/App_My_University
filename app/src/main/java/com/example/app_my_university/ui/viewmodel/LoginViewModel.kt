@@ -58,10 +58,14 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Сначала сбрасываем UI-состояние синхронно, иначе [AppNavigation] LaunchedEffect
+     * всё ещё видит isLoggedIn=true и с экрана входа снова уводит на главную, пока корутина не завершилась.
+     */
     fun logout() {
+        _uiState.value = LoginUiState(isLoggedIn = false, userType = null, isLoading = false, error = null)
         viewModelScope.launch {
             authRepository.logout()
-            _uiState.value = LoginUiState()
         }
     }
 

@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +44,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.ScheduleResponse
 import com.example.app_my_university.ui.components.TeacherBottomBar
+import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
+import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
 import com.example.app_my_university.ui.components.common.MuErrorState
 import com.example.app_my_university.ui.components.common.MuLoadingState
 import com.example.app_my_university.ui.components.common.MuSectionHeader
@@ -52,6 +55,11 @@ import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.HomeDashboardTime
 import com.example.app_my_university.ui.viewmodel.HomeDashboardViewModel
 import com.example.app_my_university.ui.viewmodel.ProfileViewModel
+
+private val teacherDayShort = mapOf(
+    1 to "Пн", 2 to "Вт", 3 to "Ср", 4 to "Чт",
+    5 to "Пт", 6 to "Сб", 7 to "Вс"
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -155,6 +163,9 @@ private fun TeacherDashboardBody(
 ) {
     val next = HomeDashboardTime.nextLessonToday(scheduleByDay)
     val todayList = HomeDashboardTime.todayLessons(scheduleByDay)
+    val teacherScheduleBars = remember(scheduleByDay) {
+        (1..7).map { dow -> teacherDayShort[dow]!! to (scheduleByDay[dow]?.size ?: 0).toFloat() }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -224,6 +235,22 @@ private fun TeacherDashboardBody(
                     label = { Text("Неделя 2") },
                     modifier = Modifier.weight(1f)
                 )
+            }
+        }
+
+        if (teacherScheduleBars.any { it.second > 0f }) {
+            item {
+                MuAnalyticsCard(
+                    title = "Пары по дням недели",
+                    subtitle = "Выбранная неделя в расписании"
+                ) {
+                    MuVerticalBarChart(
+                        entries = teacherScheduleBars,
+                        chartHeight = 88.dp,
+                        valueFormatter = { it.toInt().toString() },
+                        maxValueOverride = teacherScheduleBars.maxOf { it.second }.coerceAtLeast(1f)
+                    )
+                }
             }
         }
 

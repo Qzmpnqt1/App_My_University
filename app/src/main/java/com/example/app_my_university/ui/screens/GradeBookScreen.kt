@@ -34,6 +34,12 @@ import com.example.app_my_university.ui.components.common.MuBadgeTone
 import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.components.common.MuErrorState
 import com.example.app_my_university.ui.components.common.MuLoadingState
+import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
+import com.example.app_my_university.ui.components.analytics.MuDonutChart
+import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
+import com.example.app_my_university.ui.components.analytics.creditBreakdown
+import com.example.app_my_university.ui.components.analytics.creditDonutSegments
+import com.example.app_my_university.ui.components.analytics.examGradeBarEntries
 import com.example.app_my_university.ui.components.common.MuStatusBadge
 import com.example.app_my_university.ui.viewmodel.GradeBookViewModel
 
@@ -117,6 +123,8 @@ fun GradeBookScreen(
                         passed to rows.size
                     }
                 }
+                val examBars = remember(uiState.grades) { examGradeBarEntries(uiState.grades) }
+                val creditBreakdownMemo = remember(uiState.grades) { creditBreakdown(uiState.grades) }
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -176,6 +184,36 @@ fun GradeBookScreen(
                                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     )
                                 }
+                            }
+                        }
+                    }
+                    if (examBars.any { it.second > 0f }) {
+                        item {
+                            MuAnalyticsCard(
+                                title = "Распределение оценок",
+                                subtitle = "Экзамены и дифференцированный зачёт (оценки 2–5)"
+                            ) {
+                                MuVerticalBarChart(
+                                    entries = examBars,
+                                    chartHeight = 140.dp,
+                                    maxValueOverride = examBars.maxOf { it.second }.coerceAtLeast(1f)
+                                )
+                            }
+                        }
+                    }
+                    if (creditBreakdownMemo.passed + creditBreakdownMemo.failed + creditBreakdownMemo.pending > 0) {
+                        item {
+                            MuAnalyticsCard(
+                                title = "Зачёты",
+                                subtitle = creditSummary?.let { (p, t) -> "Зачтено $p из $t по зачётам" } ?: "Статус зачётов"
+                            ) {
+                                MuDonutChart(
+                                    segments = creditDonutSegments(creditBreakdownMemo, MaterialTheme.colorScheme),
+                                    donutSize = 128.dp,
+                                    strokeWidth = 18.dp,
+                                    centerValue = creditSummary?.let { (p, _) -> "$p" } ?: "—",
+                                    centerTitle = "зачтено"
+                                )
                             }
                         }
                     }

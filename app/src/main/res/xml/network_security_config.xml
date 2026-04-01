@@ -1,18 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Разрешаем HTTP для локальной разработки -->
-    <domain-config cleartextTrafficPermitted="true">
-        <!-- Для эмулятора Android -->
-        <domain includeSubdomains="true">10.0.2.2</domain>
-        <domain includeSubdomains="true">localhost</domain>
-        <!-- Локальная сеть (телефон → ноутбук с бэкендом) -->
-        <domain includeSubdomains="true">192.168.200.168</domain>
-        <domain includeSubdomains="true">192.168.0.103</domain>
-    </domain-config>
-    <!-- Глобальное разрешение для HTTP трафика (использовать только для отладки) -->
-    <base-config cleartextTrafficPermitted="true">
+    <!-- Только HTTPS: cleartext (HTTP) запрещён для всего приложения. -->
+    <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
+    <!--
+      Для локальной разработки: доверие к встроенному dev-сертификату (res/raw/network_dev_cert.pem)
+      только при подключении по HTTPS к перечисленным хостам. HTTP не разрешён.
+    -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">192.168.200.168</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/network_dev_cert" />
+        </trust-anchors>
+    </domain-config>
 </network-security-config>

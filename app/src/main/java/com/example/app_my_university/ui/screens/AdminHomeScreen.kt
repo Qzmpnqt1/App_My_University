@@ -1,9 +1,10 @@
 package com.example.app_my_university.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,26 +13,28 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.HowToReg
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.MeetingRoom
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Subject
 import androidx.compose.material.icons.outlined.Message
 import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,8 +47,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -56,13 +57,6 @@ import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.components.common.MuStatBlock
 import com.example.app_my_university.ui.navigation.Screen
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
-data class AdminMenuItem(
-    val title: String,
-    val icon: ImageVector,
-    val route: String,
-    val description: String = "",
-    val badge: Int? = null
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +69,8 @@ fun AdminHomeScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(Unit) {
+        adminViewModel.loadAdminContext()
+        adminViewModel.loadMyUniversityAndInstitutes()
         adminViewModel.refreshDashboardBadges()
     }
 
@@ -82,100 +78,25 @@ fun AdminHomeScreen(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 adminViewModel.refreshDashboardBadges()
+                adminViewModel.loadMyUniversityAndInstitutes()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val pending = adminState.pendingRegistrationCount
-    val unread = adminState.unreadMessagesCount
-
-    val menuItems = listOf(
-        AdminMenuItem(
-            title = "ВУЗы",
-            icon = Icons.Default.School,
-            route = "admin_universities",
-            description = "Университеты и структура"
-        ),
-        AdminMenuItem(
-            title = "Заявки",
-            icon = Icons.Default.HowToReg,
-            route = "admin_requests",
-            description = "Подтверждение регистраций",
-            badge = pending.takeIf { it > 0 }
-        ),
-        AdminMenuItem(
-            title = "Сообщения",
-            icon = Icons.Outlined.Message,
-            route = "dialogs",
-            description = "Общение с пользователями",
-            badge = unread.takeIf { it > 0 }
-        ),
-        AdminMenuItem(
-            title = "Расписание",
-            icon = Icons.Default.Schedule,
-            route = "admin_schedule",
-            description = "Управление расписанием"
-        ),
-        AdminMenuItem(
-            title = "Предметы",
-            icon = Icons.Default.Subject,
-            route = "admin_subjects",
-            description = "Справочник предметов"
-        ),
-        AdminMenuItem(
-            title = "Группы",
-            icon = Icons.Default.Group,
-            route = "admin_groups",
-            description = "Учебные группы"
-        ),
-        AdminMenuItem(
-            title = "Пользователи",
-            icon = Icons.Default.Person,
-            route = "admin_users",
-            description = "Аккаунты пользователей"
-        ),
-        AdminMenuItem(
-            title = "Аудит",
-            icon = Icons.Default.History,
-            route = "admin_audit",
-            description = "Журнал действий"
-        ),
-        AdminMenuItem(
-            title = "Аналитика",
-            icon = Icons.Default.Assessment,
-            route = "admin_statistics",
-            description = "Сводные показатели"
-        ),
-        AdminMenuItem(
-            title = "Профиль",
-            icon = Icons.Default.Settings,
-            route = "profile",
-            description = "Настройки аккаунта"
-        )
-    )
-
-    fun navigateByKey(key: String) {
-        val route = when (key) {
-            "admin_universities" -> Screen.AdminUniversities.route
-            "admin_requests" -> Screen.AdminRequests.route
-            "admin_schedule" -> Screen.AdminSchedule.route
-            "admin_subjects" -> Screen.AdminSubjects.route
-            "admin_groups" -> Screen.AdminGroups.route
-            "admin_users" -> Screen.AdminUsers.route
-            "admin_audit" -> Screen.AdminAudit.route
-            "admin_statistics" -> Screen.AdminStatistics.route
-            "dialogs" -> Screen.Dialogs.route
-            "profile" -> Screen.Profile.route
-            else -> return
-        }
+    fun navigateTo(route: String) {
         navController.navigate(route) {
             popUpTo(Screen.AdminHome.route) { saveState = true }
             launchSingleTop = true
             restoreState = true
         }
     }
+
+    val pending = adminState.pendingRegistrationCount
+    val unread = adminState.unreadMessagesCount
+    val uniName = adminState.adminUniversityName ?: "Ваш вуз"
+    val instituteCount = adminState.institutes.size
 
     Scaffold(
         bottomBar = {
@@ -196,110 +117,288 @@ fun AdminHomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            UniformTopAppBar(title = "Панель администратора")
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            UniformTopAppBar(title = "Администрирование")
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                MuStatBlock(
-                    value = pending.toString(),
-                    label = "Заявок на рассмотрение",
-                    modifier = Modifier.weight(1f)
-                )
-                MuStatBlock(
-                    value = unread.toString(),
-                    label = "Непрочитанных сообщений",
-                    modifier = Modifier.weight(1f)
-                )
+                item {
+                    Text(
+                        text = uniName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Панель управления данными вашего вуза",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        MuStatBlock(
+                            value = pending.toString(),
+                            label = "Заявок на рассмотрение",
+                            modifier = Modifier.weight(1f)
+                        )
+                        MuStatBlock(
+                            value = unread.toString(),
+                            label = "Непрочитанных в чатах",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                item {
+                    OutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { navigateTo(Screen.AdminRequests.route) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Заявки на регистрацию",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = if (pending > 0) {
+                                        "$pending требуют решения"
+                                    } else {
+                                        "Новых заявок нет"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (pending > 0) {
+                                BadgedBox(
+                                    badge = {
+                                        Badge { Text(pending.toString()) }
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Default.HowToReg,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            } else {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Text(
+                        text = "Быстрые действия",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilledTonalButton(onClick = { navigateTo(Screen.AdminRequests.route) }) {
+                            Text("Заявки")
+                        }
+                        FilledTonalButton(onClick = { navigateTo(Screen.AdminStructure.route) }) {
+                            Text("Структура")
+                        }
+                        FilledTonalButton(onClick = { navigateTo(Screen.AdminSchedule.route) }) {
+                            Text("Расписание")
+                        }
+                        FilledTonalButton(onClick = { navigateTo(Screen.AdminClassrooms.route) }) {
+                            Text("Аудитории")
+                        }
+                        FilledTonalButton(onClick = { navigateTo(Screen.AdminTeacherSubjects.route) }) {
+                            Text("Преподаватели")
+                        }
+                        FilledTonalButton(onClick = { navigateTo(Screen.Dialogs.route) }) {
+                            Text("Сообщения")
+                        }
+                    }
+                }
+
+                item {
+                    Text(
+                        text = "Состояние данных",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.School,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Column {
+                                    Text(
+                                        text = "Институты",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "$instituteCount в структуре вуза",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = { navigateTo(Screen.AdminStructure.route) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Учебная структура")
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Text(
+                        text = "Разделы",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                item {
+                    AdminHomeLinkRow(
+                        title = "Расписание занятий",
+                        subtitle = "Создание и редактирование записей",
+                        icon = Icons.Default.CalendarMonth,
+                        onClick = { navigateTo(Screen.AdminSchedule.route) }
+                    )
+                }
+                item {
+                    AdminHomeLinkRow(
+                        title = "Аудитории",
+                        subtitle = "Корпуса, номера, вместимость",
+                        icon = Icons.Default.MeetingRoom,
+                        onClick = { navigateTo(Screen.AdminClassrooms.route) }
+                    )
+                }
+                item {
+                    AdminHomeLinkRow(
+                        title = "Преподаватели и дисциплины",
+                        subtitle = "Назначение ведения предметов",
+                        icon = Icons.Default.PersonAdd,
+                        onClick = { navigateTo(Screen.AdminTeacherSubjects.route) }
+                    )
+                }
+                item {
+                    AdminHomeLinkRow(
+                        title = "Группы и дисциплины",
+                        subtitle = "Через раздел «Структура»",
+                        icon = Icons.Default.Group,
+                        onClick = { navigateTo(Screen.AdminStructure.route) }
+                    )
+                }
+                item {
+                    AdminHomeLinkRow(
+                        title = "Справочник дисциплин",
+                        subtitle = "Предметы и связи с направлениями",
+                        icon = Icons.Default.Subject,
+                        onClick = {
+                            navController.navigate(Screen.AdminSubjects.route) {
+                                popUpTo(Screen.AdminHome.route) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+                item {
+                    AdminHomeLinkRow(
+                        title = "Сообщения и прочее",
+                        subtitle = "Пользователи, аналитика, профиль",
+                        icon = Icons.Outlined.Message,
+                        onClick = { navigateTo(Screen.AdminMore.route) }
+                    )
+                }
             }
-            AdminDashboardContent(
-                menuItems = menuItems,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                onItemClick = { navigateByKey(it) }
-            )
         }
     }
 }
 
 @Composable
-private fun AdminDashboardContent(
-    menuItems: List<AdminMenuItem>,
-    modifier: Modifier = Modifier,
-    onItemClick: (String) -> Unit
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(menuItems) { item ->
-            AdminMenuCard(item = item, onClick = { onItemClick(item.route) })
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AdminMenuCard(
-    item: AdminMenuItem,
+private fun AdminHomeLinkRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp)
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = item.title,
-                    modifier = Modifier.size(28.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                item.badge?.let { badgeCount ->
-                    Badge(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 8.dp, y = (-4).dp)
-                    ) {
-                        Text(badgeCount.toString())
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(28.dp),
+                tint = MaterialTheme.colorScheme.primary
             )
-            if (item.description.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(4.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.description,
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline
+            )
         }
     }
 }
