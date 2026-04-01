@@ -9,7 +9,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +30,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.app_my_university.data.api.model.GradeResponse
 import com.example.app_my_university.data.api.model.PracticeGradeResponse
+import com.example.app_my_university.ui.components.common.MuBadgeTone
+import com.example.app_my_university.ui.components.common.MuEmptyState
+import com.example.app_my_university.ui.components.common.MuErrorState
+import com.example.app_my_university.ui.components.common.MuLoadingState
+import com.example.app_my_university.ui.components.common.MuStatusBadge
 import com.example.app_my_university.ui.viewmodel.GradeBookViewModel
 
 private fun GradeResponse.isCreditFinalDiscipline(): Boolean =
@@ -58,48 +75,31 @@ fun GradeBookScreen(
     ) { padding ->
         when {
             uiState.isLoading && uiState.grades.isEmpty() -> {
-                Box(
+                MuLoadingState(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+                        .padding(padding)
+                )
             }
             uiState.error != null && uiState.grades.isEmpty() -> {
-                Box(
+                MuErrorState(
+                    message = uiState.error ?: "Ошибка загрузки",
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = uiState.error ?: "Ошибка загрузки",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.loadStudentGrades() }) {
-                            Text("Повторить")
-                        }
-                    }
-                }
+                    onRetry = { viewModel.loadStudentGrades() }
+                )
             }
             uiState.grades.isEmpty() -> {
-                Box(
+                MuEmptyState(
+                    title = "Зачётная книжка пуста",
+                    subtitle = "Когда преподаватели выставят оценки, они появятся здесь.",
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Оценки пока не выставлены",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                    actionLabel = "Обновить",
+                    onAction = { viewModel.loadStudentGrades() }
+                )
             }
             else -> {
                 val examAvg = remember(uiState.grades) {
@@ -242,28 +242,20 @@ private fun GradeCard(
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         if (grade.isCreditFinalDiscipline()) {
                             grade.creditStatus?.let {
-                                Text(
-                                    text = if (it) "Зачтено" else "Не зачтено",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = if (it) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.error
+                                MuStatusBadge(
+                                    text = if (it) "Зачтено" else "Незачёт",
+                                    tone = if (it) MuBadgeTone.Success else MuBadgeTone.Error
                                 )
-                            } ?: Text(
-                                text = "—",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            } ?: MuStatusBadge(
+                                text = "Не выставлено",
+                                tone = MuBadgeTone.Warning
                             )
                         } else {
                             grade.grade?.let {
-                                Text(
-                                    text = "Оценка: $it",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            } ?: Text(
-                                text = "—",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                MuStatusBadge(text = "Оценка $it", tone = MuBadgeTone.Primary)
+                            } ?: MuStatusBadge(
+                                text = "Не выставлено",
+                                tone = MuBadgeTone.Warning
                             )
                         }
                     }

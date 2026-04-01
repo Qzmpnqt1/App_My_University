@@ -1,40 +1,108 @@
 package com.example.app_my_university.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Grade
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.example.app_my_university.data.api.model.ScheduleResponse
 import com.example.app_my_university.ui.components.StudentBottomBar
+import com.example.app_my_university.ui.components.common.MuErrorState
+import com.example.app_my_university.ui.components.common.MuLoadingState
+import com.example.app_my_university.ui.components.common.MuSectionHeader
+import com.example.app_my_university.ui.components.common.MuStatBlock
+import com.example.app_my_university.ui.components.schedule.ScheduleLessonCard
 import com.example.app_my_university.ui.navigation.Screen
+import com.example.app_my_university.ui.theme.Dimens
+import com.example.app_my_university.ui.viewmodel.HomeDashboardTime
+import com.example.app_my_university.ui.viewmodel.HomeDashboardViewModel
 import com.example.app_my_university.ui.viewmodel.ProfileViewModel
+import com.example.app_my_university.ui.viewmodel.examAverage
+import com.example.app_my_university.ui.viewmodel.pendingFinalCount
+import java.time.LocalTime
+
+private val dayShort = mapOf(
+    1 to "Пн", 2 to "Вт", 3 to "Ср", 4 to "Чт",
+    5 to "Пт", 6 to "Сб", 7 to "Вс"
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavHostController,
-    profileViewModel: ProfileViewModel = hiltViewModel()
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    dashboardViewModel: HomeDashboardViewModel = hiltViewModel()
 ) {
     val profileState by profileViewModel.uiState.collectAsState()
+    val dash by dashboardViewModel.uiState.collectAsState()
     val currentRoute = navController.currentDestination?.route
+
+    LaunchedEffect(Unit) {
+        dashboardViewModel.load(includeGrades = true)
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Главная") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            CenterAlignedTopAppBar(
+                title = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "Мой ВУЗ",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            "Студент",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         },
@@ -51,103 +119,415 @@ fun HomeScreen(
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            val userName = profileState.profile?.let {
-                "${it.firstName} ${it.lastName}"
-            } ?: "..."
-
-            Text(
-                text = "Добро пожаловать,\n$userName!",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            profileState.profile?.studentProfile?.let { sp ->
-                sp.groupName?.let { groupName ->
-                    Text(
-                        text = "Группа: $groupName",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+        when {
+            dash.isLoading && dash.scheduleByDay.isEmpty() -> {
+                MuLoadingState(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                )
+            }
+            dash.error != null && dash.scheduleByDay.isEmpty() -> {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
+                    MuErrorState(
+                        message = dash.error ?: "Не удалось загрузить данные",
+                        onRetry = { dashboardViewModel.retry() }
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            QuickLinkCard(
-                title = "Расписание",
-                description = "Посмотреть расписание занятий",
-                icon = Icons.Default.CalendarMonth,
-                onClick = { navController.navigate(Screen.Schedule.route) }
-            )
-
-            QuickLinkCard(
-                title = "Зачётная книжка",
-                description = "Оценки и зачёты по предметам",
-                icon = Icons.Default.Grade,
-                onClick = { navController.navigate(Screen.GradeBook.route) }
-            )
-
-            QuickLinkCard(
-                title = "Успеваемость",
-                description = "Сводная статистика по дисциплинам и практикам",
-                icon = Icons.Default.Assessment,
-                onClick = { navController.navigate(Screen.StudentPerformance.route) }
-            )
-
-            QuickLinkCard(
-                title = "Сообщения",
-                description = "Диалоги с преподавателями",
-                icon = Icons.AutoMirrored.Filled.Chat,
-                onClick = { navController.navigate(Screen.Dialogs.route) }
-            )
+            else -> {
+                StudentDashboardBody(
+                    padding = padding,
+                    profileName = profileState.profile?.let { "${it.firstName} ${it.lastName}" } ?: "Студент",
+                    groupLabel = profileState.profile?.studentProfile?.groupName,
+                    dash = dash,
+                    onWeek = { dashboardViewModel.setWeek(it) },
+                    onOpenSchedule = { navController.navigate(Screen.Schedule.route) },
+                    onOpenGradeBook = { navController.navigate(Screen.GradeBook.route) },
+                    onOpenPerformance = { navController.navigate(Screen.StudentPerformance.route) },
+                    onOpenMessages = { navController.navigate(Screen.Dialogs.route) },
+                    scheduleByDay = dash.scheduleByDay
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun QuickLinkCard(
-    title: String,
-    description: String,
-    icon: ImageVector,
-    onClick: () -> Unit
+private fun StudentDashboardBody(
+    padding: PaddingValues,
+    profileName: String,
+    groupLabel: String?,
+    dash: com.example.app_my_university.ui.viewmodel.HomeDashboardUiState,
+    onWeek: (Int) -> Unit,
+    onOpenSchedule: () -> Unit,
+    onOpenGradeBook: () -> Unit,
+    onOpenPerformance: () -> Unit,
+    onOpenMessages: () -> Unit,
+    scheduleByDay: Map<Int, List<ScheduleResponse>>
 ) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    val next = HomeDashboardTime.nextLessonToday(scheduleByDay)
+    val todayList = HomeDashboardTime.todayLessons(scheduleByDay)
+    val avg = examAverage(dash.grades)
+    val pending = pendingFinalCount(dash.grades)
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding),
+        contentPadding = PaddingValues(
+            start = Dimens.screenPadding,
+            end = Dimens.screenPadding,
+            bottom = Dimens.spaceXL
+        ),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spaceM)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(40.dp)
+        item {
+            WelcomeHero(
+                userName = profileName,
+                groupName = groupLabel
             )
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS)
+            ) {
+                FilterChip(
+                    selected = dash.currentWeek == 1,
+                    onClick = { onWeek(1) },
+                    label = { Text("Неделя 1") },
+                    modifier = Modifier.weight(1f)
                 )
+                FilterChip(
+                    selected = dash.currentWeek == 2,
+                    onClick = { onWeek(2) },
+                    label = { Text("Неделя 2") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        item {
+            WeekStrip(scheduleByDay = scheduleByDay)
+        }
+
+        item {
+            MuSectionHeader(
+                title = "Ближайшее занятие",
+                subtitle = if (todayList.isEmpty()) "Сегодня пар нет" else "Сегодня ${todayList.size} ${lessonWord(todayList.size)}",
+                actionLabel = "Всё расписание",
+                onActionClick = onOpenSchedule
+            )
+        }
+
+        item {
+            if (next != null) {
+                ScheduleLessonCard(entry = next, emphasize = true)
+            } else if (todayList.isEmpty()) {
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                    )
+                ) {
+                    Text(
+                        text = "Свободный день или занятия на другой неделе. Откройте полное расписание.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(Dimens.spaceM)
+                    )
+                }
+            } else {
+                val done = todayList.filter { lesson ->
+                    val end = HomeDashboardTime.parseStart(lesson.endTime)
+                    end != null && end.isBefore(LocalTime.now())
+                }.size
                 Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
+                    text = if (done >= todayList.size) {
+                        "На сегодня пары завершены."
+                    } else {
+                        "Следующие пары смотрите ниже."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
+
+        item {
+            MuSectionHeader(
+                title = "Сегодня",
+                actionLabel = "Расписание",
+                onActionClick = onOpenSchedule
+            )
+        }
+
+        items(
+            items = todayList.take(4),
+            key = { it.id }
+        ) { lesson ->
+            ScheduleLessonCard(entry = lesson)
+        }
+
+        item {
+            MuSectionHeader(
+                title = "Успеваемость",
+                subtitle = "Сводка по зачётной книжке",
+                actionLabel = "Зачётная книжка",
+                onActionClick = onOpenGradeBook
+            )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS)
+            ) {
+                MuStatBlock(
+                    value = avg?.let { String.format("%.1f", it) } ?: "—",
+                    label = "Средний балл",
+                    modifier = Modifier.weight(1f)
+                )
+                MuStatBlock(
+                    value = "${dash.grades.size}",
+                    label = "Дисциплин",
+                    modifier = Modifier.weight(1f)
+                )
+                MuStatBlock(
+                    value = pending.toString(),
+                    label = "Без итога",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        item {
+            OutlinedCard(
+                onClick = onOpenPerformance,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(Dimens.spaceM),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spaceM)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.TrendingUp,
+                        null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(Dimens.iconM)
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Статистика успеваемости",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            "Графики и детализация по практикам",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            MuSectionHeader(
+                title = "Сообщения",
+                subtitle = "Чаты с преподавателями",
+                actionLabel = "Открыть",
+                onActionClick = onOpenMessages
+            )
+        }
+
+        item {
+            OutlinedCard(
+                onClick = onOpenMessages,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(Dimens.spaceM),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spaceM)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Chat,
+                        null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(Dimens.iconM)
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Диалоги",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            "Переписка по учебным вопросам",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            MuSectionHeader(title = "Быстрый доступ")
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS)
+            ) {
+                QuickTile(
+                    icon = Icons.Default.CalendarMonth,
+                    label = "Расписание",
+                    onClick = onOpenSchedule,
+                    modifier = Modifier.weight(1f)
+                )
+                QuickTile(
+                    icon = Icons.Default.Grade,
+                    label = "Оценки",
+                    onClick = onOpenGradeBook,
+                    modifier = Modifier.weight(1f)
+                )
+                QuickTile(
+                    icon = Icons.Default.School,
+                    label = "Успеваемость",
+                    onClick = onOpenPerformance,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
     }
+}
+
+@Composable
+private fun WelcomeHero(
+    userName: String,
+    groupName: String?
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Dimens.spaceM))
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.85f)
+                    )
+                )
+            )
+            .padding(Dimens.spaceL)
+    ) {
+        Column {
+            Text(
+                text = "Здравствуйте,",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+            )
+            Text(
+                text = userName,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            groupName?.let {
+                Spacer(Modifier.height(Dimens.spaceXS))
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekStrip(scheduleByDay: Map<Int, List<ScheduleResponse>>) {
+    val today = HomeDashboardTime.todayIsoDayOfWeek()
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS)
+    ) {
+        items((1..7).toList()) { d ->
+            val has = scheduleByDay[d].orEmpty().isNotEmpty()
+            val label = dayShort[d] ?: "$d"
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (d == today) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                }
+            ) {
+                Text(
+                    text = if (has) "$label ·" else label,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    color = if (d == today) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickTile(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = Dimens.spaceM),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Dimens.spaceXS)
+        ) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+private fun lessonWord(n: Int): String = when {
+    n % 10 == 1 && n % 100 != 11 -> "занятие"
+    n % 10 in 2..4 && n % 100 !in 12..14 -> "занятия"
+    else -> "занятий"
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,6 +53,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
 import com.example.app_my_university.ui.components.AdminBottomBar
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.components.common.MuStatBlock
 import com.example.app_my_university.ui.navigation.Screen
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 data class AdminMenuItem(
@@ -195,6 +197,23 @@ fun AdminHomeScreen(
                 .padding(paddingValues)
         ) {
             UniformTopAppBar(title = "Панель администратора")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                MuStatBlock(
+                    value = pending.toString(),
+                    label = "Заявок на рассмотрение",
+                    modifier = Modifier.weight(1f)
+                )
+                MuStatBlock(
+                    value = unread.toString(),
+                    label = "Непрочитанных сообщений",
+                    modifier = Modifier.weight(1f)
+                )
+            }
             AdminDashboardContent(
                 menuItems = menuItems,
                 modifier = Modifier

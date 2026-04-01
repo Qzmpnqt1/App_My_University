@@ -13,35 +13,35 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF1565C0),
+    primary = MuPalette.Accent,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD1E4FF),
-    onPrimaryContainer = Color(0xFF001D36),
+    primaryContainer = MuPalette.AccentLight,
+    onPrimaryContainer = MuPalette.Ink,
 
-    secondary = Color(0xFF546E7A),
+    secondary = MuPalette.InkMuted,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFCFE4EF),
-    onSecondaryContainer = Color(0xFF0D1D26),
+    secondaryContainer = Color(0xFFE3E8EE),
+    onSecondaryContainer = MuPalette.Ink,
 
-    tertiary = Color(0xFF00897B),
+    tertiary = MuPalette.TealAccent,
     onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFA7F0E2),
+    tertiaryContainer = Color(0xFFD5F0EA),
     onTertiaryContainer = Color(0xFF002019),
 
-    background = Color(0xFFF8F9FB),
-    onBackground = Color(0xFF1A1C1E),
-    surface = Color(0xFFFCFCFE),
-    onSurface = Color(0xFF1A1C1E),
-    surfaceVariant = Color(0xFFE7E8EC),
-    onSurfaceVariant = Color(0xFF44474E),
+    background = MuPalette.Surface,
+    onBackground = MuPalette.Ink,
+    surface = MuPalette.SurfaceCard,
+    onSurface = MuPalette.Ink,
+    surfaceVariant = Color(0xFFEEF1F5),
+    onSurfaceVariant = MuPalette.InkMuted,
 
-    error = Color(0xFFBA1A1A),
+    error = MuPalette.Error,
     onError = Color.White,
     errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFF410002),
 
-    outline = Color(0xFF74777F),
-    outlineVariant = Color(0xFFC4C6CF)
+    outline = MuPalette.OutlineSoft,
+    outlineVariant = Color(0xFFE2E5E9)
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -79,7 +79,7 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun AppMyUniversityTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current

@@ -156,24 +156,25 @@ fun TeacherGradesScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                LinearProgressIndicator(
-                    progress = { (tabIndex + 1) / 2f },
+                SingleChoiceSegmentedButtonRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                )
-
-                TabRow(selectedTabIndex = tabIndex) {
-                    Tab(
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    SegmentedButton(
                         selected = tabIndex == 0,
                         onClick = { tabIndex = 0 },
-                        text = { Text("Практики") }
-                    )
-                    Tab(
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) {
+                        Text("Практики", maxLines = 1)
+                    }
+                    SegmentedButton(
                         selected = tabIndex == 1,
                         onClick = { tabIndex = 1 },
-                        text = { Text("Итог по дисциплине") }
-                    )
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) {
+                        Text("Итог", maxLines = 1)
+                    }
                 }
 
                 when {

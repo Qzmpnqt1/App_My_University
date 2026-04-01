@@ -1,23 +1,16 @@
 package com.example.app_my_university.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -25,7 +18,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -37,10 +29,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.app_my_university.data.api.model.ScheduleResponse
+import com.example.app_my_university.ui.components.common.MuEmptyState
+import com.example.app_my_university.ui.components.common.MuErrorState
+import com.example.app_my_university.ui.components.common.MuLoadingState
+import com.example.app_my_university.ui.components.schedule.ScheduleLessonCard
 import com.example.app_my_university.ui.viewmodel.ScheduleViewModel
 
 private val dayNames = mapOf(
@@ -135,138 +129,46 @@ fun ScheduleScreen(
 
             when {
                 uiState.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    MuLoadingState(modifier = Modifier.fillMaxSize())
                 }
                 uiState.error != null -> {
-                    Box(
+                    MuErrorState(
+                        message = uiState.error ?: "Ошибка загрузки",
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = uiState.error ?: "Ошибка загрузки",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = { viewModel.loadSchedule() }) {
-                                Text("Повторить")
-                            }
-                        }
-                    }
+                        onRetry = { viewModel.loadSchedule() }
+                    )
                 }
                 uiState.scheduleByDay.isEmpty() -> {
-                    Box(
+                    MuEmptyState(
+                        title = "Нет занятий",
+                        subtitle = "На выбранную неделю и день пары не запланированы. Смените фильтр или обновите позже.",
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "На выбранный период занятий нет",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                        actionLabel = "Обновить",
+                        onAction = { viewModel.loadSchedule() }
+                    )
                 }
                 else -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         uiState.scheduleByDay.forEach { (day, entries) ->
                             item {
                                 Text(
                                     text = dayNamesLong[day] ?: "День $day",
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 )
                             }
-                            items(entries) { entry ->
-                                ScheduleEntryCard(entry)
+                            items(entries, key = { it.id }) { entry ->
+                                ScheduleLessonCard(entry = entry)
                             }
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ScheduleEntryCard(entry: ScheduleResponse) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${entry.startTime} — ${entry.endTime}",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                entry.lessonType?.let { type ->
-                    SuggestionChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                text = when (type) {
-                                    "LECTURE" -> "Лекция"
-                                    "SEMINAR" -> "Семинар"
-                                    "LABORATORY" -> "Лаб."
-                                    "PRACTICE" -> "Практика"
-                                    else -> type
-                                },
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    )
-                }
-            }
-
-            Text(
-                text = entry.subjectName ?: "Предмет не указан",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-
-            entry.teacherName?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            entry.groupName?.let {
-                Text(
-                    text = "Группа: $it",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            entry.classroomInfo?.let {
-                Text(
-                    text = "Аудитория: $it",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
