@@ -1,27 +1,76 @@
 package com.example.app_my_university.di
 
+import android.content.Context
+import androidx.room.Room
+import com.example.app_my_university.BuildConfig
+import com.example.app_my_university.core.database.AppDatabase
+import com.example.app_my_university.core.database.CacheDao
+import com.example.app_my_university.data.api.ApiService
+import com.example.app_my_university.data.network.AuthInterceptor
+import com.example.app_my_university.data.network.UnauthorizedResponseInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import com.google.gson.Gson
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
-/**
- * Основной модуль для предоставления зависимостей на уровне приложения.
- * 
- * Важно: для Hilt модули должны быть статическими классами (object в Kotlin)
- * и должны иметь статические методы предоставления (обозначенные @Provides).
- */
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    /**
-     * Простой метод для проверки работы Hilt
-     */
     @Provides
     @Singleton
-    fun provideString(): String {
-        return "AppModule is working"
+    fun provideGson(): Gson = Gson()
+
+    @Provides
+    @Singleton
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
+        Room.databaseBuilder(context, AppDatabase::class.java, "moi_vuz_cache.db")
+            .fallbackToDestructiveMigration()
+            .build()
+
+    @Provides
+    @Singleton
+    fun provideCacheDao(db: AppDatabase): CacheDao = db.cacheDao()
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor,
+        unauthorizedResponseInterceptor: UnauthorizedResponseInterceptor
+    ): OkHttpClient {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        return OkHttpClient.Builder()
+            .addInterceptor(unauthorizedResponseInterceptor)
+            .addInterceptor(authInterceptor)
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
     }
-} 
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideApiService(retrofit: Retrofit): ApiService {
+        return retrofit.create(ApiService::class.java)
+    }
+}

@@ -1,380 +1,155 @@
 package com.example.app_my_university.ui.viewmodel
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_my_university.data.api.model.AcademicGroupDTO
-import com.example.app_my_university.data.api.model.InstituteDTO
-import com.example.app_my_university.data.api.model.RegistrationRequest
-import com.example.app_my_university.data.api.model.RegistrationResponse
-import com.example.app_my_university.data.api.model.StudyDirectionDTO
-import com.example.app_my_university.data.api.model.SubjectDTO
-import com.example.app_my_university.data.repository.UniversityRepository
-import com.example.app_my_university.model.Subject
-import com.example.app_my_university.model.UserType
-import com.example.app_my_university.ui.screens.Direction
-import com.example.app_my_university.ui.screens.Group
-import com.example.app_my_university.ui.screens.Institute
+import com.example.app_my_university.data.api.model.*
+import com.example.app_my_university.data.repository.AuthRepository
+import com.example.app_my_university.data.repository.EducationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class RegistrationUiState(
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val isRegistered: Boolean = false,
+    val universities: List<UniversityResponse> = emptyList(),
+    val institutes: List<InstituteResponse> = emptyList(),
+    val directions: List<StudyDirectionResponse> = emptyList(),
+    val groups: List<AcademicGroupResponse> = emptyList(),
+    val selectedUniversityId: Long? = null,
+    val selectedInstituteId: Long? = null,
+    val selectedDirectionId: Long? = null,
+    val selectedGroupId: Long? = null,
+    val selectedUserType: String = "STUDENT"
+)
+
 @HiltViewModel
 class RegistrationViewModel @Inject constructor(
-    private val repository: UniversityRepository,
-    savedStateHandle: SavedStateHandle
+    private val authRepository: AuthRepository,
+    private val educationRepository: EducationRepository
 ) : ViewModel() {
 
-    // UI state
     private val _uiState = MutableStateFlow(RegistrationUiState())
-    val uiState: StateFlow<RegistrationUiState> = _uiState.asStateFlow()
-
-    // Аргументы из навигации
-    private val universityId: String = checkNotNull(savedStateHandle["universityId"])
-    private val universityName: String = checkNotNull(savedStateHandle["universityName"])
+    val uiState: StateFlow<RegistrationUiState> = _uiState
 
     init {
-        loadInstitutes()
-        loadSubjects()
+        loadUniversities()
     }
 
-    fun loadInstitutes() {
+    private fun loadUniversities() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingInstitutes = true, instituteError = null) }
-
-            try {
-                repository.getInstitutes(universityId.toInt())
-                    .collect { result ->
-                        result.fold(
-                            onSuccess = { institutes ->
-                                _uiState.update {
-                                    it.copy(
-                                        institutes = institutes.map { dto ->
-                                            Institute(dto.id.toString(), dto.name)
-                                        },
-                                        isLoadingInstitutes = false
-                                    )
-                                }
-                            },
-                            onFailure = { e ->
-                                _uiState.update {
-                                    it.copy(
-                                        instituteError = e.message,
-                                        isLoadingInstitutes = false
-                                    )
-                                }
-                            }
-                        )
-                    }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        instituteError = e.message ?: "Неизвестная ошибка",
-                        isLoadingInstitutes = false
-                    )
-                }
-            }
-        }
-    }
-
-    fun loadDirections(instituteId: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingDirections = true, directionError = null) }
-
-            try {
-                repository.getDirections(instituteId.toInt())
-                    .collect { result ->
-                        result.fold(
-                            onSuccess = { directions ->
-                                _uiState.update {
-                                    it.copy(
-                                        directions = directions.map { dto ->
-                                            Direction(dto.id.toString(), dto.name, instituteId)
-                                        },
-                                        isLoadingDirections = false
-                                    )
-                                }
-                            },
-                            onFailure = { e ->
-                                _uiState.update {
-                                    it.copy(
-                                        directionError = e.message,
-                                        isLoadingDirections = false
-                                    )
-                                }
-                            }
-                        )
-                    }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        directionError = e.message ?: "Неизвестная ошибка",
-                        isLoadingDirections = false
-                    )
-                }
-            }
-        }
-    }
-
-    fun loadGroups(directionId: String, course: String? = null) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingGroups = true, groupError = null) }
-
-            try {
-                val flow = if (course != null) {
-                    repository.getGroupsByCourse(directionId.toInt(), course.toInt())
-                } else {
-                    repository.getGroups(directionId.toInt())
-                }
-
-                flow.collect { result ->
-                    result.fold(
-                        onSuccess = { groups ->
-                            _uiState.update {
-                                it.copy(
-                                    groups = groups.map { dto ->
-                                        Group(dto.id.toString(), dto.name, directionId)
-                                    },
-                                    isLoadingGroups = false
-                                )
-                            }
-                        },
-                        onFailure = { e ->
-                            _uiState.update {
-                                it.copy(
-                                    groupError = e.message,
-                                    isLoadingGroups = false
-                                )
-                            }
-                        }
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        groupError = e.message ?: "Неизвестная ошибка",
-                        isLoadingGroups = false
-                    )
-                }
-            }
-        }
-    }
-
-    fun loadSubjects() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingSubjects = true, subjectError = null) }
-
-            try {
-                repository.getSubjectsByUniversity(universityId.toInt())
-                    .collect { result ->
-                        result.fold(
-                            onSuccess = { subjects ->
-                                _uiState.update {
-                                    it.copy(
-                                        subjects = subjects.map { dto ->
-                                            Subject(
-                                                id = dto.id.toString(),
-                                                name = dto.name
-                                            )
-                                        },
-                                        isLoadingSubjects = false
-                                    )
-                                }
-                            },
-                            onFailure = { e ->
-                                _uiState.update {
-                                    it.copy(
-                                        subjectError = e.message,
-                                        isLoadingSubjects = false
-                                    )
-                                }
-                            }
-                        )
-                    }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        subjectError = e.message ?: "Неизвестная ошибка",
-                        isLoadingSubjects = false
-                    )
-                }
-            }
-        }
-    }
-
-    fun searchSubjects(query: String) {
-        if (query.isEmpty()) {
-            _uiState.update { it.copy(searchSubjectsResults = emptyList()) }
-            return
-        }
-
-        // Локальный поиск по уже загруженным предметам
-        val filteredSubjects = uiState.value.subjects.filter { subject ->
-            subject.name.contains(query, ignoreCase = true)
-        }
-        
-        _uiState.update { 
-            it.copy(searchSubjectsResults = filteredSubjects)
-        }
-    }
-
-    fun registerUser(
-        userType: UserType,
-        lastName: String,
-        firstName: String,
-        middleName: String,
-        email: String,
-        password: String,
-        selectedInstitute: Institute?,
-        selectedDirection: Direction?,
-        selectedGroup: Group?,
-        courseYear: String?,
-        selectedSubjects: List<Subject>
-    ) {
-        // Валидация на клиенте
-        val validationError = validateRegistrationData(
-            userType, lastName, firstName, middleName, email, password,
-            selectedInstitute, selectedDirection, selectedGroup, courseYear, selectedSubjects
-        )
-        
-        if (validationError != null) {
-            _uiState.update {
-                it.copy(registrationError = validationError)
-            }
-            return
-        }
-        viewModelScope.launch {
-            _uiState.update { 
-                it.copy(
-                    isRegistering = true,
-                    registrationError = null,
-                    registrationSuccess = null
-                )
-            }
-
-            try {
-                val request = RegistrationRequest(
-                    lastName = lastName,
-                    firstName = firstName,
-                    middleName = middleName,
-                    email = email,
-                    password = password,
-                    userType = userType.name,
-                    universityId = universityId.toInt(),
-                    instituteId = selectedInstitute?.id?.toInt(),
-                    directionId = selectedDirection?.id?.toInt(),
-                    groupId = selectedGroup?.id?.toInt(),
-                    courseYear = courseYear?.toIntOrNull(),
-                    subjectIds = if (userType == UserType.TEACHER) {
-                        selectedSubjects.map { it.id.toInt() }
-                    } else null
-                )
-
-                repository.registerUser(request)
-                    .collect { result ->
-                        result.fold(
-                            onSuccess = { response ->
-                                _uiState.update {
-                                    it.copy(
-                                        isRegistering = false,
-                                        registrationSuccess = response.message
-                                    )
-                                }
-                            },
-                            onFailure = { e ->
-                                _uiState.update {
-                                    it.copy(
-                                        isRegistering = false,
-                                        registrationError = e.message
-                                    )
-                                }
-                            }
-                        )
-                    }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isRegistering = false,
-                        registrationError = e.message ?: "Неизвестная ошибка"
-                    )
-                }
-            }
-        }
-    }
-
-    fun clearRegistrationState() {
-        _uiState.update {
-            it.copy(
-                registrationError = null,
-                registrationSuccess = null
+            educationRepository.getUniversities().fold(
+                onSuccess = { _uiState.value = _uiState.value.copy(universities = it) },
+                onFailure = { _uiState.value = _uiState.value.copy(error = it.message) }
             )
         }
     }
 
-    private fun validateRegistrationData(
-        userType: UserType,
-        lastName: String,
-        firstName: String,
-        middleName: String,
+    fun selectUniversity(universityId: Long) {
+        _uiState.value = _uiState.value.copy(
+            selectedUniversityId = universityId,
+            selectedInstituteId = null,
+            selectedDirectionId = null,
+            selectedGroupId = null,
+            institutes = emptyList(),
+            directions = emptyList(),
+            groups = emptyList()
+        )
+        viewModelScope.launch {
+            educationRepository.getInstitutes(universityId).fold(
+                onSuccess = { _uiState.value = _uiState.value.copy(institutes = it) },
+                onFailure = { _uiState.value = _uiState.value.copy(error = it.message) }
+            )
+        }
+    }
+
+    fun selectInstitute(instituteId: Long) {
+        _uiState.value = _uiState.value.copy(
+            selectedInstituteId = instituteId,
+            selectedDirectionId = null,
+            selectedGroupId = null,
+            directions = emptyList(),
+            groups = emptyList()
+        )
+        viewModelScope.launch {
+            educationRepository.getDirections(instituteId).fold(
+                onSuccess = { _uiState.value = _uiState.value.copy(directions = it) },
+                onFailure = { _uiState.value = _uiState.value.copy(error = it.message) }
+            )
+        }
+    }
+
+    fun selectDirection(directionId: Long) {
+        _uiState.value = _uiState.value.copy(
+            selectedDirectionId = directionId,
+            selectedGroupId = null,
+            groups = emptyList()
+        )
+        viewModelScope.launch {
+            educationRepository.getGroups(directionId).fold(
+                onSuccess = { _uiState.value = _uiState.value.copy(groups = it) },
+                onFailure = { _uiState.value = _uiState.value.copy(error = it.message) }
+            )
+        }
+    }
+
+    fun selectGroup(groupId: Long) {
+        _uiState.value = _uiState.value.copy(selectedGroupId = groupId)
+    }
+
+    fun selectUserType(userType: String) {
+        _uiState.value = _uiState.value.copy(selectedUserType = userType)
+    }
+
+    fun register(
         email: String,
         password: String,
-        selectedInstitute: Institute?,
-        selectedDirection: Direction?,
-        selectedGroup: Group?,
-        courseYear: String?,
-        selectedSubjects: List<Subject>
-    ): String? {
-        // Общие проверки
-        if (lastName.isBlank()) return "Фамилия обязательна"
-        if (firstName.isBlank()) return "Имя обязательно"
-        if (middleName.isBlank()) return "Отчество обязательно"
-        if (email.isBlank()) return "Email обязателен"
-        if (!email.endsWith("@gmail.com")) return "Email должен заканчиваться на @gmail.com"
-        if (password.length < 6) return "Пароль должен содержать не менее 6 символов"
-
-        // Проверки для студентов
-        if (userType == UserType.STUDENT) {
-            if (selectedInstitute == null) return "Необходимо выбрать институт"
-            if (selectedDirection == null) return "Необходимо выбрать направление обучения"
-            if (selectedGroup == null) return "Необходимо выбрать группу"
-            if (courseYear.isNullOrBlank()) return "Необходимо указать курс обучения"
-            
-            val course = courseYear.toIntOrNull()
-            if (course == null || course !in 1..5) {
-                return "Курс должен быть от 1 до 5"
-            }
+        firstName: String,
+        lastName: String,
+        middleName: String?
+    ) {
+        val state = _uiState.value
+        if (email.isBlank() || password.isBlank() || firstName.isBlank() || lastName.isBlank()) {
+            _uiState.value = state.copy(error = "Заполните все обязательные поля")
+            return
+        }
+        if (state.selectedUniversityId == null) {
+            _uiState.value = state.copy(error = "Выберите университет")
+            return
+        }
+        if (state.selectedUserType == "STUDENT" && state.selectedGroupId == null) {
+            _uiState.value = state.copy(error = "Выберите группу")
+            return
+        }
+        if (state.selectedUserType == "TEACHER" && state.selectedInstituteId == null) {
+            _uiState.value = state.copy(error = "Выберите институт")
+            return
         }
 
-        // Проверки для преподавателей
-        if (userType == UserType.TEACHER) {
-            if (selectedSubjects.isEmpty()) {
-                return "Необходимо выбрать хотя бы один преподаваемый предмет"
-            }
+        viewModelScope.launch {
+            _uiState.value = state.copy(isLoading = true, error = null)
+            val request = RegisterRequest(
+                email = email,
+                password = password,
+                firstName = firstName,
+                lastName = lastName,
+                middleName = middleName,
+                userType = state.selectedUserType,
+                universityId = state.selectedUniversityId,
+                groupId = if (state.selectedUserType == "STUDENT") state.selectedGroupId else null,
+                instituteId = if (state.selectedUserType == "TEACHER") state.selectedInstituteId else null
+            )
+            authRepository.register(request).fold(
+                onSuccess = { _uiState.value = _uiState.value.copy(isLoading = false, isRegistered = true) },
+                onFailure = { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message ?: "Ошибка регистрации") }
+            )
         }
+    }
 
-        return null
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
     }
 }
-
-data class RegistrationUiState(
-    val institutes: List<Institute> = emptyList(),
-    val directions: List<Direction> = emptyList(),
-    val groups: List<Group> = emptyList(),
-    val subjects: List<Subject> = emptyList(),
-    val searchSubjectsResults: List<Subject> = emptyList(),
-    val isLoadingInstitutes: Boolean = false,
-    val isLoadingDirections: Boolean = false,
-    val isLoadingGroups: Boolean = false,
-    val isLoadingSubjects: Boolean = false,
-    val isRegistering: Boolean = false,
-    val instituteError: String? = null,
-    val directionError: String? = null,
-    val groupError: String? = null,
-    val subjectError: String? = null,
-    val registrationError: String? = null,
-    val registrationSuccess: String? = null
-) 

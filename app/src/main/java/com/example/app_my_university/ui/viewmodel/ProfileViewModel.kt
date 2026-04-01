@@ -2,248 +2,102 @@ package com.example.app_my_university.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_my_university.data.api.model.ChangePasswordRequest
-import com.example.app_my_university.data.api.model.UpdateProfileRequest
-import com.example.app_my_university.data.api.model.UserProfile
-import com.example.app_my_university.data.auth.TokenManager
-import com.example.app_my_university.data.repository.UniversityRepository
+import com.example.app_my_university.data.api.model.UserProfileResponse
+import com.example.app_my_university.data.repository.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class ProfileUiState(
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val profile: UserProfileResponse? = null,
+    val emailChangeSuccess: Boolean = false,
+    val passwordChangeSuccess: Boolean = false
+)
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val repository: UniversityRepository,
-    private val tokenManager: TokenManager
+    private val profileRepository: ProfileRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
-    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<ProfileUiState> = _uiState
 
     init {
-        loadUserProfile()
+        loadProfile()
     }
 
-    fun loadUserProfile() {
+    fun loadProfile() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
-            try {
-                repository.getUserProfile()
-                    .collect { result ->
-                        result.fold(
-                            onSuccess = { profile ->
-                                _uiState.update {
-                                    it.copy(
-                                        isLoading = false,
-                                        userProfile = profile,
-                                        error = null
-                                    )
-                                }
-                            },
-                            onFailure = { exception ->
-                                _uiState.update {
-                                    it.copy(
-                                        isLoading = false,
-                                        error = exception.message ?: "Ошибка загрузки профиля"
-                                    )
-                                }
-                            }
-                        )
-                    }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e.message ?: "Неизвестная ошибка"
-                    )
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            profileRepository.getProfile().fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, profile = it)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
                 }
-            }
-        }
-    }
-
-    fun updateProfile(
-        firstName: String,
-        lastName: String,
-        middleName: String?,
-        email: String
-    ) {
-        val validationError = validateProfileData(firstName, lastName, email)
-        if (validationError != null) {
-            _uiState.update { it.copy(error = validationError) }
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isUpdating = true, error = null) }
-
-            try {
-                val request = UpdateProfileRequest(
-                    firstName = firstName,
-                    lastName = lastName,
-                    middleName = middleName,
-                    email = email
-                )
-
-                repository.updateUserProfile(request)
-                    .collect { result ->
-                        result.fold(
-                            onSuccess = { profile ->
-                                _uiState.update {
-                                    it.copy(
-                                        isUpdating = false,
-                                        userProfile = profile,
-                                        updateSuccess = "Профиль успешно обновлен",
-                                        error = null
-                                    )
-                                }
-                            },
-                            onFailure = { exception ->
-                                _uiState.update {
-                                    it.copy(
-                                        isUpdating = false,
-                                        error = exception.message ?: "Ошибка обновления профиля"
-                                    )
-                                }
-                            }
-                        )
-                    }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isUpdating = false,
-                        error = e.message ?: "Неизвестная ошибка"
-                    )
-                }
-            }
-        }
-    }
-
-    fun changePassword(
-        currentPassword: String,
-        newPassword: String,
-        confirmPassword: String
-    ) {
-        val validationError = validatePasswordData(currentPassword, newPassword, confirmPassword)
-        if (validationError != null) {
-            _uiState.update { it.copy(error = validationError) }
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isChangingPassword = true, error = null) }
-
-            try {
-                val request = ChangePasswordRequest(
-                    currentPassword = currentPassword,
-                    newPassword = newPassword,
-                    confirmPassword = confirmPassword
-                )
-
-                repository.changePassword(request)
-                    .collect { result ->
-                        result.fold(
-                            onSuccess = { response ->
-                                _uiState.update {
-                                    it.copy(
-                                        isChangingPassword = false,
-                                        passwordChangeSuccess = "Пароль успешно изменен",
-                                        error = null
-                                    )
-                                }
-                            },
-                            onFailure = { exception ->
-                                _uiState.update {
-                                    it.copy(
-                                        isChangingPassword = false,
-                                        error = exception.message ?: "Ошибка смены пароля"
-                                    )
-                                }
-                            }
-                        )
-                    }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isChangingPassword = false,
-                        error = e.message ?: "Неизвестная ошибка"
-                    )
-                }
-            }
-        }
-    }
-
-    /**
-     * Выход из аккаунта
-     * 
-     * @return true - если выход успешен, false - если возникла ошибка
-     */
-    fun logout() {
-        try {
-            // Очищаем токен
-            tokenManager.clearToken()
-            
-            // Обновляем состояние UI
-            _uiState.update { 
-                it.copy(
-                    isLoggingOut = true,
-                    logoutSuccess = true
-                )
-            }
-        } catch (e: Exception) {
-            _uiState.update {
-                it.copy(
-                    error = "Ошибка при выходе из аккаунта: ${e.message}",
-                    logoutSuccess = false,
-                    isLoggingOut = false
-                )
-            }
-        }
-    }
-
-    fun clearMessages() {
-        _uiState.update {
-            it.copy(
-                error = null,
-                updateSuccess = null,
-                passwordChangeSuccess = null
             )
         }
     }
 
-    private fun validateProfileData(firstName: String, lastName: String, email: String): String? {
-        if (firstName.isBlank()) return "Имя обязательно"
-        if (lastName.isBlank()) return "Фамилия обязательна"
-        if (email.isBlank()) return "Email обязателен"
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) return "Неверный формат email"
-        return null
+    fun changeEmail(newEmail: String, currentPassword: String) {
+        if (newEmail.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "Введите новый email")
+            return
+        }
+        if (currentPassword.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "Введите текущий пароль для подтверждения")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, emailChangeSuccess = false)
+            profileRepository.changeEmail(newEmail, currentPassword).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, emailChangeSuccess = true)
+                    loadProfile()
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
     }
 
-    private fun validatePasswordData(
-        currentPassword: String,
-        newPassword: String,
-        confirmPassword: String
-    ): String? {
-        if (currentPassword.isBlank()) return "Текущий пароль обязателен"
-        if (newPassword.isBlank()) return "Новый пароль обязателен"
-        if (newPassword.length < 6) return "Новый пароль должен содержать не менее 6 символов"
-        if (newPassword != confirmPassword) return "Новый пароль и подтверждение не совпадают"
-        return null
+    fun changePassword(oldPassword: String, newPassword: String, newPasswordConfirm: String) {
+        if (oldPassword.isBlank() || newPassword.isBlank() || newPasswordConfirm.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "Заполните все поля")
+            return
+        }
+        if (newPassword != newPasswordConfirm) {
+            _uiState.value = _uiState.value.copy(error = "Новый пароль и подтверждение не совпадают")
+            return
+        }
+        if (newPassword.length < 6) {
+            _uiState.value = _uiState.value.copy(error = "Пароль должен содержать минимум 6 символов")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, passwordChangeSuccess = false)
+            profileRepository.changePassword(oldPassword, newPassword, newPasswordConfirm).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, passwordChangeSuccess = true)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun clearSuccessFlags() {
+        _uiState.value = _uiState.value.copy(emailChangeSuccess = false, passwordChangeSuccess = false)
     }
 }
-
-data class ProfileUiState(
-    val isLoading: Boolean = false,
-    val isUpdating: Boolean = false,
-    val isChangingPassword: Boolean = false,
-    val isLoggingOut: Boolean = false,
-    val logoutSuccess: Boolean = false,
-    val userProfile: UserProfile? = null,
-    val error: String? = null,
-    val updateSuccess: String? = null,
-    val passwordChangeSuccess: String? = null
-)

@@ -10,16 +10,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.runtime.collectAsState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,9 +27,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,52 +43,64 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.app_my_university.model.University
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.app_my_university.data.api.model.UniversityResponse
 import com.example.app_my_university.ui.viewmodel.UniversitySelectionUiState
 import com.example.app_my_university.ui.viewmodel.UniversitySelectionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UniversitySelectionScreen(
-    viewModel: UniversitySelectionViewModel = hiltViewModel(),
-    onUniversitySelected: (String, String) -> Unit,
-    onNavigateToLogin: (String, String) -> Unit
+    onNavigateBack: () -> Unit,
+    onContinueToLogin: () -> Unit,
+    viewModel: UniversitySelectionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
     var searchQuery by remember { mutableStateOf("") }
-    var selectedUniversity by remember { mutableStateOf<University?>(null) }
-    
-    val filteredUniversities = when (uiState) {
+    var selectedUniversity by remember { mutableStateOf<UniversityResponse?>(null) }
+
+    val filtered = when (val s = uiState) {
         is UniversitySelectionUiState.Success -> {
-            if (searchQuery.isEmpty()) {
-                (uiState as UniversitySelectionUiState.Success).universities
-            } else {
-                (uiState as UniversitySelectionUiState.Success).universities.filter { 
-                    it.name.contains(searchQuery, ignoreCase = true) ||
-                    it.shortName.contains(searchQuery, ignoreCase = true) ||
-                    it.city.contains(searchQuery, ignoreCase = true)
-                }
+            val list = s.universities
+            if (searchQuery.isBlank()) list
+            else list.filter {
+                it.name.contains(searchQuery, ignoreCase = true) ||
+                    (it.shortName?.contains(searchQuery, ignoreCase = true) == true) ||
+                    (it.city?.contains(searchQuery, ignoreCase = true) == true)
             }
         }
         else -> emptyList()
     }
-    
-    Surface(modifier = Modifier.fillMaxSize()) {
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Университеты") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(padding)
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "Выберите ваш университет",
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 36.dp, bottom = 24.dp)
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
             )
-            
-            // Строка поиска с кнопкой обновления при ошибке
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -97,30 +111,20 @@ fun UniversitySelectionScreen(
                     label = { Text("Поиск университета") },
                     modifier = Modifier.weight(1f),
                     leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Поиск"
-                        )
+                        Icon(Icons.Default.Search, contentDescription = null)
                     },
                     singleLine = true,
                     enabled = uiState is UniversitySelectionUiState.Success
                 )
-                
                 if (uiState is UniversitySelectionUiState.Error) {
                     Spacer(modifier = Modifier.width(8.dp))
                     IconButton(onClick = { viewModel.loadUniversities() }) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Обновить",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Icon(Icons.Default.Refresh, contentDescription = "Обновить")
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            when (uiState) {
+            Spacer(modifier = Modifier.height(12.dp))
+            when (val s = uiState) {
                 is UniversitySelectionUiState.Loading -> {
                     Box(
                         modifier = Modifier
@@ -131,7 +135,6 @@ fun UniversitySelectionScreen(
                         CircularProgressIndicator()
                     }
                 }
-                
                 is UniversitySelectionUiState.Error -> {
                     Box(
                         modifier = Modifier
@@ -139,25 +142,19 @@ fun UniversitySelectionScreen(
                             .weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = (uiState as UniversitySelectionUiState.Error).message,
+                                text = s.message,
                                 color = MaterialTheme.colorScheme.error,
                                 textAlign = TextAlign.Center
                             )
-                            
                             Spacer(modifier = Modifier.height(16.dp))
-                            
                             Button(onClick = { viewModel.loadUniversities() }) {
                                 Text("Повторить")
                             }
                         }
                     }
                 }
-                
                 is UniversitySelectionUiState.Empty -> {
                     Box(
                         modifier = Modifier
@@ -171,9 +168,8 @@ fun UniversitySelectionScreen(
                         )
                     }
                 }
-                
                 is UniversitySelectionUiState.Success -> {
-                    if (filteredUniversities.isEmpty()) {
+                    if (filtered.isEmpty()) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -191,10 +187,10 @@ fun UniversitySelectionScreen(
                                 .fillMaxWidth()
                                 .weight(1f)
                         ) {
-                            items(filteredUniversities) { university ->
-                                UniversityItem(
+                            items(filtered) { university ->
+                                UniversitySelectionItem(
                                     university = university,
-                                    isSelected = university == selectedUniversity,
+                                    isSelected = university.id == selectedUniversity?.id,
                                     onClick = { selectedUniversity = university }
                                 )
                             }
@@ -202,14 +198,9 @@ fun UniversitySelectionScreen(
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Кнопка продолжения
+            Spacer(modifier = Modifier.height(12.dp))
             Button(
-                onClick = { 
-                    selectedUniversity?.let { onUniversitySelected(it.id, it.name) }
-                },
+                onClick = onContinueToLogin,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = selectedUniversity != null
             ) {
@@ -220,30 +211,24 @@ fun UniversitySelectionScreen(
                     Text("Продолжить")
                     Icon(
                         imageVector = Icons.Default.ArrowForward,
-                        contentDescription = "Продолжить",
+                        contentDescription = null,
                         modifier = Modifier.padding(start = 8.dp)
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Ссылка на экран входа без выбора университета
-            Text(
-                text = "Вход в аккаунт",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .clickable { onNavigateToLogin("", "") }
-                    .padding(vertical = 8.dp)
-            )
+            TextButton(
+                onClick = onContinueToLogin,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Text("Вход в аккаунт")
+            }
         }
     }
 }
 
 @Composable
-fun UniversityItem(
-    university: University,
+private fun UniversitySelectionItem(
+    university: UniversityResponse,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
@@ -251,7 +236,7 @@ fun UniversityItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable { onClick() },
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = if (isSelected) {
             CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
@@ -259,34 +244,29 @@ fun UniversityItem(
             CardDefaults.cardColors()
         }
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = university.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Row {
+            Text(
+                text = university.name,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row {
+                university.shortName?.let {
                     Text(
-                        text = university.shortName,
+                        text = it,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
                     Spacer(modifier = Modifier.width(8.dp))
-                    
+                }
+                university.city?.let {
                     Text(
-                        text = university.city,
+                        text = it,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

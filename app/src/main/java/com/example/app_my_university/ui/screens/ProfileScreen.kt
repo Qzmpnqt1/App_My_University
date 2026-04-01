@@ -1,441 +1,330 @@
 package com.example.app_my_university.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.app_my_university.data.api.model.UserProfile
 import com.example.app_my_university.ui.viewmodel.ProfileViewModel
-import com.example.app_my_university.ui.viewmodel.ProfileUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
+    onNavigateBack: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val userProfile = uiState.userProfile
-    var showLogoutDialog by remember { mutableStateOf(false) }
+    var newEmail by remember { mutableStateOf("") }
+    var emailConfirmPassword by remember { mutableStateOf("") }
+    var showEmailConfirmPassword by remember { mutableStateOf(false) }
+    var oldPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var newPasswordConfirm by remember { mutableStateOf("") }
+    var showOldPassword by remember { mutableStateOf(false) }
+    var showNewPassword by remember { mutableStateOf(false) }
+    var showEmailForm by remember { mutableStateOf(false) }
+    var showPasswordForm by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Убрали LaunchedEffect для logoutSuccess
-    // Теперь выход выполняется синхронно
-
-    // Диалог подтверждения выхода
-    if (showLogoutDialog) {
-        AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Выход из аккаунта") },
-            text = { Text("Вы уверены, что хотите выйти из аккаунта?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showLogoutDialog = false
-                        viewModel.logout() // Очистка данных
-                        onLogout() // Немедленный переход
-                    }
-                ) {
-                    Text("Выйти")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showLogoutDialog = false }
-                ) {
-                    Text("Отмена")
-                }
-            }
-        )
-    }
-
-    Surface(modifier = Modifier.fillMaxSize()) {
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Загрузка профиля...")
-                }
-            }
-        } else if (uiState.error != null) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Error,
-                        contentDescription = "Ошибка",
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = uiState.error ?: "Ошибка загрузки профиля",
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { viewModel.loadUserProfile() }) {
-                        Text("Повторить")
-                    }
-                }
-            }
-        } else if (userProfile != null) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 36.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
-                    // Добавляем отступ снизу, чтобы контент не перекрывался BottomBar
-                    .padding(bottom = 80.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Аватар пользователя
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Аватар пользователя",
-                        modifier = Modifier.size(80.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Имя пользователя
-                Text(
-                    text = "${userProfile.lastName} ${userProfile.firstName} ${userProfile.middleName ?: ""}",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Тип пользователя
-                Text(
-                    text = when (userProfile.userType) {
-                        "STUDENT" -> "Студент"
-                        "TEACHER" -> "Преподаватель"
-                        "ADMIN" -> "Администратор"
-                        else -> userProfile.userType
-                    },
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Общая информация для всех типов пользователей
-                ProfileInfoSection(userProfile, viewModel, uiState)
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Кнопка выхода из аккаунта
-                Button(
-                    onClick = { showLogoutDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Logout,
-                        contentDescription = "Выйти"
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Выйти из аккаунта")
-                }
-            }
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearError()
         }
     }
-}
 
-@Composable
-fun ProfileInfoSection(
-    userProfile: UserProfile,
-    viewModel: ProfileViewModel,
-    uiState: ProfileUiState
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "Личная информация",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+    LaunchedEffect(uiState.emailChangeSuccess) {
+        if (uiState.emailChangeSuccess) {
+            snackbarHostState.showSnackbar("Email успешно изменён")
+            newEmail = ""
+            emailConfirmPassword = ""
+            showEmailForm = false
+            viewModel.clearSuccessFlags()
+        }
+    }
+
+    LaunchedEffect(uiState.passwordChangeSuccess) {
+        if (uiState.passwordChangeSuccess) {
+            snackbarHostState.showSnackbar("Пароль успешно изменён")
+            oldPassword = ""
+            newPassword = ""
+            newPasswordConfirm = ""
+            showPasswordForm = false
+            viewModel.clearSuccessFlags()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Профиль") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = "Выйти из аккаунта"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             )
-
-            ProfileInfoRow("Имя", userProfile.firstName)
-            ProfileInfoRow("Фамилия", userProfile.lastName)
-            ProfileInfoRow("Отчество", userProfile.middleName)
-
-            // Дополнительные данные в зависимости от типа пользователя
-            if (userProfile.studentProfile != null) {
-                ProfileInfoRow("Университет", userProfile.studentProfile.universityName)
-                ProfileInfoRow("Институт", userProfile.studentProfile.instituteName)
-                ProfileInfoRow("Направление", userProfile.studentProfile.directionName)
-                ProfileInfoRow("Группа", userProfile.studentProfile.groupName)
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        when {
+            uiState.isLoading && uiState.profile == null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
-            if (userProfile.teacherProfile != null) {
-                ProfileInfoRow("Университет", userProfile.teacherProfile.universityName)
-                // Предметы, которые преподает учитель
-                val subjects = userProfile.teacherProfile.subjects?.joinToString(", ") { it.name } ?: "-"
-                ProfileInfoRow("Предметы", subjects)
+            uiState.error != null && uiState.profile == null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "Ошибка загрузки профиля",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { viewModel.loadProfile() }) {
+                            Text("Повторить")
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedButton(onClick = onLogout) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Logout,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Выйти из аккаунта")
+                        }
+                    }
+                }
             }
-            if (userProfile.adminProfile != null) {
-                ProfileInfoRow("Университет", userProfile.adminProfile.universityName)
-                ProfileInfoRow("Роль", userProfile.adminProfile.role ?: "Администратор системы")
-            }
+            else -> {
+                val profile = uiState.profile
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .verticalScroll(rememberScrollState())
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Личные данные",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            HorizontalDivider()
 
-            // Добавляем редактируемое поле email
-            var isEditingEmail by remember { mutableStateOf(false) }
-            var emailValue by remember { mutableStateOf(userProfile.email) }
+                            ProfileRow("Фамилия", profile?.lastName ?: "—")
+                            ProfileRow("Имя", profile?.firstName ?: "—")
+                            profile?.middleName?.let { ProfileRow("Отчество", it) }
+                            ProfileRow("Email", profile?.email ?: "—")
+                            ProfileRow("Тип", when (profile?.userType) {
+                                "STUDENT" -> "Студент"
+                                "TEACHER" -> "Преподаватель"
+                                "ADMIN" -> "Администратор"
+                                else -> profile?.userType ?: "—"
+                            })
 
-            if (isEditingEmail) {
-                OutlinedTextField(
-                    value = emailValue,
-                    onValueChange = { emailValue = it },
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon = {
-                        Row {
-                            IconButton(onClick = {
-                                viewModel.updateProfile(
-                                    firstName = userProfile.firstName,
-                                    lastName = userProfile.lastName,
-                                    middleName = userProfile.middleName,
-                                    email = emailValue
-                                )
-                                isEditingEmail = false
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Done,
-                                    contentDescription = "Сохранить"
-                                )
+                            profile?.studentProfile?.let { sp ->
+                                sp.groupName?.let { ProfileRow("Группа", it) }
+                                sp.instituteName?.let { ProfileRow("Институт", it) }
                             }
-                            IconButton(onClick = {
-                                emailValue = userProfile.email
-                                isEditingEmail = false
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Отменить"
-                                )
+
+                            profile?.teacherProfile?.let { tp ->
+                                tp.instituteName?.let { ProfileRow("Институт", it) }
+                                tp.position?.let { ProfileRow("Должность", it) }
+                            }
+
+                            profile?.adminProfile?.let { ap ->
+                                ap.universityName?.let { ProfileRow("Университет", it) }
                             }
                         }
                     }
-                )
-            } else {
-                ProfileInfoRow(
-                    label = "Email",
-                    value = userProfile.email,
-                    onEdit = {
-                        isEditingEmail = true
-                    }
-                )
-            }
 
-            // Секция для изменения пароля
-            Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(16.dp))
-
-            var isChangingPassword by remember { mutableStateOf(false) }
-            var currentPassword by remember { mutableStateOf("") }
-            var newPassword by remember { mutableStateOf("") }
-            var confirmPassword by remember { mutableStateOf("") }
-
-            Text(
-                text = "Безопасность",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            if (isChangingPassword) {
-                OutlinedTextField(
-                    value = currentPassword,
-                    onValueChange = { currentPassword = it },
-                    label = { Text("Текущий пароль") },
-                    modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = newPassword,
-                    onValueChange = { newPassword = it },
-                    label = { Text("Новый пароль") },
-                    modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = { Text("Подтвердите новый пароль") },
-                    modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = {
-                        currentPassword = ""
-                        newPassword = ""
-                        confirmPassword = ""
-                        isChangingPassword = false
-                    }) {
-                        Text("Отмена")
+                    OutlinedButton(
+                        onClick = { showEmailForm = !showEmailForm },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (showEmailForm) "Скрыть" else "Изменить Email")
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    if (showEmailForm) {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = newEmail,
+                                    onValueChange = { newEmail = it },
+                                    label = { Text("Новый Email") },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = emailConfirmPassword,
+                                    onValueChange = { emailConfirmPassword = it },
+                                    label = { Text("Текущий пароль") },
+                                    singleLine = true,
+                                    visualTransformation = if (showEmailConfirmPassword) VisualTransformation.None
+                                        else PasswordVisualTransformation(),
+                                    trailingIcon = {
+                                        IconButton(onClick = { showEmailConfirmPassword = !showEmailConfirmPassword }) {
+                                            Icon(
+                                                if (showEmailConfirmPassword) Icons.Default.VisibilityOff
+                                                else Icons.Default.Visibility,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Button(
+                                    onClick = { viewModel.changeEmail(newEmail, emailConfirmPassword) },
+                                    enabled = !uiState.isLoading && newEmail.isNotBlank() && emailConfirmPassword.isNotBlank(),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Сохранить Email")
+                                }
+                            }
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = { showPasswordForm = !showPasswordForm },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (showPasswordForm) "Скрыть" else "Изменить пароль")
+                    }
+
+                    if (showPasswordForm) {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = oldPassword,
+                                    onValueChange = { oldPassword = it },
+                                    label = { Text("Текущий пароль") },
+                                    singleLine = true,
+                                    visualTransformation = if (showOldPassword) VisualTransformation.None
+                                        else PasswordVisualTransformation(),
+                                    trailingIcon = {
+                                        IconButton(onClick = { showOldPassword = !showOldPassword }) {
+                                            Icon(
+                                                if (showOldPassword) Icons.Default.VisibilityOff
+                                                else Icons.Default.Visibility,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = newPassword,
+                                    onValueChange = { newPassword = it },
+                                    label = { Text("Новый пароль") },
+                                    singleLine = true,
+                                    visualTransformation = if (showNewPassword) VisualTransformation.None
+                                        else PasswordVisualTransformation(),
+                                    trailingIcon = {
+                                        IconButton(onClick = { showNewPassword = !showNewPassword }) {
+                                            Icon(
+                                                if (showNewPassword) Icons.Default.VisibilityOff
+                                                else Icons.Default.Visibility,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = newPasswordConfirm,
+                                    onValueChange = { newPasswordConfirm = it },
+                                    label = { Text("Подтверждение пароля") },
+                                    singleLine = true,
+                                    visualTransformation = if (showNewPassword) VisualTransformation.None
+                                        else PasswordVisualTransformation(),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Button(
+                                    onClick = { viewModel.changePassword(oldPassword, newPassword, newPasswordConfirm) },
+                                    enabled = !uiState.isLoading &&
+                                            oldPassword.isNotBlank() &&
+                                            newPassword.isNotBlank() &&
+                                            newPasswordConfirm.isNotBlank(),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Сохранить пароль")
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = {
-                            viewModel.changePassword(
-                                currentPassword = currentPassword,
-                                newPassword = newPassword,
-                                confirmPassword = confirmPassword
-                            )
-                            if (uiState.passwordChangeSuccess != null) {
-                                currentPassword = ""
-                                newPassword = ""
-                                confirmPassword = ""
-                                isChangingPassword = false
-                            }
-                        },
-                        enabled = currentPassword.isNotEmpty() && newPassword.isNotEmpty() && confirmPassword.isNotEmpty()
+                        onClick = onLogout,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
                     ) {
-                        Text("Сохранить")
+                        Icon(
+                            Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Выйти из аккаунта")
                     }
-                }
-            } else {
-                Button(
-                    onClick = { isChangingPassword = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Изменить пароль")
-                }
-            }
-
-            // Сообщения об успешных операциях или ошибках
-            if (uiState.updateSuccess != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = uiState.updateSuccess,
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                LaunchedEffect(uiState.updateSuccess) {
-                    // Очищаем сообщение через некоторое время
-                    kotlinx.coroutines.delay(3000)
-                    viewModel.clearMessages()
-                }
-            }
-
-            if (uiState.passwordChangeSuccess != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = uiState.passwordChangeSuccess,
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                LaunchedEffect(uiState.passwordChangeSuccess) {
-                    // Очищаем сообщение через некоторое время
-                    kotlinx.coroutines.delay(3000)
-                    viewModel.clearMessages()
                 }
             }
         }
@@ -443,40 +332,22 @@ fun ProfileInfoSection(
 }
 
 @Composable
-fun ProfileInfoRow(
-    label: String,
-    value: String?,
-    onEdit: (() -> Unit)? = null
-) {
+private fun ProfileRow(label: String, value: String) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = "$label:",
+            text = label,
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.width(120.dp)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-
         Text(
-            text = value ?: "-",
+            text = value,
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f)
+            color = MaterialTheme.colorScheme.onSurface
         )
-
-        if (onEdit != null) {
-            IconButton(
-                onClick = onEdit,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Редактировать",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
     }
 }

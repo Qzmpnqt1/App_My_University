@@ -1,18 +1,19 @@
 package com.example.app_my_university
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
-/**
- * Основной класс приложения, который инициализирует Hilt.
- * 
- * HiltAndroidApp аннотация генерирует все необходимые компоненты Dagger
- * и запускает контейнер внедрения зависимостей.
- */
 @HiltAndroidApp
-class MyUniversityApplication : Application() {
-    
-    override fun onCreate() {
-        super.onCreate()
-    }
+class MyUniversityApplication : Application(), Configuration.Provider {
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
 }

@@ -4,213 +4,194 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
-data class ChatMessage(
-    val id: String,
-    val content: String,
-    val isFromMe: Boolean,
-    val timestamp: Long
-)
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.app_my_university.data.api.model.MessageResponse
+import com.example.app_my_university.ui.viewmodel.ChatViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    chatId: String,
-    onNavigateBack: () -> Unit
+    conversationId: String,
+    participantName: String,
+    participantId: Long = 0L,
+    onNavigateBack: () -> Unit,
+    viewModel: ChatViewModel = hiltViewModel()
 ) {
-    var newMessage by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsState()
+    var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    
-    // Пример сообщений для демонстрации
-    val messages = remember {
-        listOf(
-            ChatMessage(
-                id = "1",
-                content = "Добрый день! Когда будет доступен материал по следующей теме?",
-                isFromMe = false,
-                timestamp = System.currentTimeMillis() - 3600000
-            ),
-            ChatMessage(
-                id = "2",
-                content = "Здравствуйте! Материалы будут доступны завтра после 14:00",
-                isFromMe = true,
-                timestamp = System.currentTimeMillis() - 3500000
-            ),
-            ChatMessage(
-                id = "3",
-                content = "Отлично, спасибо за информацию!",
-                isFromMe = false,
-                timestamp = System.currentTimeMillis() - 3400000
-            ),
-            ChatMessage(
-                id = "4",
-                content = "Не за что! Если будут вопросы, обращайтесь",
-                isFromMe = true,
-                timestamp = System.currentTimeMillis() - 3300000
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(conversationId, participantId, participantName) {
+        if (conversationId == "NEW") {
+            viewModel.prepareNewConversation(participantId, participantName)
+        } else {
+            viewModel.selectConversation(
+                com.example.app_my_university.data.api.model.ConversationResponse(
+                    conversationId = conversationId,
+                    participantId = participantId,
+                    participantName = participantName,
+                    lastMessageText = null,
+                    lastMessageAt = null,
+                    unreadCount = null
+                )
             )
-        )
-    }
-    
-    // Название чата для демонстрации
-    val chatName = "Студент Иванов Иван"
-    
-    var isMoreMenuExpanded by remember { mutableStateOf(false) }
-    
-    // Прокрутка к последнему сообщению при открытии чата
-    LaunchedEffect(Unit) {
-        if (messages.isNotEmpty()) {
-            listState.scrollToItem(messages.size - 1)
         }
     }
-    
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Заголовок чата с отступом 36dp сверху
+
+    LaunchedEffect(uiState.messages.size) {
+        if (uiState.messages.isNotEmpty()) {
+            scope.launch {
+                listState.animateScrollToItem(uiState.messages.size - 1)
+            }
+        }
+    }
+
+    LaunchedEffect(uiState.sendSuccess) {
+        if (uiState.sendSuccess) {
+            messageText = ""
+            viewModel.clearSendSuccess()
+        }
+    }
+
+    Scaffold(
+        topBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(top = 36.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+                    .padding(top = 8.dp, bottom = 12.dp, start = 4.dp, end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Назад",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
-                
                 Text(
-                    text = chatName,
+                    text = participantName,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.weight(1f)
                 )
-                
-                IconButton(onClick = { isMoreMenuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Ещё",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-                
-                DropdownMenu(
-                    expanded = isMoreMenuExpanded,
-                    onDismissRequest = { isMoreMenuExpanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Очистить историю") },
-                        onClick = {
-                            isMoreMenuExpanded = false
-                            // Логика очистки истории
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.DeleteSweep,
-                                contentDescription = null
-                            )
-                        }
-                    )
-                }
             }
-            
-            // Список сообщений
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                state = listState
-            ) {
-                items(messages) { message ->
-                    MessageItem(message = message)
-                }
-            }
-            
-            // Поле ввода сообщения
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { /* Функционал прикрепления файлов */ }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AttachFile,
-                        contentDescription = "Прикрепить файл"
-                    )
-                }
-                
-                OutlinedTextField(
-                    value = newMessage,
-                    onValueChange = { newMessage = it },
-                    placeholder = { Text("Введите сообщение...") },
+        },
+        bottomBar = {
+            Surface(tonalElevation = 3.dp) {
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp),
-                    maxLines = 3
-                )
-                
-                IconButton(
-                    onClick = {
-                        if (newMessage.isNotBlank()) {
-                            // В реальном приложении здесь будет отправка сообщения
-                            newMessage = ""
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp)
+                        .navigationBarsPadding(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = messageText,
+                        onValueChange = { messageText = it },
+                        placeholder = { Text("Сообщение...") },
+                        modifier = Modifier.weight(1f),
+                        maxLines = 3
+                    )
+                    FilledIconButton(
+                        onClick = {
+                            if (messageText.isNotBlank()) {
+                                viewModel.sendMessageToSelected(messageText)
+                            }
+                        },
+                        enabled = messageText.isNotBlank()
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Отправить")
+                    }
+                }
+            }
+        }
+    ) { padding ->
+        when {
+            uiState.isLoading && uiState.messages.isEmpty() && conversationId != "NEW" -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            uiState.error != null && uiState.messages.isEmpty() && conversationId != "NEW" -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = uiState.error ?: "Ошибка загрузки",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { viewModel.loadMessages(conversationId) }) {
+                            Text("Повторить")
                         }
                     }
+                }
+            }
+            uiState.messages.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Send,
-                        contentDescription = "Отправить",
-                        tint = MaterialTheme.colorScheme.primary
+                    Text(
+                        text = "Начните диалог",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    state = listState,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(uiState.messages) { message ->
+                        val isOwn = message.senderId == uiState.currentUserId
+                        MessageBubble(message = message, isOwnMessage = isOwn)
+                    }
                 }
             }
         }
@@ -218,53 +199,72 @@ fun ChatScreen(
 }
 
 @Composable
-fun MessageItem(message: ChatMessage) {
+private fun MessageBubble(message: MessageResponse, isOwnMessage: Boolean) {
+    val alignment = if (isOwnMessage) Alignment.End else Alignment.Start
+    val bgColor = if (isOwnMessage)
+        MaterialTheme.colorScheme.primary
+    else
+        MaterialTheme.colorScheme.surfaceVariant
+    val textColor = if (isOwnMessage)
+        MaterialTheme.colorScheme.onPrimary
+    else
+        MaterialTheme.colorScheme.onSurfaceVariant
+
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalAlignment = if (message.isFromMe) Alignment.End else Alignment.Start
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = alignment
     ) {
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = if (message.isFromMe) 
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                else 
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
-            ),
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (message.isFromMe) 16.dp else 4.dp,
-                bottomEnd = if (message.isFromMe) 4.dp else 16.dp
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp)
-            ) {
+        if (!isOwnMessage) {
+            message.senderName?.let { name ->
                 Text(
-                    text = message.content,
-                    color = if (message.isFromMe) 
-                        MaterialTheme.colorScheme.onPrimary
-                    else 
-                        MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                val formattedTime = SimpleDateFormat("HH:mm", Locale.getDefault())
-                    .format(Date(message.timestamp))
-                
-                Text(
-                    text = formattedTime,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (message.isFromMe) 
-                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
-                    else 
-                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
-                    modifier = Modifier.align(Alignment.End)
+                    text = name,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 2.dp)
                 )
             }
         }
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = bgColor),
+            modifier = Modifier.widthIn(max = 280.dp),
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = if (isOwnMessage) 16.dp else 4.dp,
+                bottomEnd = if (isOwnMessage) 4.dp else 16.dp
+            )
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = message.text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor
+                )
+                message.sentAt?.let { time ->
+                    Text(
+                        text = formatMessageTime(time),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = textColor.copy(alpha = 0.7f),
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(top = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun formatMessageTime(isoTime: String): String {
+    return try {
+        if (isoTime.contains("T") && isoTime.length >= 16) {
+            isoTime.substring(11, 16)
+        } else {
+            isoTime
+        }
+    } catch (_: Exception) {
+        isoTime
     }
 }

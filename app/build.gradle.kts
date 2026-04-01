@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.android") version "2.0.21"
     id("com.google.dagger.hilt.android") version "2.51"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
+    alias(libs.plugins.google.services)
 }
 
 hilt {
@@ -38,13 +39,37 @@ android {
                 "proguard-rules.pro"
             )
 
+            // Базовый URL API (замените на боевой сервер или задайте -PapiBaseUrlRelease=...)
+            val raw = (project.findProperty("apiBaseUrlRelease") as String?)?.trim().orEmpty()
+            val baseUrl = when {
+                raw.isEmpty() -> "https://example.com/"
+                raw.endsWith("/") -> raw
+                else -> "$raw/"
+            }
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"${baseUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+            )
+
             // При необходимости можно добавить signingConfig signingConfigs.release
             // для автоматической подписи APK.
         }
-        // Debug остаётся без изменений
+        // Debug: телефон в той же Wi‑Fi сети, что и ноутбук (см. ipconfig → IPv4 адаптера Wi‑Fi).
+        // Эмулятор: в gradle.properties раскомментируйте apiBaseUrl=http://10.0.2.2:8080/ или передайте -PapiBaseUrl=...
         debug {
-            // Можно оставить по умолчанию
             isDebuggable = true
+            val raw = (project.findProperty("apiBaseUrl") as String?)?.trim().orEmpty()
+            val baseUrl = when {
+                raw.isEmpty() -> "http://192.168.200.168:8080/"
+                raw.endsWith("/") -> raw
+                else -> "$raw/"
+            }
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"${baseUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+            )
         }
     }
 
@@ -119,6 +144,9 @@ dependencies {
     // Kotlin Coroutines для асинхронных операций
     implementation(libs.kotlinx.coroutines.android)
 
+    // DataStore для хранения токена и настроек
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
     // Moshi для работы с JSON
     implementation(libs.moshi)
     kapt(libs.moshi.kotlin.codegen)
@@ -137,8 +165,22 @@ dependencies {
     // Core для работы с инсетами в Compose
     implementation("androidx.core:core-splashscreen:1.0.1")
 
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    kapt(libs.androidx.hilt.compiler)
+
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+
     // Тестовые зависимости
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.mockk.android)
     androidTestImplementation(libs.androidx.junit.v121)
     androidTestImplementation(libs.androidx.espresso.core.v361)
     androidTestImplementation(libs.androidx.ui.test.junit4)

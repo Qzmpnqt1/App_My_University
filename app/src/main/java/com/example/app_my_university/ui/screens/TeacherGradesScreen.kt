@@ -1,215 +1,564 @@
 package com.example.app_my_university.ui.screens
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.app_my_university.data.api.model.GradeRequest
+import com.example.app_my_university.data.api.model.GradeResponse
+import com.example.app_my_university.data.api.model.PracticeGradeRequest
+import com.example.app_my_university.data.api.model.PracticeGradeResponse
+import com.example.app_my_university.data.api.model.SubjectPracticeResponse
+import com.example.app_my_university.ui.viewmodel.GradeBookViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherGradesScreen(
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit,
+    viewModel: GradeBookViewModel = hiltViewModel()
 ) {
-    var selectedSubject by remember { mutableStateOf<String?>(null) }
-    var selectedGroup by remember { mutableStateOf<String?>(null) }
-    var selectedStudent by remember { mutableStateOf<String?>(null) }
-    var currentStep by remember { mutableStateOf(1) } // 1 - предметы, 2 - группы, 3 - студенты, 4 - оценка
+    val uiState by viewModel.uiState.collectAsState()
+    var tabIndex by remember { mutableIntStateOf(0) }
+    var selectedPracticeId by remember { mutableStateOf<Long?>(null) }
 
-    // Временные данные для демонстрации
-    val subjects = listOf("Математический анализ", "Линейная алгебра", "Программирование", "Базы данных")
-    val groups = listOf("ИС-21-1", "ИС-21-2", "ИС-22-1", "ИС-22-2")
-    val students = listOf("Иванов И.И.", "Петров П.П.", "Сидоров С.С.", "Козлов К.К.")
+    var showPracticeDialog by remember { mutableStateOf(false) }
+    var editingPracticeGradeId by remember { mutableStateOf<Long?>(null) }
+    var editingPracticeId by remember { mutableStateOf<Long?>(null) }
+    var editingStudentId by remember { mutableStateOf<Long?>(null) }
+    var editingStudentName by remember { mutableStateOf("") }
+    var practiceStudentIdInput by remember { mutableStateOf("") }
+    var gradeValue by remember { mutableStateOf("") }
+    var creditStatus by remember { mutableStateOf<Boolean?>(null) }
 
-    Surface(modifier = Modifier.fillMaxSize()) {
+    var showFinalDialog by remember { mutableStateOf(false) }
+    var editingFinalGrade by remember { mutableStateOf<GradeResponse?>(null) }
+    var newFinalStudentId by remember { mutableStateOf("") }
+    var finalGradeNum by remember { mutableStateOf<String?>(null) }
+    var finalCredit by remember { mutableStateOf<Boolean?>(null) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    var subjectExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadSubjectsInDirection()
+    }
+
+    LaunchedEffect(uiState.saveSuccess) {
+        if (uiState.saveSuccess) {
+            snackbarHostState.showSnackbar("Сохранено")
+            viewModel.clearSaveSuccess()
+            selectedPracticeId?.let { viewModel.loadPracticeGradesByPractice(it) }
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearError()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Выставление оценок") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(padding)
         ) {
-            // Заголовок страницы с отступом 36dp сверху
-            Text(
-                text = "Выставление оценок",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
+            ExposedDropdownMenuBox(
+                expanded = subjectExpanded,
+                onExpandedChange = { subjectExpanded = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 36.dp, bottom = 16.dp)
-            )
-            
-            // Индикатор прогресса
-            LinearProgressIndicator(
-                progress = currentStep / 4f,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            )
-
-            // Заголовок текущего шага
-            Text(
-                text = when (currentStep) {
-                    1 -> "Выберите предмет"
-                    2 -> "Выберите группу"
-                    3 -> "Выберите студента"
-                    4 -> "Выставьте оценку"
-                    else -> ""
-                },
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            when (currentStep) {
-                1 -> {
-                    // Список предметов
-                    LazyColumn {
-                        items(subjects) { subject ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                                    .clickable {
-                                        selectedSubject = subject
-                                        currentStep = 2
-                                    },
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.School,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        text = subject,
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }
+                    .padding(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = uiState.subjects.find { it.id == uiState.selectedSubjectDirectionId }
+                        ?.let { "${it.subjectName ?: "Предмет"} (${it.directionName ?: ""})" }
+                        ?: "Выберите предмет",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Предмет") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = subjectExpanded) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = subjectExpanded,
+                    onDismissRequest = { subjectExpanded = false }
+                ) {
+                    uiState.subjects.forEach { subj ->
+                        DropdownMenuItem(
+                            text = {
+                                Text("${subj.subjectName ?: "Предмет"} (${subj.directionName ?: ""})")
+                            },
+                            onClick = {
+                                viewModel.selectSubjectDirection(subj.id)
+                                selectedPracticeId = null
+                                subjectExpanded = false
                             }
-                        }
+                        )
                     }
-                }
-                2 -> {
-                    // Список групп
-                    LazyColumn {
-                        items(groups) { group ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                                    .clickable {
-                                        selectedGroup = group
-                                        currentStep = 3
-                                    },
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Assessment,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        text = group,
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                3 -> {
-                    // Список студентов
-                    LazyColumn {
-                        items(students) { student ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                                    .clickable {
-                                        selectedStudent = student
-                                        currentStep = 4
-                                    },
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Person,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        text = student,
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                4 -> {
-                    // Экран выставления оценки
-                    GradeSelectionScreen(
-                        subject = selectedSubject ?: "",
-                        group = selectedGroup ?: "",
-                        student = selectedStudent ?: "",
-                        onGradeSubmitted = {
-                            // Сброс к началу
-                            selectedSubject = null
-                            selectedGroup = null
-                            selectedStudent = null
-                            currentStep = 1
-                        }
-                    )
                 }
             }
 
-            // Кнопка "Назад" для всех шагов кроме первого
-            if (currentStep > 1) {
-                Spacer(modifier = Modifier.weight(1f))
-                Button(
-                    onClick = {
-                        when (currentStep) {
-                            2 -> {
-                                selectedSubject = null
-                                currentStep = 1
+            if (uiState.selectedSubjectDirectionId == null) {
+                Text(
+                    text = "Выберите предмет, чтобы выставлять оценки",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                LinearProgressIndicator(
+                    progress = { (tabIndex + 1) / 2f },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                )
+
+                TabRow(selectedTabIndex = tabIndex) {
+                    Tab(
+                        selected = tabIndex == 0,
+                        onClick = { tabIndex = 0 },
+                        text = { Text("Практики") }
+                    )
+                    Tab(
+                        selected = tabIndex == 1,
+                        onClick = { tabIndex = 1 },
+                        text = { Text("Итог по дисциплине") }
+                    )
+                }
+
+                when {
+                    uiState.isLoading && tabIndex == 0 && uiState.practices.isEmpty() -> {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    tabIndex == 0 -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(uiState.practices) { practice ->
+                                PracticeCard(
+                                    practice = practice,
+                                    selected = practice.id == selectedPracticeId,
+                                    onClick = {
+                                        selectedPracticeId = practice.id
+                                        viewModel.loadPracticeGradesByPractice(practice.id)
+                                    }
+                                )
                             }
-                            3 -> {
-                                selectedGroup = null
-                                currentStep = 2
+                            if (uiState.practices.isEmpty()) {
+                                item {
+                                    Text(
+                                        "Для этого предмета нет практических работ в справочнике",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
-                            4 -> {
-                                selectedStudent = null
-                                currentStep = 3
+                            if (selectedPracticeId != null) {
+                                item {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                editingPracticeGradeId = null
+                                                editingPracticeId = selectedPracticeId
+                                                editingStudentId = null
+                                                editingStudentName = "Новая оценка"
+                                                practiceStudentIdInput = ""
+                                                gradeValue = ""
+                                                creditStatus = null
+                                                showPracticeDialog = true
+                                            }
+                                        ) {
+                                            Icon(Icons.Default.Add, contentDescription = null)
+                                            Text("Добавить", modifier = Modifier.padding(start = 8.dp))
+                                        }
+                                    }
+                                }
+                            }
+                            if (selectedPracticeId != null && uiState.gradesByPractice.isNotEmpty()) {
+                                item {
+                                    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                                    Text(
+                                        "Студенты",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                items(uiState.gradesByPractice) { pg ->
+                                    StudentPracticeGradeRow(
+                                        practiceGrade = pg,
+                                        onEdit = {
+                                            editingPracticeGradeId = pg.id
+                                            editingPracticeId = pg.practiceId
+                                            editingStudentId = pg.studentId
+                                            editingStudentName = pg.studentName ?: "Студент"
+                                            practiceStudentIdInput = pg.studentId.toString()
+                                            val creditPractice =
+                                                uiState.practices.find { it.id == pg.practiceId }?.isCredit == true
+                                            gradeValue =
+                                                if (creditPractice) "" else (pg.grade?.toString() ?: "")
+                                            creditStatus = pg.creditStatus
+                                            showPracticeDialog = true
+                                        }
+                                    )
+                                }
                             }
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                    }
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(uiState.finalGradesBySubject) { g ->
+                                FinalGradeRow(
+                                    grade = g,
+                                    onEdit = {
+                                        editingFinalGrade = g
+                                        newFinalStudentId = g.studentId.toString()
+                                        finalGradeNum = g.grade?.toString()
+                                        finalCredit = g.creditStatus
+                                        showFinalDialog = true
+                                    }
+                                )
+                            }
+                            item {
+                                Button(
+                                    onClick = {
+                                        editingFinalGrade = null
+                                        newFinalStudentId = ""
+                                        finalGradeNum = null
+                                        finalCredit = null
+                                        showFinalDialog = true
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Добавить итоговую оценку")
+                                }
+                            }
+                            if (uiState.finalGradesBySubject.isEmpty()) {
+                                item {
+                                    Text(
+                                        "Итоговых оценок пока нет. Нажмите кнопку выше, чтобы добавить.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showPracticeDialog) {
+        val practiceIsCredit =
+            uiState.practices.find { it.id == editingPracticeId }?.isCredit == true
+        AlertDialog(
+            onDismissRequest = { showPracticeDialog = false },
+            title = { Text(editingStudentName) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (editingStudentId == null) {
+                        OutlinedTextField(
+                            value = practiceStudentIdInput,
+                            onValueChange = { practiceStudentIdInput = it },
+                            label = { Text("ID студента *") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    Text(
+                        if (practiceIsCredit) {
+                            "Зачётная практика: укажите зачёт / незачёт (без числовой оценки)."
+                        } else {
+                            "Оценочная практика: выберите оценку 2–5."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (!practiceIsCredit) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("2", "3", "4", "5").forEach { g ->
+                                FilterChip(
+                                    selected = gradeValue == g,
+                                    onClick = { gradeValue = g },
+                                    label = { Text(g) }
+                                )
+                            }
+                        }
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = creditStatus == true,
+                                onClick = { creditStatus = if (creditStatus == true) null else true },
+                                label = { Text("Зачтено") }
+                            )
+                            FilterChip(
+                                selected = creditStatus == false,
+                                onClick = { creditStatus = if (creditStatus == false) null else false },
+                                label = { Text("Не зачтено") }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val practiceId = editingPracticeId ?: return@Button
+                    val studentId = editingStudentId ?: practiceStudentIdInput.toLongOrNull() ?: return@Button
+                    val req = if (practiceIsCredit) {
+                        PracticeGradeRequest(
+                            studentId = studentId,
+                            practiceId = practiceId,
+                            grade = null,
+                            creditStatus = creditStatus
+                        )
+                    } else {
+                        val g = gradeValue.toIntOrNull()
+                        if (g == null || g !in 2..5) return@Button
+                        PracticeGradeRequest(
+                            studentId = studentId,
+                            practiceId = practiceId,
+                            grade = g,
+                            creditStatus = null
+                        )
+                    }
+                    if (editingPracticeGradeId != null) {
+                        viewModel.updatePracticeGrade(editingPracticeGradeId!!, req)
+                    } else {
+                        viewModel.createPracticeGrade(req)
+                    }
+                    showPracticeDialog = false
+                }) {
+                    Text("Сохранить")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPracticeDialog = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
+
+    if (showFinalDialog) {
+        val subjectDirectionId = uiState.selectedSubjectDirectionId
+        val finalType = uiState.subjects
+            .find { it.id == subjectDirectionId }
+            ?.finalAssessmentType
+            ?.uppercase()
+            ?: "EXAM"
+        val isFinalCreditSubject = finalType == "CREDIT"
+        AlertDialog(
+            onDismissRequest = { showFinalDialog = false },
+            title = {
+                Text(
+                    if (editingFinalGrade != null) {
+                        "Итог: ${editingFinalGrade!!.studentName ?: "Студент"}"
+                    } else {
+                        "Новая итоговая оценка"
+                    }
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (editingFinalGrade == null) {
+                        OutlinedTextField(
+                            value = newFinalStudentId,
+                            onValueChange = { newFinalStudentId = it },
+                            label = { Text("ID студента *") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    Text(
+                        if (isFinalCreditSubject) {
+                            "Дисциплина зачётная: укажите зачёт или незачёт (оценка 2–5 не используется)."
+                        } else {
+                            "Дисциплина экзаменационная: укажите итоговую оценку 2–5."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (!isFinalCreditSubject) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("2", "3", "4", "5").forEach { g ->
+                                FilterChip(
+                                    selected = finalGradeNum == g,
+                                    onClick = { finalGradeNum = g },
+                                    label = { Text(g) }
+                                )
+                            }
+                        }
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = finalCredit == true,
+                                onClick = { finalCredit = true },
+                                label = { Text("Зачёт") }
+                            )
+                            FilterChip(
+                                selected = finalCredit == false,
+                                onClick = { finalCredit = false },
+                                label = { Text("Незачёт") }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (subjectDirectionId == null) return@Button
+                        val studentId = editingFinalGrade?.studentId ?: newFinalStudentId.toLongOrNull()
+                            ?: return@Button
+                        val req = if (isFinalCreditSubject) {
+                            if (finalCredit == null) return@Button
+                            GradeRequest(
+                                studentId = studentId,
+                                subjectDirectionId = subjectDirectionId,
+                                grade = null,
+                                creditStatus = finalCredit
+                            )
+                        } else {
+                            val g = finalGradeNum?.toIntOrNull()
+                            if (g == null || g !in 2..5) return@Button
+                            GradeRequest(
+                                studentId = studentId,
+                                subjectDirectionId = subjectDirectionId,
+                                grade = g,
+                                creditStatus = null
+                            )
+                        }
+                        if (editingFinalGrade != null) {
+                            viewModel.updateGrade(editingFinalGrade!!.id, req)
+                        } else {
+                            viewModel.createGrade(req)
+                        }
+                        showFinalDialog = false
+                    }
                 ) {
-                    Text("Назад")
+                    Text("Сохранить")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFinalDialog = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun PracticeCard(
+    practice: SubjectPracticeResponse,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (selected) 4.dp else 1.dp),
+        colors = if (selected) {
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+        } else {
+            CardDefaults.cardColors()
+        }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = practice.practiceTitle ?: "Практика #${practice.practiceNumber ?: practice.id}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+                if (practice.isCredit == true) {
+                    Text(
+                        text = "Зачётная практика",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    practice.maxGrade?.let {
+                        Text(
+                            text = "Макс. балл: $it",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Text(
+                        text = "Оценочная (2–5)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -217,120 +566,109 @@ fun TeacherGradesScreen(
 }
 
 @Composable
-fun GradeSelectionScreen(
-    subject: String,
-    group: String,
-    student: String,
-    onGradeSubmitted: () -> Unit
+private fun StudentPracticeGradeRow(
+    practiceGrade: PracticeGradeResponse,
+    onEdit: () -> Unit
 ) {
-    var selectedGrade by remember { mutableStateOf<String?>(null) }
-    var isExam by remember { mutableStateOf(true) } // true - экзамен, false - зачет
-
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        // Информация о выборе
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "Предмет: $subject",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Группа: $group",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "Студент: $student",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Выбор типа оценки
-        Text(
-            text = "Тип оценки:",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
+    Card(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            FilterChip(
-                selected = isExam,
-                onClick = { isExam = true },
-                label = { Text("Экзамен") }
-            )
-            FilterChip(
-                selected = !isExam,
-                onClick = { isExam = false },
-                label = { Text("Зачет") }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Выбор оценки
-        Text(
-            text = if (isExam) "Выберите оценку:" else "Выберите результат:",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        if (isExam) {
-            // Оценки для экзамена
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf("2", "3", "4", "5").forEach { grade ->
-                    FilterChip(
-                        selected = selectedGrade == grade,
-                        onClick = { selectedGrade = grade },
-                        label = { Text(grade) }
-                    )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = practiceGrade.studentName ?: "Студент #${practiceGrade.studentId}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    when (practiceGrade.practiceIsCredit) {
+                        true -> {
+                            practiceGrade.creditStatus?.let {
+                                Text(
+                                    if (it) "Зачтено" else "Не зачтено",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (it) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                )
+                            } ?: Text("—", style = MaterialTheme.typography.bodySmall)
+                        }
+                        false -> {
+                            practiceGrade.grade?.let {
+                                Text(
+                                    "Оценка: $it" + (practiceGrade.maxGrade?.let { m -> "/$m" } ?: ""),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } ?: Text("—", style = MaterialTheme.typography.bodySmall)
+                        }
+                        null -> {
+                            practiceGrade.grade?.let {
+                                Text(
+                                    "Оценка: $it" + (practiceGrade.maxGrade?.let { m -> "/$m" } ?: ""),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            practiceGrade.creditStatus?.let {
+                                Text(
+                                    if (it) "Зачтено" else "Не зачтено",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (it) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                )
+                            }
+                            if (practiceGrade.grade == null && practiceGrade.creditStatus == null) {
+                                Text("—", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
                 }
             }
-        } else {
-            // Результат для зачета
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilterChip(
-                    selected = selectedGrade == "Зачет",
-                    onClick = { selectedGrade = "Зачет" },
-                    label = { Text("Зачет") }
-                )
-                FilterChip(
-                    selected = selectedGrade == "Незачет",
-                    onClick = { selectedGrade = "Незачет" },
-                    label = { Text("Незачет") }
-                )
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Default.Edit, contentDescription = "Изменить")
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Кнопка подтверждения
-        Button(
-            onClick = onGradeSubmitted,
-            enabled = selectedGrade != null,
-            modifier = Modifier.fillMaxWidth()
+@Composable
+private fun FinalGradeRow(
+    grade: GradeResponse,
+    onEdit: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Выставить оценку")
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = grade.studentName ?: "Студент #${grade.studentId}",
+                    fontWeight = FontWeight.Medium
+                )
+                val creditDiscipline = grade.finalAssessmentType.equals("CREDIT", ignoreCase = true) ||
+                    (grade.finalAssessmentType.isNullOrBlank() && grade.creditStatus != null && grade.grade == null)
+                if (creditDiscipline) {
+                    grade.creditStatus?.let {
+                        Text(
+                            if (it) "Зачёт" else "Незачёт",
+                            color = if (it) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                        )
+                    } ?: Text("—", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    grade.grade?.let {
+                        Text("Оценка: $it", color = MaterialTheme.colorScheme.primary)
+                    } ?: Text("—", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Default.Edit, contentDescription = "Изменить")
+            }
         }
     }
 }

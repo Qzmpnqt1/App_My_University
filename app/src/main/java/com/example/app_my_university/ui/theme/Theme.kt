@@ -2,7 +2,6 @@ package com.example.app_my_university.ui.theme
 
 import android.app.Activity
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -14,60 +13,69 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF0055A2),
+    primary = Color(0xFF1565C0),
     onPrimary = Color.White,
     primaryContainer = Color(0xFFD1E4FF),
     onPrimaryContainer = Color(0xFF001D36),
 
-    secondary = Color(0xFF965F00),
+    secondary = Color(0xFF546E7A),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFDDB2),
-    onSecondaryContainer = Color(0xFF301D00),
+    secondaryContainer = Color(0xFFCFE4EF),
+    onSecondaryContainer = Color(0xFF0D1D26),
 
-    tertiary = Color(0xFF4E5F7D),
+    tertiary = Color(0xFF00897B),
     onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFD5E3FF),
-    onTertiaryContainer = Color(0xFF091C37),
+    tertiaryContainer = Color(0xFFA7F0E2),
+    onTertiaryContainer = Color(0xFF002019),
 
-    background = Color(0xFFFAFAFA),
+    background = Color(0xFFF8F9FB),
     onBackground = Color(0xFF1A1C1E),
-    surface = Color(0xFFFAFAFA),
+    surface = Color(0xFFFCFCFE),
     onSurface = Color(0xFF1A1C1E),
+    surfaceVariant = Color(0xFFE7E8EC),
+    onSurfaceVariant = Color(0xFF44474E),
 
     error = Color(0xFFBA1A1A),
     onError = Color.White,
     errorContainer = Color(0xFFFFDAD6),
-    onErrorContainer = Color(0xFF410002)
+    onErrorContainer = Color(0xFF410002),
+
+    outline = Color(0xFF74777F),
+    outlineVariant = Color(0xFFC4C6CF)
 )
 
 private val DarkColorScheme = darkColorScheme(
     primary = Color(0xFF9ECAFF),
-    onPrimary = Color(0xFF00315C),
-    primaryContainer = Color(0xFF004784),
+    onPrimary = Color(0xFF003258),
+    primaryContainer = Color(0xFF00497E),
     onPrimaryContainer = Color(0xFFD1E4FF),
 
-    secondary = Color(0xFFFFBA50),
-    onSecondary = Color(0xFF502E00),
-    secondaryContainer = Color(0xFF724600),
-    onSecondaryContainer = Color(0xFFFFDDB2),
+    secondary = Color(0xFFB4CAD6),
+    onSecondary = Color(0xFF1F333D),
+    secondaryContainer = Color(0xFF364955),
+    onSecondaryContainer = Color(0xFFCFE4EF),
 
-    tertiary = Color(0xFFB7C7FF),
-    onTertiary = Color(0xFF1F3050),
-    tertiaryContainer = Color(0xFF364767),
-    onTertiaryContainer = Color(0xFFD5E3FF),
+    tertiary = Color(0xFF8BD4C6),
+    onTertiary = Color(0xFF00382F),
+    tertiaryContainer = Color(0xFF005045),
+    onTertiaryContainer = Color(0xFFA7F0E2),
 
     background = Color(0xFF1A1C1E),
     onBackground = Color(0xFFE2E2E6),
     surface = Color(0xFF1A1C1E),
     onSurface = Color(0xFFE2E2E6),
+    surfaceVariant = Color(0xFF44474E),
+    onSurfaceVariant = Color(0xFFC4C6CF),
 
     error = Color(0xFFFFB4AB),
     onError = Color(0xFF690005),
     errorContainer = Color(0xFF93000A),
-    onErrorContainer = Color(0xFFFFDAD6)
+    onErrorContainer = Color(0xFFFFDAD6),
+
+    outline = Color(0xFF8E9099),
+    outlineVariant = Color(0xFF44474E)
 )
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun AppMyUniversityTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -77,9 +85,9 @@ fun AppMyUniversityTheme(
     val context = LocalContext.current
     val colorScheme = when {
         dynamicColor && !darkTheme -> dynamicLightColorScheme(context)
-        dynamicColor && darkTheme     -> dynamicDarkColorScheme(context)
-        darkTheme                     -> DarkColorScheme
-        else                          -> LightColorScheme
+        dynamicColor && darkTheme  -> dynamicDarkColorScheme(context)
+        darkTheme                  -> DarkColorScheme
+        else                       -> LightColorScheme
     }
 
     val view = LocalView.current

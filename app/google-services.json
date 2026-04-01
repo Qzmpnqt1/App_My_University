@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "100000000001",
+    "project_id": "moi-vuz-android-placeholder",
+    "storage_bucket": "moi-vuz-android-placeholder.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:100000000001:android:placeholder",
+        "android_client_info": {
+          "package_name": "com.example.app_my_university"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "placeholder-replace-with-firebase-console-key"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
