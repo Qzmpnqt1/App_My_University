@@ -249,6 +249,37 @@ interface ApiService {
         @Query("dayOfWeek") dayOfWeek: Int? = null
     ): Response<List<ScheduleResponse>>
 
+    @GET("api/v1/schedule/classroom/{classroomId}")
+    suspend fun getClassroomSchedule(
+        @Path("classroomId") classroomId: Long,
+        @Query("weekNumber") weekNumber: Int? = null,
+        @Query("dayOfWeek") dayOfWeek: Int? = null
+    ): Response<List<ScheduleResponse>>
+
+    @POST("api/v1/schedule/compare")
+    suspend fun compareSchedule(@Body body: ScheduleCompareRequest): Response<ScheduleCompareResultResponse>
+
+    @GET("api/v1/schedule/compare/institutes")
+    suspend fun listScheduleCompareInstitutes(): Response<List<ScheduleCompareInstituteOptionResponse>>
+
+    @GET("api/v1/schedule/compare/directions")
+    suspend fun listScheduleCompareDirections(
+        @Query("instituteId") instituteId: Long
+    ): Response<List<ScheduleCompareDirectionOptionResponse>>
+
+    @GET("api/v1/schedule/compare/groups")
+    suspend fun listScheduleCompareGroups(
+        @Query("instituteId") instituteId: Long? = null,
+        @Query("directionId") directionId: Long? = null,
+        @Query("q") q: String? = null
+    ): Response<List<ScheduleCompareGroupOptionResponse>>
+
+    @GET("api/v1/schedule/compare/teachers")
+    suspend fun listScheduleCompareTeachers(@Query("q") q: String? = null): Response<List<ScheduleCompareTeacherOptionResponse>>
+
+    @GET("api/v1/schedule/compare/classrooms")
+    suspend fun listScheduleCompareClassrooms(@Query("q") q: String? = null): Response<List<ScheduleCompareClassroomOptionResponse>>
+
     @GET("api/v1/schedule/{id}")
     suspend fun getScheduleById(@Path("id") id: Long): Response<ScheduleResponse>
 
