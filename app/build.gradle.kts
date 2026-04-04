@@ -7,6 +7,9 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
+// При true задача :hiltAggregateDeps* падает с NoSuchMethodError на JavaPoet ClassName.canonicalName()
+// (конфликт версий javapoet на classpath плагина + Kotlin 2.x). Явный hiltViewModel(backStackEntry) в NavHost
+// компенсирует отключённую агрегацию для @HiltViewModel.
 hilt {
     enableAggregatingTask = false
 }
@@ -63,12 +66,13 @@ android {
             // При необходимости можно добавить signingConfig signingConfigs.release
             // для автоматической подписи APK.
         }
-        // Debug: сервер Spring Boot с TLS на 8443 (см. Server_My_University application.properties).
-        // Эмулятор: https://10.0.2.2:8443/  Телефон в Wi‑Fi: https://<IPv4_ПК>:8443/ (gradle.properties: apiBaseUrl=...)
+        // Debug: HTTPS на 8443. По умолчанию — LAN-IP для физического телефона в Wi‑Fi (не 10.0.2.2).
+        // Смените fallback или задайте в gradle.properties: apiBaseUrl=https://<IPv4_ПК>:8443/
+        // Для эмулятора: apiBaseUrl=https://10.0.2.2:8443/
         debug {
             isDebuggable = true
             val raw = (project.findProperty("apiBaseUrl") as String?)?.trim().orEmpty()
-            val baseUrl = normalizedHttpsApiBaseUrl(raw, "https://10.0.2.2:8443/")
+            val baseUrl = normalizedHttpsApiBaseUrl(raw, "https://192.168.200.168:8443/")
             buildConfigField(
                 "String",
                 "API_BASE_URL",

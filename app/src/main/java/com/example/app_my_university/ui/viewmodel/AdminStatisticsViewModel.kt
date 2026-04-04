@@ -2,11 +2,18 @@ package com.example.app_my_university.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.app_my_university.data.api.model.AcademicGroupResponse
+import com.example.app_my_university.data.api.model.ClassroomResponse
 import com.example.app_my_university.data.api.model.DirectionStatisticsResponse
 import com.example.app_my_university.data.api.model.GroupStatisticsResponse
+import com.example.app_my_university.data.api.model.InstituteResponse
 import com.example.app_my_university.data.api.model.InstituteStatisticsResponse
 import com.example.app_my_university.data.api.model.ScheduleStatisticsResponse
+import com.example.app_my_university.data.api.model.StudyDirectionResponse
 import com.example.app_my_university.data.api.model.UniversityStatisticsResponse
+import com.example.app_my_university.data.api.model.UserProfileResponse
+import com.example.app_my_university.data.repository.EducationRepository
+import com.example.app_my_university.data.repository.ProfileRepository
 import com.example.app_my_university.data.repository.StatisticsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,16 +34,101 @@ sealed class AdminStatisticsPayload {
 data class AdminStatisticsUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
-    val payload: AdminStatisticsPayload? = null
-)
+    val payload: AdminStatisticsPayload? = null,
+    val catalogLoading: Boolean = false,
+    val catalogLoaded: Boolean = false,
+    val catalogError: String? = null,
+    val adminUniversityId: Long? = null,
+    val adminUniversityName: String? = null,
+    val groups: List<AcademicGroupResponse> = emptyList(),
+    val directions: List<StudyDirectionResponse> = emptyList(),
+    val institutes: List<InstituteResponse> = emptyList(),
+    val classrooms: List<ClassroomResponse> = emptyList(),
+    val teachers: List<UserProfileResponse> = emptyList(),
+) {
+    /** Справочники не грузятся и каталог не в ошибке — можно открывать выбор и «Загрузить». */
+    val catalogReady: Boolean
+        get() = catalogLoaded && !catalogLoading && catalogError == null
+}
 
 @HiltViewModel
 class AdminStatisticsViewModel @Inject constructor(
-    private val statisticsRepository: StatisticsRepository
+    private val statisticsRepository: StatisticsRepository,
+    private val educationRepository: EducationRepository,
+    private val profileRepository: ProfileRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminStatisticsUiState())
     val uiState: StateFlow<AdminStatisticsUiState> = _uiState.asStateFlow()
+
+    fun ensureCatalogLoaded() {
+        viewModelScope.launch {
+            if (_uiState.value.catalogLoading) return@launch
+            _uiState.update { it.copy(catalogLoading = true, catalogError = null) }
+            val profile = profileRepository.getProfile().getOrNull()
+            val uni = profile?.adminProfile?.universityId
+            val uniName = profile?.adminProfile?.universityName
+
+            if (uni == null) {
+                _uiState.update {
+                    it.copy(
+                        catalogLoading = false,
+                        catalogLoaded = true,
+                        catalogError = "В профиле администратора не указан вуз — справочники недоступны.",
+                        adminUniversityId = null,
+                        adminUniversityName = null,
+                        groups = emptyList(),
+                        directions = emptyList(),
+                        institutes = emptyList(),
+                        classrooms = emptyList(),
+                        teachers = emptyList(),
+                    )
+                }
+                return@launch
+            }
+
+            val institutes = educationRepository.getInstitutes(uni).getOrElse { emptyList() }
+            // API ожидает instituteId / directionId: без них списки часто пустые.
+            val directions = institutes.flatMap { inst ->
+                educationRepository.getDirections(inst.id).getOrElse { emptyList() }
+            }.distinctBy { it.id }
+
+            val groups = directions.flatMap { dir ->
+                educationRepository.getGroups(dir.id).getOrElse { emptyList() }
+            }.distinctBy { it.id }
+
+            val classrooms = educationRepository.getClassrooms(uni).getOrElse { emptyList() }
+            val teachers = educationRepository.getUsers(userType = "TEACHER", universityId = uni)
+                .getOrElse { emptyList() }
+
+            _uiState.update {
+                it.copy(
+                    catalogLoading = false,
+                    catalogLoaded = true,
+                    catalogError = null,
+                    adminUniversityId = uni,
+                    adminUniversityName = uniName,
+                    groups = groups,
+                    directions = directions,
+                    institutes = institutes,
+                    classrooms = classrooms,
+                    teachers = teachers,
+                )
+            }
+        }
+    }
+
+    /** Повторная загрузка справочников (например, после ошибки сети). */
+    fun refreshCatalog() {
+        _uiState.update {
+            it.copy(
+                catalogLoaded = false,
+                catalogLoading = false,
+                catalogError = null,
+            )
+        }
+        ensureCatalogLoaded()
+    }
 
     fun loadGroup(groupId: Long) {
         viewModelScope.launch {

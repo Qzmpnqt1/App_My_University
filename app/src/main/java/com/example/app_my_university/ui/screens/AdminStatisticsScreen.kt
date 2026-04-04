@@ -8,31 +8,33 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.components.picker.MuPickerField
+import com.example.app_my_university.ui.components.picker.MuSearchablePickerSheet
+import com.example.app_my_university.ui.components.picker.PickerListItem
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.app_my_university.core.logging.AppLogger
 import com.example.app_my_university.data.api.model.DirectionStatisticsResponse
 import com.example.app_my_university.data.api.model.GroupStatisticsResponse
 import com.example.app_my_university.data.api.model.InstituteStatisticsResponse
@@ -65,19 +67,84 @@ fun AdminStatisticsScreen(
     viewModel: AdminStatisticsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    var entityId by remember { mutableStateOf("") }
     var tab by remember { mutableIntStateOf(0) }
     val tabs = AdminStatTab.entries
+    var selectionId by remember { mutableStateOf<Long?>(null) }
+    var selectionLabel by remember { mutableStateOf("") }
+    var entityPickerOpen by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        AppLogger.screen("AdminStatistics")
+        viewModel.ensureCatalogLoaded()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { AppLogger.i("Screen", "leave=AdminStatistics") }
+    }
+
+    LaunchedEffect(tab) {
+        selectionId = null
+        selectionLabel = ""
+    }
+
+    val currentTab = tabs[tab]
+    val pickerItems: List<PickerListItem> = remember(currentTab, state) {
+        when (currentTab) {
+            AdminStatTab.GROUP -> state.groups.map { g ->
+                PickerListItem(
+                    id = g.id,
+                    primary = g.name,
+                    secondary = g.directionName?.takeIf { it.isNotBlank() },
+                )
+            }
+            AdminStatTab.DIRECTION -> state.directions.map { d ->
+                PickerListItem(id = d.id, primary = d.name, secondary = d.instituteName)
+            }
+            AdminStatTab.INSTITUTE -> state.institutes.map { i ->
+                PickerListItem(id = i.id, primary = i.name, secondary = i.shortName)
+            }
+            AdminStatTab.UNIVERSITY -> emptyList()
+            AdminStatTab.SCHEDULE_ROOM -> state.classrooms.map { c ->
+                PickerListItem(
+                    id = c.id,
+                    primary = "${c.building.orEmpty()} ${c.roomNumber.orEmpty()}".trim().ifBlank { "Аудитория" },
+                    secondary = c.capacity?.let { "Вместимость: $it" },
+                )
+            }
+            AdminStatTab.SCHEDULE_TEACHER -> state.teachers.map { t ->
+                PickerListItem(
+                    id = t.id,
+                    primary = "${t.lastName} ${t.firstName}".trim(),
+                    secondary = t.email,
+                )
+            }
+            AdminStatTab.SCHEDULE_GROUP -> state.groups.map { g ->
+                PickerListItem(
+                    id = g.id,
+                    primary = g.name,
+                    secondary = g.directionName,
+                )
+            }
+        }
+    }
+
+    MuSearchablePickerSheet(
+        visible = entityPickerOpen,
+        onDismiss = { entityPickerOpen = false },
+        title = pickerTitle(currentTab),
+        items = pickerItems,
+        onSelect = { row ->
+            selectionId = row.id
+            selectionLabel = listOfNotNull(row.primary, row.secondary).joinToString(" · ")
+            entityPickerOpen = false
+        },
+    )
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Аналитика") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                }
+            UniformTopAppBar(
+                title = "Аналитика",
+                onBackPressed = onNavigateBack,
             )
         }
     ) { padding ->
@@ -89,10 +156,19 @@ fun AdminStatisticsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Агрегаты по вузу и сущностям. Выберите тип, введите ID и нажмите «Загрузить». Для своего вуза откройте вкладку «Вуз» и укажите его идентификатор.",
+                text = "Выберите тип аналитики, затем сущность по названию и нажмите «Загрузить». Для вуза используется ваш вуз автоматически.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (state.catalogLoading) {
+                Text("Загрузка справочников…", style = MaterialTheme.typography.bodySmall)
+            }
+            state.catalogError?.let { err ->
+                Text(err, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = { viewModel.refreshCatalog() }) {
+                    Text("Повторить загрузку справочников")
+                }
+            }
 
             Row(
                 modifier = Modifier
@@ -109,31 +185,67 @@ fun AdminStatisticsScreen(
                 }
             }
 
-            OutlinedTextField(
-                value = entityId,
-                onValueChange = { entityId = it },
-                label = { Text(hintForTab(tabs[tab])) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Button(
-                onClick = {
-                    val id = entityId.toLongOrNull() ?: return@Button
-                    when (tabs[tab]) {
-                        AdminStatTab.GROUP -> viewModel.loadGroup(id)
-                        AdminStatTab.DIRECTION -> viewModel.loadDirection(id)
-                        AdminStatTab.INSTITUTE -> viewModel.loadInstitute(id)
-                        AdminStatTab.UNIVERSITY -> viewModel.loadUniversity(id)
-                        AdminStatTab.SCHEDULE_ROOM -> viewModel.loadClassroomSchedule(id)
-                        AdminStatTab.SCHEDULE_TEACHER -> viewModel.loadTeacherSchedule(id)
-                        AdminStatTab.SCHEDULE_GROUP -> viewModel.loadGroupSchedule(id)
+            when (currentTab) {
+                AdminStatTab.UNIVERSITY -> {
+                    val uniId = state.adminUniversityId
+                    val label = state.adminUniversityName ?: "Вуз не определён в профиле"
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Button(
+                        onClick = {
+                            if (uniId != null) viewModel.loadUniversity(uniId)
+                        },
+                        enabled = uniId != null && !state.isLoading,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Загрузить статистику вуза")
                     }
-                },
-                enabled = entityId.toLongOrNull() != null && !state.isLoading,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Загрузить")
+                }
+                else -> {
+                    MuPickerField(
+                        label = pickerTitle(currentTab),
+                        valueText = selectionLabel,
+                        placeholder = "Выберите из списка",
+                        enabled = state.catalogReady,
+                        onClick = {
+                            AppLogger.userAction("AdminStatistics", "openPicker tab=${currentTab.name}")
+                            entityPickerOpen = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        supportingText = if (state.catalogReady && pickerItems.isEmpty()) {
+                            { Text("Нет записей для выбора в вашем вузе", color = MaterialTheme.colorScheme.error) }
+                        } else null,
+                    )
+                    Button(
+                        onClick = {
+                            val id = selectionId ?: return@Button
+                            AppLogger.userAction("AdminStatistics", "load tab=${currentTab.name} id=$id")
+                            when (currentTab) {
+                                AdminStatTab.GROUP -> viewModel.loadGroup(id)
+                                AdminStatTab.DIRECTION -> viewModel.loadDirection(id)
+                                AdminStatTab.INSTITUTE -> viewModel.loadInstitute(id)
+                                AdminStatTab.UNIVERSITY -> Unit
+                                AdminStatTab.SCHEDULE_ROOM -> viewModel.loadClassroomSchedule(id)
+                                AdminStatTab.SCHEDULE_TEACHER -> viewModel.loadTeacherSchedule(id)
+                                AdminStatTab.SCHEDULE_GROUP -> viewModel.loadGroupSchedule(id)
+                            }
+                        },
+                        enabled = selectionId != null && !state.isLoading && state.catalogReady && pickerItems.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (state.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.padding(4.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Text("Загрузить")
+                        }
+                    }
+                }
             }
 
             if (state.isLoading) {
@@ -163,14 +275,14 @@ fun AdminStatisticsScreen(
     }
 }
 
-private fun hintForTab(tab: AdminStatTab): String = when (tab) {
-    AdminStatTab.GROUP -> "ID группы"
-    AdminStatTab.DIRECTION -> "ID направления"
-    AdminStatTab.INSTITUTE -> "ID института"
-    AdminStatTab.UNIVERSITY -> "ID вуза"
-    AdminStatTab.SCHEDULE_ROOM -> "ID аудитории"
-    AdminStatTab.SCHEDULE_TEACHER -> "ID преподавателя"
-    AdminStatTab.SCHEDULE_GROUP -> "ID группы"
+private fun pickerTitle(tab: AdminStatTab): String = when (tab) {
+    AdminStatTab.GROUP -> "Группа"
+    AdminStatTab.DIRECTION -> "Направление"
+    AdminStatTab.INSTITUTE -> "Институт"
+    AdminStatTab.UNIVERSITY -> "Вуз"
+    AdminStatTab.SCHEDULE_ROOM -> "Аудитория"
+    AdminStatTab.SCHEDULE_TEACHER -> "Преподаватель"
+    AdminStatTab.SCHEDULE_GROUP -> "Группа (расписание)"
 }
 
 private fun shortLabel(s: String, max: Int = 20): String =

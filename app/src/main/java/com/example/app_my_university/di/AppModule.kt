@@ -16,7 +16,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
+import com.example.app_my_university.data.network.SafeHttpLoggingInterceptor
 import com.google.gson.Gson
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -48,9 +48,7 @@ object AppModule {
         authInterceptor: AuthInterceptor,
         unauthorizedResponseInterceptor: UnauthorizedResponseInterceptor
     ): OkHttpClient {
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
+        val loggingInterceptor = SafeHttpLoggingInterceptor()
         return OkHttpClient.Builder()
             .addInterceptor(unauthorizedResponseInterceptor)
             .addInterceptor(authInterceptor)

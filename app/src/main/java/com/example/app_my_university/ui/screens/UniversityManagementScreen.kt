@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -32,8 +31,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -54,6 +51,7 @@ import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.components.common.MuErrorState
 import com.example.app_my_university.ui.components.common.MuLoadingState
 import com.example.app_my_university.ui.theme.Dimens
+import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 /**
@@ -100,17 +98,9 @@ fun UniversityManagementScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Мой вуз") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+            UniformTopAppBar(
+                title = "Мой вуз",
+                onBackPressed = onNavigateBack,
             )
         },
         floatingActionButton = {

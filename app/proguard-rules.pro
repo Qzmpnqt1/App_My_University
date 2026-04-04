@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Hilt @HiltViewModel: R8 не должен выкидывать классы из multibinding-карты фабрики ViewModel.
+-keepnames @dagger.hilt.android.lifecycle.HiltViewModel class *

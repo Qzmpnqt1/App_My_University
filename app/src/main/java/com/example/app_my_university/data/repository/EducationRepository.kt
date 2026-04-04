@@ -71,6 +71,11 @@ class EducationRepository @Inject constructor(private val apiService: ApiService
         safeApiCall { apiService.getTeacherSubjects(teacherId) }
     suspend fun createTeacherSubject(request: TeacherSubjectRequest): Result<TeacherSubjectResponse> =
         safeApiCall { apiService.createTeacherSubject(request) }
+    suspend fun replaceTeacherAssignments(
+        teacherProfileId: Long,
+        request: TeacherSubjectReplaceRequest
+    ): Result<List<TeacherSubjectResponse>> =
+        safeApiCall { apiService.replaceTeacherAssignments(teacherProfileId, request) }
     suspend fun deleteTeacherSubject(id: Long): Result<Unit> = safeApiCall { apiService.deleteTeacherSubject(id) }
 
     suspend fun getClassrooms(universityId: Long? = null): Result<List<ClassroomResponse>> = safeApiCall { apiService.getClassrooms(universityId) }
@@ -113,9 +118,10 @@ class EducationRepository @Inject constructor(private val apiService: ApiService
         isActive: Boolean? = null,
         universityId: Long? = null,
         instituteId: Long? = null,
-        groupId: Long? = null
+        groupId: Long? = null,
+        searchQuery: String? = null
     ): Result<List<UserProfileResponse>> =
-        safeApiCall { apiService.getUsers(userType, isActive, universityId, instituteId, groupId) }
+        safeApiCall { apiService.getUsers(userType, isActive, universityId, instituteId, groupId, searchQuery) }
 
     suspend fun getUser(id: Long): Result<UserProfileResponse> = safeApiCall { apiService.getUser(id) }
     suspend fun activateUser(id: Long): Result<Unit> = safeApiCall { apiService.activateUser(id) }

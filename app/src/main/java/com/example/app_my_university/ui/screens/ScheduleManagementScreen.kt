@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
@@ -36,6 +35,7 @@ import com.example.app_my_university.data.api.model.ScheduleResponse
 import com.example.app_my_university.data.api.model.SubjectInDirectionResponse
 import com.example.app_my_university.data.api.model.UserProfileResponse
 import com.example.app_my_university.ui.components.AdminBottomBar
+import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.navigation.Screen
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 import com.example.app_my_university.ui.viewmodel.ScheduleViewModel
@@ -105,17 +105,9 @@ fun ScheduleManagementScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Управление расписанием") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+            UniformTopAppBar(
+                title = "Управление расписанием",
+                onBackPressed = onNavigateBack,
             )
         },
         floatingActionButton = {
@@ -251,6 +243,7 @@ fun ScheduleManagementScreen(
     if (showAddDialog && selectedGroupId != null) {
         AddScheduleDialog(
             groupId = selectedGroupId!!,
+            groupName = adminState.groups.find { it.id == selectedGroupId }?.name.orEmpty(),
             subjectsInDirections = adminState.subjectsInDirections,
             teachers = adminState.users.filter { it.userType == "TEACHER" },
             classrooms = adminState.classrooms,
@@ -361,6 +354,7 @@ private fun AdminScheduleEntryCard(
 @Composable
 private fun AddScheduleDialog(
     groupId: Long,
+    groupName: String,
     subjectsInDirections: List<SubjectInDirectionResponse>,
     teachers: List<UserProfileResponse>,
     classrooms: List<com.example.app_my_university.data.api.model.ClassroomResponse>,
@@ -449,7 +443,11 @@ private fun AddScheduleDialog(
                 }
 
                 Text(
-                    text = "Группа: id $groupId (текущая)",
+                    text = if (groupName.isNotBlank()) {
+                        "Группа: $groupName"
+                    } else {
+                        "Запись будет добавлена для выбранной группы"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -474,9 +472,22 @@ private fun AddScheduleDialog(
                         onDismissRequest = { classroomMenuExpanded = false }
                     ) {
                         classrooms.forEach { c ->
+                            val place = listOfNotNull(c.building, c.roomNumber)
+                                .filter { it.isNotBlank() }
+                                .joinToString(", ")
+                                .ifBlank { "Аудитория" }
                             DropdownMenuItem(
                                 text = {
-                                    Text("${c.building ?: ""} ${c.roomNumber ?: ""} (id ${c.id})")
+                                    Column {
+                                        Text(place)
+                                        c.capacity?.let { cap ->
+                                            Text(
+                                                "До $cap мест",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
                                 },
                                 onClick = {
                                     selectedClassroom = c

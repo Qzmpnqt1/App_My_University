@@ -42,8 +42,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,6 +58,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.RegistrationRequestResponse
 import com.example.app_my_university.ui.components.AdminBottomBar
+import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.navigation.Screen
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
@@ -133,17 +132,9 @@ fun RegistrationRequestsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Заявки на регистрацию") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+            UniformTopAppBar(
+                title = "Заявки на регистрацию",
+                onBackPressed = onNavigateBack,
             )
         },
         bottomBar = {

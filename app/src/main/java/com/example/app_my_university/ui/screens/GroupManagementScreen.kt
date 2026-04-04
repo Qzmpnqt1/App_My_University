@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -36,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.app_my_university.data.api.model.AcademicGroupRequest
 import com.example.app_my_university.data.api.model.AcademicGroupResponse
 import com.example.app_my_university.data.api.model.StudyDirectionResponse
+import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,18 +78,9 @@ fun GroupManagementScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Управление группами") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+            UniformTopAppBar(
+                title = "Управление группами",
+                onBackPressed = onNavigateBack,
             )
         },
         floatingActionButton = {

@@ -148,8 +148,11 @@ fun AppNavigation() {
             GradeBookScreen(onNavigateBack = { navController.navigateUp() })
         }
 
-        composable(Screen.TeacherGrades.route) {
-            TeacherGradesScreen(onNavigateBack = { navController.navigateUp() })
+        composable(Screen.TeacherGrades.route) { backStackEntry ->
+            TeacherGradesScreen(
+                onNavigateBack = { navController.navigateUp() },
+                viewModel = hiltViewModel(backStackEntry),
+            )
         }
 
         composable(Screen.Dialogs.route) {
@@ -222,8 +225,11 @@ fun AppNavigation() {
             AdminClassroomManagementScreen(onNavigateBack = { navController.navigateUp() })
         }
 
-        composable(Screen.AdminTeacherSubjects.route) {
-            AdminTeacherAssignmentScreen(onNavigateBack = { navController.navigateUp() })
+        composable(Screen.AdminTeacherSubjects.route) { backStackEntry ->
+            AdminTeacherAssignmentScreen(
+                onNavigateBack = { navController.navigateUp() },
+                viewModel = hiltViewModel(backStackEntry),
+            )
         }
 
         composable(Screen.AdminMore.route) {

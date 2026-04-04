@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -17,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.app_my_university.data.api.model.ChatContactResponse
+import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.viewmodel.ChatContactsViewModel
 
 private fun displayName(c: ChatContactResponse): String {
@@ -35,17 +35,9 @@ fun ChatContactsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Новое сообщение") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+            UniformTopAppBar(
+                title = "Новое сообщение",
+                onBackPressed = onNavigateBack,
             )
         }
     ) { padding ->

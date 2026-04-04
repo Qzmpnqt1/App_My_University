@@ -15,7 +15,8 @@ data class ProfileUiState(
     val error: String? = null,
     val profile: UserProfileResponse? = null,
     val emailChangeSuccess: Boolean = false,
-    val passwordChangeSuccess: Boolean = false
+    val passwordChangeSuccess: Boolean = false,
+    val profileUpdateSuccess: Boolean = false
 )
 
 @HiltViewModel
@@ -36,6 +37,33 @@ class ProfileViewModel @Inject constructor(
             profileRepository.getProfile().fold(
                 onSuccess = {
                     _uiState.value = _uiState.value.copy(isLoading = false, profile = it)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
+    fun updatePersonalProfile(firstName: String, lastName: String, middleName: String?) {
+        if (lastName.isBlank() || firstName.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "Укажите фамилию и имя")
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                error = null,
+                profileUpdateSuccess = false
+            )
+            profileRepository.updatePersonalProfile(
+                firstName.trim(),
+                lastName.trim(),
+                middleName?.trim()?.takeIf { it.isNotEmpty() }
+            ).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, profileUpdateSuccess = true)
+                    loadProfile()
                 },
                 onFailure = {
                     _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
@@ -98,6 +126,10 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun clearSuccessFlags() {
-        _uiState.value = _uiState.value.copy(emailChangeSuccess = false, passwordChangeSuccess = false)
+        _uiState.value = _uiState.value.copy(
+            emailChangeSuccess = false,
+            passwordChangeSuccess = false,
+            profileUpdateSuccess = false
+        )
     }
 }

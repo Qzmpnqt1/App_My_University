@@ -189,6 +189,12 @@ interface ApiService {
     @POST("api/v1/teacher-subjects")
     suspend fun createTeacherSubject(@Body request: TeacherSubjectRequest): Response<TeacherSubjectResponse>
 
+    @PUT("api/v1/teacher-subjects/teachers/{teacherProfileId}/assignments")
+    suspend fun replaceTeacherAssignments(
+        @Path("teacherProfileId") teacherProfileId: Long,
+        @Body request: TeacherSubjectReplaceRequest
+    ): Response<List<TeacherSubjectResponse>>
+
     @DELETE("api/v1/teacher-subjects/{id}")
     suspend fun deleteTeacherSubject(@Path("id") id: Long): Response<Unit>
 
@@ -274,6 +280,31 @@ interface ApiService {
     @PUT("api/v1/grades/{id}")
     suspend fun updateGrade(@Path("id") id: Long, @Body request: GradeRequest): Response<GradeResponse>
 
+    @GET("api/v1/grades/teacher-catalog/institutes")
+    suspend fun getTeacherGradingInstitutes(): Response<List<TeacherGradingPickResponse>>
+
+    @GET("api/v1/grades/teacher-catalog/directions")
+    suspend fun getTeacherGradingDirections(@Query("instituteId") instituteId: Long): Response<List<TeacherGradingPickResponse>>
+
+    @GET("api/v1/grades/teacher-catalog/subject-directions")
+    suspend fun getTeacherGradingSubjectDirections(@Query("directionId") directionId: Long): Response<List<SubjectInDirectionResponse>>
+
+    @GET("api/v1/grades/teacher-catalog/groups")
+    suspend fun getTeacherGradingGroups(@Query("subjectDirectionId") subjectDirectionId: Long): Response<List<TeacherGradingPickResponse>>
+
+    @GET("api/v1/grades/teacher-catalog/students")
+    suspend fun getTeacherGradingStudents(
+        @Query("subjectDirectionId") subjectDirectionId: Long,
+        @Query("groupId") groupId: Long,
+    ): Response<List<TeacherGradingPickResponse>>
+
+    @GET("api/v1/grades/teacher-catalog/assessment")
+    suspend fun getTeacherStudentAssessment(
+        @Query("subjectDirectionId") subjectDirectionId: Long,
+        @Query("groupId") groupId: Long,
+        @Query("studentUserId") studentUserId: Long,
+    ): Response<TeacherStudentAssessmentResponse>
+
     // ── Practice grades ────────────────────────────────────────────
     @GET("api/v1/practice-grades/my")
     suspend fun getMyPracticeGrades(@Query("subjectDirectionId") subjectDirectionId: Long? = null): Response<List<PracticeGradeResponse>>
@@ -358,7 +389,8 @@ interface ApiService {
         @Query("isActive") isActive: Boolean? = null,
         @Query("universityId") universityId: Long? = null,
         @Query("instituteId") instituteId: Long? = null,
-        @Query("groupId") groupId: Long? = null
+        @Query("groupId") groupId: Long? = null,
+        @Query("q") searchQuery: String? = null
     ): Response<List<UserProfileResponse>>
 
     @GET("api/v1/users/{id}")

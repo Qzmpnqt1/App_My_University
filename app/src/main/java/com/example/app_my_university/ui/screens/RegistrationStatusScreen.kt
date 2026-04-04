@@ -8,18 +8,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -30,6 +20,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.app_my_university.data.api.model.GuestRegistrationStatusResponse
+import com.example.app_my_university.data.api.model.RegisterRequest
+import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.components.picker.MuPickerField
+import com.example.app_my_university.ui.components.picker.MuSearchablePickerSheet
+import com.example.app_my_university.ui.components.picker.PickerListItem
 import com.example.app_my_university.ui.viewmodel.RegistrationStatusViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,13 +44,9 @@ fun RegistrationStatusScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Статус заявки") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                }
+            UniformTopAppBar(
+                title = "Статус заявки",
+                onBackPressed = onNavigateBack,
             )
         }
     ) { padding ->
@@ -102,6 +94,9 @@ fun RegistrationStatusScreen(
                     Spacer(Modifier.height(8.dp))
                     Text("Редактирование заявки", style = MaterialTheme.typography.titleSmall)
                     PendingEditForm(
+                        viewModel = viewModel,
+                        catalogState = state,
+                        status = s,
                         defaultEmail = email,
                         onSubmit = { currentPwd, req -> viewModel.updatePending(currentPwd, req) },
                         isLoading = state.isLoading
@@ -116,11 +111,17 @@ fun RegistrationStatusScreen(
     }
 }
 
+private enum class GuestEntityPick { None, University, Institute, Direction, Group }
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PendingEditForm(
+    viewModel: RegistrationStatusViewModel,
+    catalogState: com.example.app_my_university.ui.viewmodel.RegistrationStatusUiState,
+    status: GuestRegistrationStatusResponse,
     defaultEmail: String,
-    onSubmit: (String, com.example.app_my_university.data.api.model.RegisterRequest) -> Unit,
-    isLoading: Boolean
+    onSubmit: (String, RegisterRequest) -> Unit,
+    isLoading: Boolean,
 ) {
     var regEmail by remember { mutableStateOf(defaultEmail) }
     LaunchedEffect(defaultEmail) { regEmail = defaultEmail }
@@ -129,10 +130,124 @@ private fun PendingEditForm(
     var last by remember { mutableStateOf("") }
     var mid by remember { mutableStateOf("") }
     var pwd by remember { mutableStateOf("") }
-    var userType by remember { mutableStateOf("STUDENT") }
-    var uni by remember { mutableStateOf("") }
-    var inst by remember { mutableStateOf("") }
-    var grp by remember { mutableStateOf("") }
+    var userType by remember { mutableStateOf(status.userType ?: "STUDENT") }
+    var userTypeMenu by remember { mutableStateOf(false) }
+
+    var selUniversityId by remember { mutableStateOf<Long?>(status.universityId) }
+    var selInstituteId by remember { mutableStateOf<Long?>(status.instituteId) }
+    var selDirectionId by remember { mutableStateOf<Long?>(null) }
+    var selGroupId by remember { mutableStateOf<Long?>(status.groupId) }
+
+    var labUniversity by remember { mutableStateOf("") }
+    var labInstitute by remember { mutableStateOf("") }
+    var labDirection by remember { mutableStateOf("") }
+    var labGroup by remember { mutableStateOf("") }
+
+    var guestPick by remember { mutableStateOf(GuestEntityPick.None) }
+
+    LaunchedEffect(catalogState.guestUniversities, status.universityId) {
+        val uid = status.universityId ?: return@LaunchedEffect
+        catalogState.guestUniversities.find { it.id == uid }?.let { labUniversity = it.name }
+        viewModel.loadGuestInstitutes(uid)
+    }
+
+    LaunchedEffect(catalogState.guestInstitutes, status.instituteId) {
+        val iid = status.instituteId ?: return@LaunchedEffect
+        catalogState.guestInstitutes.find { it.id == iid }?.let { labInstitute = it.name }
+        viewModel.loadGuestDirections(iid)
+    }
+
+    LaunchedEffect(status.groupId, status.userType) {
+        val gid = status.groupId ?: return@LaunchedEffect
+        if (!status.userType.equals("STUDENT", ignoreCase = true)) return@LaunchedEffect
+        val g = viewModel.fetchGroupForPrefill(gid) ?: return@LaunchedEffect
+        selDirectionId = g.directionId
+        labDirection = g.directionName?.takeIf { it.isNotBlank() } ?: labDirection
+        viewModel.loadGuestGroups(g.directionId)
+        labGroup = g.name
+    }
+
+    LaunchedEffect(selUniversityId) {
+        val uid = selUniversityId ?: return@LaunchedEffect
+        viewModel.loadGuestInstitutes(uid)
+    }
+    LaunchedEffect(selInstituteId) {
+        val iid = selInstituteId ?: return@LaunchedEffect
+        viewModel.loadGuestDirections(iid)
+    }
+    LaunchedEffect(selDirectionId) {
+        val did = selDirectionId ?: return@LaunchedEffect
+        viewModel.loadGuestGroups(did)
+    }
+
+    val pickItems: List<PickerListItem> = when (guestPick) {
+        GuestEntityPick.University -> catalogState.guestUniversities.map { u ->
+            PickerListItem(u.id, u.name, u.city?.takeIf { it.isNotBlank() })
+        }
+        GuestEntityPick.Institute -> catalogState.guestInstitutes.map { i ->
+            PickerListItem(i.id, i.name, i.shortName)
+        }
+        GuestEntityPick.Direction -> catalogState.guestDirections.map { d ->
+            PickerListItem(d.id, d.name, d.instituteName)
+        }
+        GuestEntityPick.Group -> catalogState.guestGroups.map { g ->
+            PickerListItem(g.id, g.name, g.directionName)
+        }
+        GuestEntityPick.None -> emptyList()
+    }
+
+    MuSearchablePickerSheet(
+        visible = guestPick != GuestEntityPick.None,
+        onDismiss = { guestPick = GuestEntityPick.None },
+        title = when (guestPick) {
+            GuestEntityPick.University -> "Университет"
+            GuestEntityPick.Institute -> "Институт"
+            GuestEntityPick.Direction -> "Направление"
+            GuestEntityPick.Group -> "Группа"
+            GuestEntityPick.None -> ""
+        },
+        items = pickItems,
+        onSelect = { row ->
+            when (guestPick) {
+                GuestEntityPick.University -> {
+                    selUniversityId = row.id
+                    labUniversity = row.primary
+                    selInstituteId = null
+                    labInstitute = ""
+                    selDirectionId = null
+                    labDirection = ""
+                    selGroupId = null
+                    labGroup = ""
+                }
+                GuestEntityPick.Institute -> {
+                    selInstituteId = row.id
+                    labInstitute = row.primary
+                    selDirectionId = null
+                    labDirection = ""
+                    selGroupId = null
+                    labGroup = ""
+                }
+                GuestEntityPick.Direction -> {
+                    selDirectionId = row.id
+                    labDirection = row.primary
+                    selGroupId = null
+                    labGroup = ""
+                }
+                GuestEntityPick.Group -> {
+                    selGroupId = row.id
+                    labGroup = row.primary
+                }
+                GuestEntityPick.None -> Unit
+            }
+            guestPick = GuestEntityPick.None
+        },
+    )
+
+    val userTypeOptions = listOf(
+        "STUDENT" to "Студент",
+        "TEACHER" to "Преподаватель",
+        "ADMIN" to "Администратор",
+    )
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(regEmail, { regEmail = it }, label = { Text("Email в заявке") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
@@ -141,19 +256,70 @@ private fun PendingEditForm(
         OutlinedTextField(last, { last = it }, label = { Text("Фамилия") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(mid, { mid = it }, label = { Text("Отчество") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(pwd, { pwd = it }, label = { Text("Новый пароль (мин. 6)") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(userType, { userType = it }, label = { Text("Тип: STUDENT/TEACHER/ADMIN") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(uni, { uni = it }, label = { Text("universityId") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(inst, { inst = it }, label = { Text("instituteId (опц.)") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(grp, { grp = it }, label = { Text("groupId студента (опц.)") }, modifier = Modifier.fillMaxWidth())
+
+        ExposedDropdownMenuBox(
+            expanded = userTypeMenu,
+            onExpandedChange = { userTypeMenu = it },
+        ) {
+            OutlinedTextField(
+                value = userTypeOptions.find { it.first == userType }?.second ?: userType,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Тип пользователя") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = userTypeMenu) },
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
+            )
+            ExposedDropdownMenu(expanded = userTypeMenu, onDismissRequest = { userTypeMenu = false }) {
+                userTypeOptions.forEach { (code, labelRu) ->
+                    DropdownMenuItem(
+                        text = { Text(labelRu) },
+                        onClick = {
+                            userType = code
+                            userTypeMenu = false
+                        },
+                    )
+                }
+            }
+        }
+
+        MuPickerField(
+            label = "Университет",
+            valueText = labUniversity,
+            placeholder = "Выберите вуз",
+            enabled = catalogState.guestUniversities.isNotEmpty(),
+            onClick = { guestPick = GuestEntityPick.University },
+        )
+        MuPickerField(
+            label = "Институт (необязательно)",
+            valueText = labInstitute,
+            placeholder = "Сначала вуз",
+            enabled = selUniversityId != null && catalogState.guestInstitutes.isNotEmpty(),
+            onClick = { guestPick = GuestEntityPick.Institute },
+        )
+        if (userType == "STUDENT") {
+            MuPickerField(
+                label = "Направление",
+                valueText = labDirection,
+                placeholder = "Сначала институт",
+                enabled = selInstituteId != null && catalogState.guestDirections.isNotEmpty(),
+                onClick = { guestPick = GuestEntityPick.Direction },
+            )
+            MuPickerField(
+                label = "Группа",
+                valueText = labGroup,
+                placeholder = "Сначала направление",
+                enabled = selDirectionId != null && catalogState.guestGroups.isNotEmpty(),
+                onClick = { guestPick = GuestEntityPick.Group },
+            )
+        }
+
         Button(
             onClick = {
                 if (regEmail.isBlank()) return@Button
-                val u = uni.toLongOrNull() ?: return@Button
-                val i = inst.toLongOrNull()
-                val g = grp.toLongOrNull()
+                val u = selUniversityId ?: return@Button
                 onSubmit(
                     currentPwd,
-                    com.example.app_my_university.data.api.model.RegisterRequest(
+                    RegisterRequest(
                         email = regEmail.trim(),
                         password = pwd,
                         firstName = first,
@@ -161,12 +327,12 @@ private fun PendingEditForm(
                         middleName = mid.ifBlank { null },
                         userType = userType,
                         universityId = u,
-                        groupId = g,
-                        instituteId = i
+                        groupId = if (userType == "STUDENT") selGroupId else null,
+                        instituteId = selInstituteId,
                     )
                 )
             },
-            enabled = !isLoading,
+            enabled = !isLoading && selUniversityId != null && (userType != "STUDENT" || selGroupId != null),
             modifier = Modifier.fillMaxWidth()
         ) { Text("Сохранить изменения заявки") }
     }

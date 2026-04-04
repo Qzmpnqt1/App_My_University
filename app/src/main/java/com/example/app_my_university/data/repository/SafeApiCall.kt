@@ -1,6 +1,23 @@
 package com.example.app_my_university.data.repository
 
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import retrofit2.Response
+
+private data class ServerErrorJson(
+    @SerializedName("message") val message: String? = null,
+)
+
+private val gson = Gson()
+
+private fun humanReadableServerError(raw: String?, code: Int): String {
+    if (raw.isNullOrBlank()) return "Ошибка сервера: $code"
+    return try {
+        gson.fromJson(raw, ServerErrorJson::class.java)?.message?.takeIf { it.isNotBlank() } ?: raw
+    } catch (_: Exception) {
+        raw
+    }
+}
 
 suspend fun <T> safeApiCall(call: suspend () -> Response<T>): Result<T> {
     return try {
@@ -13,7 +30,8 @@ suspend fun <T> safeApiCall(call: suspend () -> Response<T>): Result<T> {
                 Result.success(Unit as T)
             } else Result.failure(Exception("Пустой ответ сервера"))
         } else {
-            val errorMsg = response.errorBody()?.string() ?: "Ошибка сервера: ${response.code()}"
+            val raw = response.errorBody()?.string()
+            val errorMsg = humanReadableServerError(raw, response.code())
             Result.failure(Exception(errorMsg))
         }
     } catch (e: Exception) {

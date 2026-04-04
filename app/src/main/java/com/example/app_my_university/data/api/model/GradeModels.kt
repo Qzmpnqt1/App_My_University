@@ -15,7 +15,8 @@ data class GradeRequest(
     val studentId: Long,
     val subjectDirectionId: Long,
     val grade: Int?,
-    val creditStatus: Boolean?
+    val creditStatus: Boolean?,
+    val groupId: Long? = null,
 )
 
 data class PracticeGradeResponse(
@@ -35,7 +36,42 @@ data class PracticeGradeRequest(
     val studentId: Long,
     val practiceId: Long,
     val grade: Int?,
-    val creditStatus: Boolean?
+    val creditStatus: Boolean?,
+    val groupId: Long? = null,
+)
+
+data class TeacherGradingPickResponse(
+    val id: Long,
+    val name: String?,
+    val subtitle: String?,
+)
+
+data class TeacherPracticeSlotResponse(
+    val practiceId: Long,
+    val practiceNumber: Int?,
+    val practiceTitle: String?,
+    val creditPractice: Boolean?,
+    val maxGrade: Int?,
+    val gradeRowId: Long?,
+    val grade: Int?,
+    val creditStatus: Boolean?,
+)
+
+data class TeacherStudentAssessmentResponse(
+    val subjectDirectionId: Long?,
+    val directionId: Long?,
+    val instituteId: Long?,
+    val groupId: Long?,
+    val studentUserId: Long?,
+    val instituteName: String?,
+    val directionName: String?,
+    val subjectName: String?,
+    val groupName: String?,
+    val studentDisplayName: String?,
+    val finalAssessmentType: String?,
+    val subjectInDirection: SubjectInDirectionResponse? = null,
+    val finalGrade: GradeResponse? = null,
+    val practices: List<TeacherPracticeSlotResponse>? = null,
 )
 
 data class TeacherJournalResponse(

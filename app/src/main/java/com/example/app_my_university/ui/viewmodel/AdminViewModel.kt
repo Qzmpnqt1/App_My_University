@@ -22,7 +22,6 @@ data class AdminUiState(
     val users: List<UserProfileResponse> = emptyList(),
     val universities: List<UniversityResponse> = emptyList(),
     val institutes: List<InstituteResponse> = emptyList(),
-    val teacherSubjects: List<TeacherSubjectResponse> = emptyList(),
     val directions: List<StudyDirectionResponse> = emptyList(),
     val groups: List<AcademicGroupResponse> = emptyList(),
     val subjects: List<SubjectResponse> = emptyList(),
@@ -260,66 +259,6 @@ class AdminViewModel @Inject constructor(
                 },
                 onFailure = { e ->
                     _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
-                }
-            )
-        }
-    }
-
-    fun loadTeacherSubjects() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            val uni = _uiState.value.adminUniversityId
-            val teacherIds = if (uni != null) {
-                educationRepository.getUsers(userType = "TEACHER", universityId = uni).getOrNull()
-                    ?.map { it.id }?.toSet()
-            } else null
-            educationRepository.getTeacherSubjects(teacherId = null).fold(
-                onSuccess = { list ->
-                    val filtered = if (teacherIds != null) {
-                        list.filter { it.teacherId in teacherIds }
-                    } else list
-                    _uiState.value = _uiState.value.copy(isLoading = false, teacherSubjects = filtered)
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
-                }
-            )
-        }
-    }
-
-    fun createTeacherSubjectLink(teacherId: Long, subjectId: Long) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
-            educationRepository.createTeacherSubject(TeacherSubjectRequest(teacherId, subjectId)).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        actionSuccess = true,
-                        actionMessage = "Преподаватель назначен на дисциплину"
-                    )
-                    loadTeacherSubjects()
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
-                }
-            )
-        }
-    }
-
-    fun deleteTeacherSubjectLink(id: Long) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
-            educationRepository.deleteTeacherSubject(id).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        actionSuccess = true,
-                        actionMessage = "Назначение снято"
-                    )
-                    loadTeacherSubjects()
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
                 }
             )
         }

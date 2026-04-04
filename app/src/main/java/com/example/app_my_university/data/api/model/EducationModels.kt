@@ -70,8 +70,15 @@ data class TeacherSubjectResponse(
     val id: Long,
     val teacherId: Long,
     val teacherName: String?,
-    val subjectId: Long,
-    val subjectName: String?
+    val subjectDirectionId: Long? = null,
+    val subjectId: Long? = null,
+    val subjectName: String?,
+    val directionId: Long? = null,
+    val directionName: String? = null,
+    val instituteId: Long? = null,
+    val instituteName: String? = null,
+    val course: Int? = null,
+    val semester: Int? = null
 )
 
 data class ClassroomResponse(
@@ -143,5 +150,20 @@ data class SubjectPracticeRequest(
 
 data class TeacherSubjectRequest(
     val teacherId: Long,
-    val subjectId: Long
+    val subjectDirectionId: Long
+)
+
+data class TeacherSubjectReplaceRequest(
+    val subjectDirectionIds: List<Long>,
+    val expectedAssignmentCount: Int? = null
+)
+
+/** Черновик назначения в UI (идентификатор — subjects_in_directions.id). */
+data class TeacherAssignmentDraftUi(
+    val subjectDirectionId: Long,
+    val subjectName: String,
+    val directionName: String,
+    val instituteName: String,
+    val course: Int?,
+    val semester: Int?,
 )

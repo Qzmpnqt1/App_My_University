@@ -24,6 +24,8 @@ data class GradeBookUiState(
     val gradesByPractice: List<PracticeGradeResponse> = emptyList(),
     /** Итоговые оценки по выбранному предмету (преподаватель). */
     val finalGradesBySubject: List<GradeResponse> = emptyList(),
+    /** Журнал группы по выбранному предмету (ФИО + группа, без ввода id). */
+    val teacherJournalStudents: List<TeacherJournalStudentRow> = emptyList(),
     val saveSuccess: Boolean = false
 )
 
@@ -81,7 +83,8 @@ class GradeBookViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             selectedSubjectDirectionId = subjectDirectionId,
             gradesByPractice = emptyList(),
-            finalGradesBySubject = emptyList()
+            finalGradesBySubject = emptyList(),
+            teacherJournalStudents = emptyList(),
         )
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -96,6 +99,16 @@ class GradeBookViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(finalGradesBySubject = list)
                 },
                 onFailure = { _uiState.value = _uiState.value.copy(error = it.message) }
+            )
+            gradeRepository.getTeacherJournal(subjectDirectionId).fold(
+                onSuccess = { journal ->
+                    _uiState.value = _uiState.value.copy(
+                        teacherJournalStudents = journal.students.orEmpty()
+                    )
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(teacherJournalStudents = emptyList())
+                }
             )
             _uiState.value = _uiState.value.copy(isLoading = false)
         }
@@ -189,5 +202,20 @@ class GradeBookViewModel @Inject constructor(
 
     fun clearSaveSuccess() {
         _uiState.value = _uiState.value.copy(saveSuccess = false)
+    }
+
+    /** Обновить журнал после сохранения оценки. */
+    fun refreshJournalForSelectedSubject() {
+        val sid = _uiState.value.selectedSubjectDirectionId ?: return
+        viewModelScope.launch {
+            gradeRepository.getTeacherJournal(sid).fold(
+                onSuccess = { journal ->
+                    _uiState.value = _uiState.value.copy(
+                        teacherJournalStudents = journal.students.orEmpty()
+                    )
+                },
+                onFailure = { /* оставляем предыдущий список */ }
+            )
+        }
     }
 }

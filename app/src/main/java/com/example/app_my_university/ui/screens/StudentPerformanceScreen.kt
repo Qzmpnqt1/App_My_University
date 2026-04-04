@@ -8,18 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -32,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsEmptyState
 import com.example.app_my_university.ui.components.analytics.MuDonutChart
@@ -56,13 +52,9 @@ fun StudentPerformanceScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Успеваемость") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                }
+            UniformTopAppBar(
+                title = "Успеваемость",
+                onBackPressed = onNavigateBack,
             )
         }
     ) { padding ->
