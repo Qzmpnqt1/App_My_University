@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -45,6 +47,8 @@ fun MuSearchablePickerSheet(
     items: List<PickerListItem>,
     onSelect: (PickerListItem) -> Unit,
     searchPlaceholder: String = "Поиск…",
+    /** Пока идёт загрузка и список ещё пуст — индикатор вместо «Ничего не найдено». */
+    listLoading: Boolean = false,
 ) {
     if (!visible) return
 
@@ -56,9 +60,12 @@ fun MuSearchablePickerSheet(
     }
 
     val q = query.trim().lowercase()
-    val filtered = remember(items, q) {
-        if (q.isEmpty()) items
-        else items.filter { row ->
+    // Не используем remember(items): пустой список часто тот же singleton emptyList() —
+    // после загрузки данных ключ не меняется и список в sheet остаётся пустым.
+    val filtered = if (q.isEmpty()) {
+        items
+    } else {
+        items.filter { row ->
             row.primary.lowercase().contains(q) ||
                 (row.secondary?.lowercase()?.contains(q) == true)
         }
@@ -87,9 +94,19 @@ fun MuSearchablePickerSheet(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
-            if (filtered.isEmpty()) {
+            if (listLoading && items.isEmpty()) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(vertical = AppSpacing.l)
+                        .size(40.dp),
+                )
+            } else if (filtered.isEmpty()) {
                 Text(
-                    text = "Ничего не найдено",
+                    text = if (q.isNotEmpty()) {
+                        "Ничего не найдено"
+                    } else {
+                        "Список пуст. Проверьте права доступа и данные на сервере."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = AppSpacing.l),

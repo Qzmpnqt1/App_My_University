@@ -340,6 +340,9 @@ interface ApiService {
     @GET("api/v1/practice-grades/my")
     suspend fun getMyPracticeGrades(@Query("subjectDirectionId") subjectDirectionId: Long? = null): Response<List<PracticeGradeResponse>>
 
+    @GET("api/v1/practice-grades/my/subject/{subjectDirectionId}/slots")
+    suspend fun getMyPracticeSlots(@Path("subjectDirectionId") subjectDirectionId: Long): Response<List<StudentPracticeSlotResponse>>
+
     @GET("api/v1/practice-grades/by-practice/{practiceId}")
     suspend fun getPracticeGradesByPractice(@Path("practiceId") practiceId: Long): Response<List<PracticeGradeResponse>>
 

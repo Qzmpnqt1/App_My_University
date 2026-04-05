@@ -493,6 +493,13 @@ private fun RoleSpecificSection(profile: UserProfileResponse) {
     ) {
         when (profile.userType) {
             "STUDENT" -> {
+                profile.studentProfile?.course?.let { c ->
+                    ProfileReadOnlyField(
+                        label = "Курс обучения",
+                        value = "$c курс",
+                        hint = "По данным вашей академической группы"
+                    )
+                }
                 profile.studentProfile?.groupName?.let {
                     ProfileReadOnlyField(
                         label = "Группа",
@@ -504,7 +511,8 @@ private fun RoleSpecificSection(profile: UserProfileResponse) {
                     ProfileReadOnlyField(label = "Институт", value = it)
                 }
                 if (profile.studentProfile?.groupName == null &&
-                    profile.studentProfile?.instituteName == null
+                    profile.studentProfile?.instituteName == null &&
+                    profile.studentProfile?.course == null
                 ) {
                     Text(
                         text = "Учебные данные появятся после назначения группы и института.",

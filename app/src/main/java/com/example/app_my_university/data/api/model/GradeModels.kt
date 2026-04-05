@@ -8,7 +8,23 @@ data class GradeResponse(
     val subjectName: String?,
     val grade: Int?,
     val creditStatus: Boolean?,
-    val finalAssessmentType: String? = null
+    val finalAssessmentType: String? = null,
+    val course: Int? = null,
+    val semester: Int? = null,
+    val directionName: String? = null,
+    /** Число практик по дисциплине в учебном плане (с сервера). */
+    val practiceCount: Int? = null,
+)
+
+data class StudentPracticeSlotResponse(
+    val practiceId: Long,
+    val practiceNumber: Int?,
+    val practiceTitle: String?,
+    val maxGrade: Int?,
+    val isCredit: Boolean?,
+    val grade: Int?,
+    val creditStatus: Boolean?,
+    val hasResult: Boolean = false,
 )
 
 data class GradeRequest(

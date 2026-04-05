@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.app_my_university.data.api.model.StudentPerformanceSummaryResponse
 import com.example.app_my_university.data.repository.StatisticsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,17 +25,20 @@ class StudentPerformanceViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StudentPerformanceUiState())
-    val uiState: StateFlow<StudentPerformanceUiState> = _uiState
+    val uiState: StateFlow<StudentPerformanceUiState> = _uiState.asStateFlow()
+
+    private var loadJob: Job? = null
 
     fun load(course: Int? = null, semester: Int? = null) {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             statisticsRepository.getMyStudentPerformance(course, semester).fold(
                 onSuccess = { res ->
                     _uiState.update { it.copy(isLoading = false, summary = res, error = null) }
                 },
                 onFailure = { e ->
-                    _uiState.update { it.copy(isLoading = false, error = e.message) }
+                    _uiState.update { it.copy(isLoading = false, error = e.message ?: "Не удалось обновить данные") }
                 }
             )
         }

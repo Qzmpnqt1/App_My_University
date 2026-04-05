@@ -26,6 +26,7 @@ sealed class Screen(val route: String) {
     object Schedule : Screen("schedule")
     object GradeBook : Screen("gradebook")
     object TeacherGrades : Screen("teacher_grades")
+    object TeacherStatistics : Screen("teacher_statistics")
     object Dialogs : Screen("dialogs")
     object ChatContacts : Screen("chat_contacts")
     object Chat : Screen("chat/{conversationId}/{participantName}/{participantId}") {
@@ -153,6 +154,10 @@ fun AppNavigation() {
                 onNavigateBack = { navController.navigateUp() },
                 viewModel = hiltViewModel(backStackEntry),
             )
+        }
+
+        composable(Screen.TeacherStatistics.route) {
+            TeacherStatisticsScreen(onNavigateBack = { navController.navigateUp() })
         }
 
         composable(Screen.Dialogs.route) {

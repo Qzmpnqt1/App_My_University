@@ -47,6 +47,8 @@ import com.example.app_my_university.ui.components.analytics.MuHorizontalBarChar
 import com.example.app_my_university.ui.components.analytics.MuLineChart
 import com.example.app_my_university.ui.components.analytics.MuLabeledProgressMetric
 import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
+import com.example.app_my_university.ui.components.analytics.scheduleDaySeriesForChart
+import com.example.app_my_university.ui.components.analytics.scheduleWeekSeriesForChart
 import com.example.app_my_university.ui.viewmodel.AdminStatisticsPayload
 import com.example.app_my_university.ui.viewmodel.AdminStatisticsViewModel
 
@@ -85,10 +87,19 @@ fun AdminStatisticsScreen(
     LaunchedEffect(tab) {
         selectionId = null
         selectionLabel = ""
+        viewModel.clearStalePayload()
     }
 
     val currentTab = tabs[tab]
-    val pickerItems: List<PickerListItem> = remember(currentTab, state) {
+    // Явные ключи-списки: remember(state) по data class может не пересчитаться при том же equals.
+    val pickerItems: List<PickerListItem> = remember(
+        currentTab,
+        state.groups,
+        state.directions,
+        state.institutes,
+        state.classrooms,
+        state.teachers,
+    ) {
         when (currentTab) {
             AdminStatTab.GROUP -> state.groups.map { g ->
                 PickerListItem(
@@ -133,6 +144,7 @@ fun AdminStatisticsScreen(
         onDismiss = { entityPickerOpen = false },
         title = pickerTitle(currentTab),
         items = pickerItems,
+        listLoading = state.catalogLoading,
         onSelect = { row ->
             selectionId = row.id
             selectionLabel = listOfNotNull(row.primary, row.secondary).joinToString(" · ")
@@ -296,7 +308,7 @@ private fun GroupStatsVisuals(g: GroupStatisticsResponse) {
         subtitle = "Средняя успеваемость ${String.format("%.2f", g.averagePerformance)} · Студентов ${g.studentCount}"
     ) {
         Text(
-            text = "Должников: ${g.studentsWithDebt} из ${g.studentCount} (${String.format("%.1f", g.debtRate * 100)}%)",
+            text = "Должников: ${g.studentsWithDebt} из ${g.studentCount} (${String.format("%.1f", g.debtRate)}%)",
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium
         )
@@ -327,7 +339,7 @@ private fun GroupStatsVisuals(g: GroupStatisticsResponse) {
                 entries = map.entries
                     .sortedByDescending { it.value }
                     .take(10)
-                    .map { (name, v) -> shortLabel(name) to (v * 100).toFloat() },
+                    .map { (name, v) -> shortLabel(name) to v.toFloat() },
                 maxValueOverride = 100f,
                 valueFormatter = { String.format("%.0f%%", it) }
             )
@@ -350,7 +362,7 @@ private fun DirectionStatsVisuals(d: DirectionStatisticsResponse) {
         subtitle = "Студентов ${d.totalStudents}, групп ${d.groupCount}"
     ) {
         Text(
-            text = "Средняя успеваемость ${String.format("%.2f", d.averagePerformance)} · Доля должников ${String.format("%.1f", d.debtRate * 100)}%",
+            text = "Средняя успеваемость ${String.format("%.2f", d.averagePerformance)} · Доля должников ${String.format("%.1f", d.debtRate)}%",
             style = MaterialTheme.typography.bodySmall
         )
         val debt = d.studentsWithDebt.toFloat()
@@ -385,7 +397,7 @@ private fun InstituteStatsVisuals(i: InstituteStatisticsResponse) {
         subtitle = "Направлений: ${i.directionCount}, студентов: ${i.totalStudents}"
     ) {
         Text(
-            text = "Средняя ${String.format("%.2f", i.averagePerformance)} · Должники ${i.studentsWithDebt} (${String.format("%.1f", i.debtRate * 100)}%)",
+            text = "Средняя ${String.format("%.2f", i.averagePerformance)} · Должники ${i.studentsWithDebt} (${String.format("%.1f", i.debtRate)}%)",
             style = MaterialTheme.typography.bodySmall
         )
         val debt = i.studentsWithDebt.toFloat()
@@ -464,12 +476,12 @@ private fun ScheduleStatsVisuals(scopeTitle: String, s: ScheduleStatisticsRespon
         title = "Расписание: $scopeTitle",
         subtitle = "Всего занятий: ${s.totalLessons}, часов: ${String.format("%.1f", s.totalHours)}"
     ) {
-        val byDay = scheduleDaySeries(s.byDayOfWeek)
+        val byDay = scheduleDaySeriesForChart(s.byDayOfWeek)
         if (byDay.isNotEmpty()) {
             Text("Нагрузка по дням недели", style = MaterialTheme.typography.labelLarge)
             MuVerticalBarChart(entries = byDay, chartHeight = 120.dp, valueFormatter = { it.toInt().toString() })
         }
-        val byWeek = scheduleWeekSeries(s.byWeekNumber)
+        val byWeek = scheduleWeekSeriesForChart(s.byWeekNumber)
         if (byWeek.size >= 2) {
             Text("Динамика по номерам недель", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 12.dp))
             MuLineChart(points = byWeek, chartHeight = 120.dp)
@@ -486,30 +498,3 @@ private fun ScheduleStatsVisuals(scopeTitle: String, s: ScheduleStatisticsRespon
     }
 }
 
-private fun scheduleDaySeries(map: Map<String, Long>?): List<Pair<String, Float>> {
-    if (map.isNullOrEmpty()) return emptyList()
-    fun dayLabel(key: String): String = when (key.uppercase()) {
-        "1", "MONDAY" -> "Пн"
-        "2", "TUESDAY" -> "Вт"
-        "3", "WEDNESDAY" -> "Ср"
-        "4", "THURSDAY" -> "Чт"
-        "5", "FRIDAY" -> "Пт"
-        "6", "SATURDAY" -> "Сб"
-        "7", "SUNDAY" -> "Вс"
-        else -> key.take(3)
-    }
-    fun dayIndex(label: String): Int = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс").indexOf(label).let { if (it < 0) 8 else it }
-    val merged = mutableMapOf<String, Float>()
-    map.forEach { (k, v) ->
-        val lab = dayLabel(k)
-        merged[lab] = (merged[lab] ?: 0f) + v.toFloat()
-    }
-    return merged.entries.sortedBy { dayIndex(it.key) }.map { it.key to it.value }
-}
-
-private fun scheduleWeekSeries(map: Map<String, Long>?): List<Pair<String, Float>> {
-    if (map.isNullOrEmpty()) return emptyList()
-    return map.entries
-        .sortedBy { it.key.toIntOrNull() ?: 0 }
-        .map { (k, v) -> "Н$k" to v.toFloat() }
-}

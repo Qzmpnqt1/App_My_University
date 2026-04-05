@@ -17,6 +17,8 @@ data class UserProfileResponse(
 data class StudentProfileInfo(
     val groupId: Long?,
     val groupName: String?,
+    /** Курс обучения (1, 2, 3, …), как у группы. */
+    val course: Int? = null,
     val instituteId: Long?,
     val instituteName: String?
 )

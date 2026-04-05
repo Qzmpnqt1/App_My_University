@@ -1,6 +1,10 @@
 package com.example.app_my_university.ui.components.picker
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -9,10 +13,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.Role
+
 /**
  * Поле только для выбора: по тапу открывается sheet / диалог с поиском.
+ *
+ * [OutlinedTextField] сам перехватывает касания по области ввода — из‑за этого тап «по плейсхолдеру»
+ * часто не доходит до [Modifier.clickable] на том же модификаторе. Накладываем прозрачный слой
+ * на весь размер поля, который получает все нажатия, когда [enabled] = true.
  */
 @Composable
 fun MuPickerField(
@@ -24,27 +34,39 @@ fun MuPickerField(
     modifier: Modifier = Modifier,
     supportingText: @Composable (() -> Unit)? = null,
 ) {
-    OutlinedTextField(
-        value = valueText,
-        onValueChange = {},
-        readOnly = true,
-        enabled = enabled,
-        label = { Text(label) },
-        placeholder = { Text(placeholder, style = MaterialTheme.typography.bodyLarge) },
-        trailingIcon = {
-            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-        },
-        supportingText = supportingText,
-        singleLine = true,
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled) { onClick() },
-        textStyle = MaterialTheme.typography.bodyLarge,
-        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-            disabledTextColor = MaterialTheme.colorScheme.onSurface,
-            disabledBorderColor = MaterialTheme.colorScheme.outline,
-            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-    )
+    Box(modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = valueText,
+            onValueChange = {},
+            readOnly = true,
+            enabled = enabled,
+            label = { Text(label) },
+            placeholder = { Text(placeholder, style = MaterialTheme.typography.bodyLarge) },
+            trailingIcon = {
+                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+            },
+            supportingText = supportingText,
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            textStyle = MaterialTheme.typography.bodyLarge,
+            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+        )
+        if (enabled) {
+            val interactionSource = remember { MutableInteractionSource() }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = LocalIndication.current,
+                        role = Role.Button,
+                    ) { onClick() },
+            )
+        }
+    }
 }

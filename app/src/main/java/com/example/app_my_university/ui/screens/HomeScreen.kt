@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.example.app_my_university.data.api.model.GradeResponse
 import com.example.app_my_university.data.api.model.ScheduleResponse
 import com.example.app_my_university.ui.components.StudentBottomBar
 import com.example.app_my_university.ui.components.UniformTopAppBar
@@ -66,8 +67,9 @@ import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.HomeDashboardTime
 import com.example.app_my_university.ui.viewmodel.HomeDashboardViewModel
 import com.example.app_my_university.ui.viewmodel.ProfileViewModel
-import com.example.app_my_university.ui.viewmodel.examAverage
-import com.example.app_my_university.ui.viewmodel.pendingFinalCount
+import com.example.app_my_university.ui.components.analytics.examAverage
+import com.example.app_my_university.ui.components.analytics.pendingFinalCount
+import com.example.app_my_university.data.api.model.StudentPerformanceSummaryResponse
 import java.time.LocalTime
 
 private val dayShort = mapOf(
@@ -87,7 +89,7 @@ fun HomeScreen(
     val currentRoute = navController.currentDestination?.route
 
     LaunchedEffect(Unit) {
-        dashboardViewModel.load(includeGrades = true)
+        dashboardViewModel.load(includeGrades = true, includeStudentPerformance = true)
     }
 
     Scaffold(
@@ -160,8 +162,10 @@ private fun StudentDashboardBody(
 ) {
     val next = HomeDashboardTime.nextLessonToday(scheduleByDay)
     val todayList = HomeDashboardTime.todayLessons(scheduleByDay)
-    val avg = examAverage(dash.grades)
-    val pending = pendingFinalCount(dash.grades)
+    val perf = dash.studentPerformanceSummary
+    val avg = studentDashboardAverage(perf, dash.grades)
+    val disciplinesCount = studentDashboardDisciplinesLabel(perf, dash.grades.size)
+    val pending = studentDashboardPendingLabel(perf, dash.grades)
     val homeExamBars = remember(dash.grades) { examGradeBarEntries(dash.grades) }
     val homeCreditBreakdown = remember(dash.grades) { creditBreakdown(dash.grades) }
     val scheduleDayBars = remember(scheduleByDay) {
@@ -287,10 +291,25 @@ private fun StudentDashboardBody(
         item {
             MuSectionHeader(
                 title = "Успеваемость",
-                subtitle = "Сводка по зачётной книжке",
+                subtitle = if (perf != null) {
+                    "По учебному плану (как на экране «Успеваемость»); графики ниже — по строкам зачётки"
+                } else {
+                    "Сводка по зачётной книжке"
+                },
                 actionLabel = "Зачётная книжка",
                 onActionClick = onOpenGradeBook
             )
+        }
+
+        dash.studentPerformanceError?.let { err ->
+            item {
+                Text(
+                    text = "Сводка с сервера недоступна: $err",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = Dimens.spaceXS)
+                )
+            }
         }
 
         item {
@@ -299,17 +318,17 @@ private fun StudentDashboardBody(
                 horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS)
             ) {
                 MuStatBlock(
-                    value = avg?.let { String.format("%.1f", it) } ?: "—",
+                    value = avg,
                     label = "Средний балл",
                     modifier = Modifier.weight(1f)
                 )
                 MuStatBlock(
-                    value = "${dash.grades.size}",
-                    label = "Дисциплин",
+                    value = disciplinesCount,
+                    label = if (perf != null) "В плане" else "Дисциплин",
                     modifier = Modifier.weight(1f)
                 )
                 MuStatBlock(
-                    value = pending.toString(),
+                    value = pending,
                     label = "Без итога",
                     modifier = Modifier.weight(1f)
                 )
@@ -563,6 +582,29 @@ private fun QuickTile(
             )
         }
     }
+}
+
+private fun studentDashboardAverage(
+    perf: StudentPerformanceSummaryResponse?,
+    grades: List<GradeResponse>,
+): String {
+    perf?.averageNumericGrade?.let { return String.format("%.1f", it) }
+    return examAverage(grades)?.let { String.format("%.1f", it) } ?: "—"
+}
+
+private fun studentDashboardDisciplinesLabel(
+    perf: StudentPerformanceSummaryResponse?,
+    gradeRowCount: Int,
+): String = perf?.plannedSubjects?.toString() ?: "$gradeRowCount"
+
+private fun studentDashboardPendingLabel(
+    perf: StudentPerformanceSummaryResponse?,
+    grades: List<GradeResponse>,
+): String {
+    perf?.let {
+        return (it.plannedSubjects - it.subjectsWithFinalResult).coerceAtLeast(0).toString()
+    }
+    return pendingFinalCount(grades).toString()
 }
 
 private fun lessonWord(n: Int): String = when {

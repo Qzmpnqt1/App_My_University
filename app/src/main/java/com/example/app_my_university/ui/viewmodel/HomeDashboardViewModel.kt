@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_my_university.data.api.model.GradeResponse
 import com.example.app_my_university.data.api.model.ScheduleResponse
+import com.example.app_my_university.data.api.model.StudentPerformanceSummaryResponse
 import com.example.app_my_university.data.repository.GradeRepository
 import com.example.app_my_university.data.repository.ScheduleRepository
+import com.example.app_my_university.data.repository.StatisticsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,34 +24,57 @@ data class HomeDashboardUiState(
     val error: String? = null,
     val currentWeek: Int = 1,
     val scheduleByDay: Map<Int, List<ScheduleResponse>> = emptyMap(),
-    val grades: List<GradeResponse> = emptyList()
+    val grades: List<GradeResponse> = emptyList(),
+    /** Сводка с backend (`/statistics/me/student`), совпадает с экраном «Успеваемость» без фильтров. */
+    val studentPerformanceSummary: StudentPerformanceSummaryResponse? = null,
+    val studentPerformanceError: String? = null,
 )
 
 @HiltViewModel
 class HomeDashboardViewModel @Inject constructor(
     private val scheduleRepository: ScheduleRepository,
-    private val gradeRepository: GradeRepository
+    private val gradeRepository: GradeRepository,
+    private val statisticsRepository: StatisticsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeDashboardUiState())
     val uiState: StateFlow<HomeDashboardUiState> = _uiState
 
     private var lastIncludeGrades: Boolean = true
+    private var lastIncludeStudentPerformance: Boolean = false
+    private var dashboardJob: Job? = null
 
-    fun load(includeGrades: Boolean = true, weekNumber: Int? = null) {
+    fun load(
+        includeGrades: Boolean = true,
+        weekNumber: Int? = null,
+        includeStudentPerformance: Boolean = false,
+    ) {
         lastIncludeGrades = includeGrades
-        viewModelScope.launch {
+        lastIncludeStudentPerformance = includeStudentPerformance
+        dashboardJob?.cancel()
+        dashboardJob = viewModelScope.launch {
             val week = weekNumber ?: _uiState.value.currentWeek
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, currentWeek = week)
-            val gradesJob = if (includeGrades) {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                error = null,
+                currentWeek = week,
+                studentPerformanceError = null,
+            )
+            val gradesDeferred = if (includeGrades) {
                 async { gradeRepository.getMyGrades() }
             } else null
+            val perfDeferred = if (includeStudentPerformance) {
+                async { statisticsRepository.getMyStudentPerformance(null, null) }
+            } else null
+
             val schedResult = scheduleRepository.getMySchedule(week, null)
-            val gradesList: List<GradeResponse> = if (gradesJob != null) {
-                gradesJob.await().getOrElse { emptyList() }
+            val gradesList: List<GradeResponse> = if (gradesDeferred != null) {
+                gradesDeferred.await().getOrElse { emptyList() }
             } else {
                 emptyList()
             }
+            val perfResult = perfDeferred?.await()
+
             schedResult.fold(
                 onSuccess = { entries ->
                     val grouped = entries.groupBy { it.dayOfWeek }
@@ -57,7 +83,17 @@ class HomeDashboardViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         scheduleByDay = grouped,
-                        grades = if (includeGrades) gradesList else emptyList()
+                        grades = if (includeGrades) gradesList else emptyList(),
+                        studentPerformanceSummary = if (includeStudentPerformance) {
+                            perfResult?.getOrNull()
+                        } else {
+                            null
+                        },
+                        studentPerformanceError = if (includeStudentPerformance) {
+                            perfResult?.exceptionOrNull()?.message
+                        } else {
+                            null
+                        },
                     )
                 },
                 onFailure = {
@@ -65,7 +101,17 @@ class HomeDashboardViewModel @Inject constructor(
                         isLoading = false,
                         error = it.message,
                         scheduleByDay = emptyMap(),
-                        grades = if (includeGrades) gradesList else emptyList()
+                        grades = if (includeGrades) gradesList else emptyList(),
+                        studentPerformanceSummary = if (includeStudentPerformance) {
+                            perfResult?.getOrNull()
+                        } else {
+                            null
+                        },
+                        studentPerformanceError = if (includeStudentPerformance) {
+                            perfResult?.exceptionOrNull()?.message
+                        } else {
+                            null
+                        },
                     )
                 }
             )
@@ -73,11 +119,18 @@ class HomeDashboardViewModel @Inject constructor(
     }
 
     fun setWeek(week: Int) {
-        load(includeGrades = lastIncludeGrades, weekNumber = week)
+        load(
+            includeGrades = lastIncludeGrades,
+            weekNumber = week,
+            includeStudentPerformance = lastIncludeStudentPerformance,
+        )
     }
 
     fun retry() {
-        load(includeGrades = lastIncludeGrades)
+        load(
+            includeGrades = lastIncludeGrades,
+            includeStudentPerformance = lastIncludeStudentPerformance,
+        )
     }
 }
 
@@ -113,27 +166,3 @@ object HomeDashboardTime {
         return scheduleByDay[dow].orEmpty().sortedBy { parseStart(it.startTime) ?: LocalTime.MAX }
     }
 }
-
-private fun GradeResponse.isExamFinal(): Boolean =
-    finalAssessmentType.equals("EXAM", ignoreCase = true) ||
-        (finalAssessmentType.isNullOrBlank() && grade != null)
-
-private fun GradeResponse.isCreditFinal(): Boolean =
-    finalAssessmentType.equals("CREDIT", ignoreCase = true) ||
-        (finalAssessmentType.isNullOrBlank() && creditStatus != null && grade == null)
-
-fun examAverage(grades: List<GradeResponse>): Double? {
-    val nums = grades.filter { it.isExamFinal() }
-        .mapNotNull { it.grade }
-        .filter { it in 2..5 }
-    return if (nums.isEmpty()) null else nums.average()
-}
-
-fun pendingFinalCount(grades: List<GradeResponse>): Int =
-    grades.count { g ->
-        when {
-            g.isCreditFinal() -> g.creditStatus == null
-            g.isExamFinal() -> g.grade == null
-            else -> g.grade == null && g.creditStatus == null
-        }
-    }

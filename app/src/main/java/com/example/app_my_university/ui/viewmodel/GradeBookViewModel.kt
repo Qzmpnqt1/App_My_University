@@ -2,220 +2,196 @@ package com.example.app_my_university.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_my_university.data.api.model.*
-import com.example.app_my_university.data.repository.EducationRepository
+import com.example.app_my_university.data.api.model.GradeResponse
+import com.example.app_my_university.data.api.model.StudentPerformanceSummaryResponse
+import com.example.app_my_university.data.api.model.StudentPracticeSlotResponse
 import com.example.app_my_university.data.repository.GradeRepository
+import com.example.app_my_university.data.repository.StatisticsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
-data class GradeBookUiState(
+data class PracticeSlotsUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
+    val slots: List<StudentPracticeSlotResponse> = emptyList(),
+    val loaded: Boolean = false,
+)
+
+enum class GradeBookListFilter {
+    ALL,
+    EXAMS,
+    CREDITS,
+    WITH_FINAL,
+    WITHOUT_FINAL,
+    WITH_PRACTICES,
+}
+
+data class GradeBookUiState(
+    val initialLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
+    val screenError: String? = null,
     val grades: List<GradeResponse> = emptyList(),
-    val practiceGrades: List<PracticeGradeResponse> = emptyList(),
-    /** К какому subjectDirectionId относятся текущие practiceGrades (для зачётки). */
-    val practiceGradesSubjectDirectionId: Long? = null,
-    val subjects: List<SubjectInDirectionResponse> = emptyList(),
-    val practices: List<SubjectPracticeResponse> = emptyList(),
-    val selectedSubjectDirectionId: Long? = null,
-    val gradesByPractice: List<PracticeGradeResponse> = emptyList(),
-    /** Итоговые оценки по выбранному предмету (преподаватель). */
-    val finalGradesBySubject: List<GradeResponse> = emptyList(),
-    /** Журнал группы по выбранному предмету (ФИО + группа, без ввода id). */
-    val teacherJournalStudents: List<TeacherJournalStudentRow> = emptyList(),
-    val saveSuccess: Boolean = false
+    val planSummary: StudentPerformanceSummaryResponse? = null,
+    val planSummaryError: String? = null,
+    val searchQuery: String = "",
+    val listFilter: GradeBookListFilter = GradeBookListFilter.ALL,
+    val expandedSubjectIds: Set<Long> = emptySet(),
+    val practiceStates: Map<Long, PracticeSlotsUiState> = emptyMap(),
 )
 
 @HiltViewModel
 class GradeBookViewModel @Inject constructor(
     private val gradeRepository: GradeRepository,
-    private val educationRepository: EducationRepository
+    private val statisticsRepository: StatisticsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GradeBookUiState())
     val uiState: StateFlow<GradeBookUiState> = _uiState
 
-    fun loadStudentGrades() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            gradeRepository.getMyGrades().fold(
-                onSuccess = { grades ->
-                    _uiState.value = _uiState.value.copy(isLoading = false, grades = grades)
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
-                }
-            )
-        }
+    private val practiceJobs = ConcurrentHashMap<Long, Job>()
+
+    fun loadInitial() {
+        load(isRefresh = false)
     }
 
-    fun loadStudentPracticeGrades(subjectDirectionId: Long? = null) {
+    fun refresh() {
+        load(isRefresh = true)
+    }
+
+    private fun load(isRefresh: Boolean) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            gradeRepository.getMyPracticeGrades(subjectDirectionId).fold(
-                onSuccess = { practiceGrades ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        practiceGrades = practiceGrades,
-                        practiceGradesSubjectDirectionId = subjectDirectionId
+            val hadData = _uiState.value.grades.isNotEmpty()
+            _uiState.update { s ->
+                when {
+                    !isRefresh && !hadData -> s.copy(
+                        initialLoading = true,
+                        isRefreshing = false,
+                        screenError = null,
+                        planSummaryError = null,
                     )
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                    else -> s.copy(
+                        initialLoading = false,
+                        isRefreshing = true,
+                        screenError = null,
+                        planSummaryError = null,
+                    )
                 }
-            )
-        }
-    }
-
-    fun loadSubjectsInDirection(directionId: Long? = null) {
-        viewModelScope.launch {
-            educationRepository.getSubjectsInDirections(directionId).fold(
-                onSuccess = { _uiState.value = _uiState.value.copy(subjects = it) },
-                onFailure = { _uiState.value = _uiState.value.copy(error = it.message) }
-            )
-        }
-    }
-
-    fun selectSubjectDirection(subjectDirectionId: Long) {
-        _uiState.value = _uiState.value.copy(
-            selectedSubjectDirectionId = subjectDirectionId,
-            gradesByPractice = emptyList(),
-            finalGradesBySubject = emptyList(),
-            teacherJournalStudents = emptyList(),
-        )
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            educationRepository.getSubjectPractices(subjectDirectionId).fold(
-                onSuccess = { practices ->
-                    _uiState.value = _uiState.value.copy(practices = practices)
-                },
-                onFailure = { _uiState.value = _uiState.value.copy(error = it.message) }
-            )
-            gradeRepository.getGradesBySubjectDirection(subjectDirectionId).fold(
+            }
+            val gradesDeferred = async { gradeRepository.getMyGrades() }
+            val planDeferred = async { statisticsRepository.getMyStudentPerformance(null, null) }
+            val planResult = planDeferred.await()
+            val gradesResult = gradesDeferred.await()
+            gradesResult.fold(
                 onSuccess = { list ->
-                    _uiState.value = _uiState.value.copy(finalGradesBySubject = list)
+                    _uiState.update { s ->
+                        s.copy(
+                            initialLoading = false,
+                            isRefreshing = false,
+                            grades = list,
+                            planSummary = planResult.getOrNull(),
+                            planSummaryError = planResult.exceptionOrNull()?.message,
+                            screenError = null,
+                            practiceStates = if (isRefresh) emptyMap() else s.practiceStates,
+                            expandedSubjectIds = if (isRefresh) emptySet() else s.expandedSubjectIds,
+                        )
+                    }
                 },
-                onFailure = { _uiState.value = _uiState.value.copy(error = it.message) }
-            )
-            gradeRepository.getTeacherJournal(subjectDirectionId).fold(
-                onSuccess = { journal ->
-                    _uiState.value = _uiState.value.copy(
-                        teacherJournalStudents = journal.students.orEmpty()
-                    )
+                onFailure = { err ->
+                    _uiState.update { s ->
+                        s.copy(
+                            initialLoading = false,
+                            isRefreshing = false,
+                            screenError = err.message,
+                            grades = if (hadData) s.grades else emptyList(),
+                            planSummary = planResult.getOrNull(),
+                            planSummaryError = planResult.exceptionOrNull()?.message,
+                        )
+                    }
                 },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(teacherJournalStudents = emptyList())
-                }
-            )
-            _uiState.value = _uiState.value.copy(isLoading = false)
-        }
-    }
-
-    fun loadPracticeGradesByPractice(practiceId: Long) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            gradeRepository.getPracticeGradesByPractice(practiceId).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, gradesByPractice = it)
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
-                }
-            )
-        }
-    }
-
-    fun reloadFinalGradesForSelectedSubject() {
-        val id = _uiState.value.selectedSubjectDirectionId ?: return
-        viewModelScope.launch {
-            gradeRepository.getGradesBySubjectDirection(id).fold(
-                onSuccess = { _uiState.value = _uiState.value.copy(finalGradesBySubject = it) },
-                onFailure = { _uiState.value = _uiState.value.copy(error = it.message) }
             )
         }
     }
 
-    fun createGrade(request: GradeRequest) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
-            gradeRepository.createGrade(request).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, saveSuccess = true)
-                    reloadFinalGradesForSelectedSubject()
+    fun onSearchQueryChange(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun onListFilterChange(filter: GradeBookListFilter) {
+        _uiState.update { it.copy(listFilter = filter) }
+    }
+
+    fun setSubjectExpanded(subjectDirectionId: Long, expanded: Boolean) {
+        _uiState.update { s ->
+            val next = s.expandedSubjectIds.toMutableSet()
+            if (expanded) next.add(subjectDirectionId) else next.remove(subjectDirectionId)
+            s.copy(expandedSubjectIds = next)
+        }
+        if (expanded) {
+            val st = _uiState.value.practiceStates[subjectDirectionId]
+            if (st == null || st.error != null || !st.loaded) {
+                loadPracticeSlots(subjectDirectionId)
+            }
+        }
+    }
+
+    fun loadPracticeSlots(subjectDirectionId: Long) {
+        practiceJobs[subjectDirectionId]?.cancel()
+        practiceJobs[subjectDirectionId] = viewModelScope.launch {
+            _uiState.update { s ->
+                val prev = s.practiceStates[subjectDirectionId] ?: PracticeSlotsUiState()
+                s.copy(
+                    practiceStates = s.practiceStates + (
+                        subjectDirectionId to prev.copy(
+                            isLoading = true,
+                            error = null,
+                            loaded = false,
+                        )
+                        ),
+                )
+            }
+            val result = gradeRepository.getMyPracticeSlots(subjectDirectionId)
+            practiceJobs.remove(subjectDirectionId)
+            result.fold(
+                onSuccess = { slots ->
+                    _uiState.update { s ->
+                        s.copy(
+                            practiceStates = s.practiceStates + (
+                                subjectDirectionId to PracticeSlotsUiState(
+                                    isLoading = false,
+                                    error = null,
+                                    slots = slots,
+                                    loaded = true,
+                                )
+                                ),
+                        )
+                    }
                 },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
-                }
+                onFailure = { e ->
+                    _uiState.update { s ->
+                        s.copy(
+                            practiceStates = s.practiceStates + (
+                                subjectDirectionId to PracticeSlotsUiState(
+                                    isLoading = false,
+                                    error = e.message ?: "Не удалось загрузить практики",
+                                    slots = emptyList(),
+                                    loaded = true,
+                                )
+                                ),
+                        )
+                    }
+                },
             )
         }
     }
 
-    fun updateGrade(id: Long, request: GradeRequest) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
-            gradeRepository.updateGrade(id, request).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, saveSuccess = true)
-                    reloadFinalGradesForSelectedSubject()
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
-                }
-            )
-        }
-    }
-
-    fun createPracticeGrade(request: PracticeGradeRequest) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
-            gradeRepository.createPracticeGrade(request).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, saveSuccess = true)
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
-                }
-            )
-        }
-    }
-
-    fun updatePracticeGrade(id: Long, request: PracticeGradeRequest) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, saveSuccess = false)
-            gradeRepository.updatePracticeGrade(id, request).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, saveSuccess = true)
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
-                }
-            )
-        }
-    }
-
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-
-    fun clearSaveSuccess() {
-        _uiState.value = _uiState.value.copy(saveSuccess = false)
-    }
-
-    /** Обновить журнал после сохранения оценки. */
-    fun refreshJournalForSelectedSubject() {
-        val sid = _uiState.value.selectedSubjectDirectionId ?: return
-        viewModelScope.launch {
-            gradeRepository.getTeacherJournal(sid).fold(
-                onSuccess = { journal ->
-                    _uiState.value = _uiState.value.copy(
-                        teacherJournalStudents = journal.students.orEmpty()
-                    )
-                },
-                onFailure = { /* оставляем предыдущий список */ }
-            )
-        }
+    fun dismissScreenError() {
+        _uiState.update { it.copy(screenError = null) }
     }
 }

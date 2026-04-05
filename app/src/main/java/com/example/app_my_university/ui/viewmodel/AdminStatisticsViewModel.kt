@@ -19,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -60,6 +61,26 @@ class AdminStatisticsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AdminStatisticsUiState())
     val uiState: StateFlow<AdminStatisticsUiState> = _uiState.asStateFlow()
+
+    /** Отмена предыдущего запроса статистики — при быстром переключении вкладок/сущностей. */
+    private var statsJob: Job? = null
+
+    /** Сброс графиков при смене типа аналитики (без справочников). */
+    fun clearStalePayload() {
+        statsJob?.cancel()
+        statsJob = null
+        _uiState.update {
+            it.copy(payload = null, error = null, isLoading = false)
+        }
+    }
+
+    private fun launchStats(block: suspend () -> Unit) {
+        statsJob?.cancel()
+        statsJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null, payload = null) }
+            block()
+        }
+    }
 
     fun ensureCatalogLoaded() {
         viewModelScope.launch {
@@ -131,8 +152,7 @@ class AdminStatisticsViewModel @Inject constructor(
     }
 
     fun loadGroup(groupId: Long) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+        launchStats {
             statisticsRepository.getGroupStatistics(groupId).fold(
                 onSuccess = {
                     _uiState.update { s ->
@@ -147,8 +167,7 @@ class AdminStatisticsViewModel @Inject constructor(
     }
 
     fun loadDirection(directionId: Long) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+        launchStats {
             statisticsRepository.getDirectionStatistics(directionId).fold(
                 onSuccess = {
                     _uiState.update { s ->
@@ -163,8 +182,7 @@ class AdminStatisticsViewModel @Inject constructor(
     }
 
     fun loadUniversity(universityId: Long) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+        launchStats {
             statisticsRepository.getUniversityStatistics(universityId).fold(
                 onSuccess = {
                     _uiState.update { s ->
@@ -179,8 +197,7 @@ class AdminStatisticsViewModel @Inject constructor(
     }
 
     fun loadInstitute(instituteId: Long) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+        launchStats {
             statisticsRepository.getInstituteStatistics(instituteId).fold(
                 onSuccess = {
                     _uiState.update { s ->
@@ -195,8 +212,7 @@ class AdminStatisticsViewModel @Inject constructor(
     }
 
     fun loadClassroomSchedule(classroomId: Long) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+        launchStats {
             statisticsRepository.getClassroomScheduleStatistics(classroomId).fold(
                 onSuccess = {
                     _uiState.update { s ->
@@ -215,8 +231,7 @@ class AdminStatisticsViewModel @Inject constructor(
     }
 
     fun loadTeacherSchedule(teacherId: Long) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+        launchStats {
             statisticsRepository.getTeacherScheduleStatistics(teacherId).fold(
                 onSuccess = {
                     _uiState.update { s ->
@@ -235,8 +250,7 @@ class AdminStatisticsViewModel @Inject constructor(
     }
 
     fun loadGroupSchedule(groupId: Long) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+        launchStats {
             statisticsRepository.getGroupScheduleStatistics(groupId).fold(
                 onSuccess = {
                     _uiState.update { s ->

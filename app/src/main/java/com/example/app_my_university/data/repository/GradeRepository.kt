@@ -23,6 +23,9 @@ class GradeRepository @Inject constructor(private val apiService: ApiService) {
     suspend fun getMyPracticeGrades(subjectDirectionId: Long? = null): Result<List<PracticeGradeResponse>> =
         safeApiCall { apiService.getMyPracticeGrades(subjectDirectionId) }
 
+    suspend fun getMyPracticeSlots(subjectDirectionId: Long): Result<List<StudentPracticeSlotResponse>> =
+        safeApiCall { apiService.getMyPracticeSlots(subjectDirectionId) }
+
     suspend fun getPracticeGradesByPractice(practiceId: Long): Result<List<PracticeGradeResponse>> =
         safeApiCall { apiService.getPracticeGradesByPractice(practiceId) }
 

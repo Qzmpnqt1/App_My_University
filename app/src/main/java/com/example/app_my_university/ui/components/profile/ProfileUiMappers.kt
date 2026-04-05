@@ -48,6 +48,7 @@ fun UserProfileResponse.roleSectionSubtitle(): String? = when (userType) {
 /** Краткие строки под ФИО в шапке (без дублирования email). */
 fun UserProfileResponse.heroContextLines(): List<String> = when (userType) {
     "STUDENT" -> buildList {
+        studentProfile?.course?.let { add("$it курс") }
         studentProfile?.groupName?.let { add("Группа $it") }
         studentProfile?.instituteName?.let { add(it) }
     }

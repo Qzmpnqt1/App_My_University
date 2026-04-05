@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Card
@@ -123,6 +124,7 @@ fun TeacherHomeScreen(
                     onWeek = { dashboardViewModel.setWeek(it) },
                     onSchedule = { navController.navigate(Screen.Schedule.route) },
                     onGrades = { navController.navigate(Screen.TeacherGrades.route) },
+                    onAnalytics = { navController.navigate(Screen.TeacherStatistics.route) },
                     onChats = { navController.navigate(Screen.Dialogs.route) }
                 )
             }
@@ -140,6 +142,7 @@ private fun TeacherDashboardBody(
     onWeek: (Int) -> Unit,
     onSchedule: () -> Unit,
     onGrades: () -> Unit,
+    onAnalytics: () -> Unit,
     onChats: () -> Unit
 ) {
     val next = HomeDashboardTime.nextLessonToday(scheduleByDay)
@@ -330,6 +333,49 @@ private fun TeacherDashboardBody(
 
         item {
             MuSectionHeader(
+                title = "Аналитика",
+                subtitle = "Расписание, дисциплины, группы и направления",
+                actionLabel = "Открыть",
+                onActionClick = onAnalytics
+            )
+        }
+
+        item {
+            OutlinedCard(
+                onClick = onAnalytics,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(Dimens.spaceM),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Dimens.spaceM)
+                ) {
+                    Icon(
+                        Icons.Default.BarChart,
+                        null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(Dimens.iconM)
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Статистика и нагрузка",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            "Те же данные, что доступны по роли преподавателя в API",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            MuSectionHeader(
                 title = "Сообщения",
                 actionLabel = "Чаты",
                 onActionClick = onChats
@@ -409,6 +455,24 @@ private fun TeacherDashboardBody(
                     ) {
                         Icon(Icons.Default.Grade, null, tint = MaterialTheme.colorScheme.primary)
                         Text("Оценки", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+                Card(
+                    onClick = onAnalytics,
+                    modifier = Modifier.weight(1f),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    ),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(Dimens.spaceM),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(Icons.Default.BarChart, null, tint = MaterialTheme.colorScheme.secondary)
+                        Text("Аналитика", style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
