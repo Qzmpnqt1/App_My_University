@@ -18,7 +18,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -29,18 +28,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.ConversationResponse
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppSpacing
+import com.example.app_my_university.ui.navigation.rememberAppRole
 import com.example.app_my_university.ui.viewmodel.ChatViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessagesScreen(
+    navController: NavHostController,
     onChatSelected: (conversationId: String, participantName: String, participantId: Long) -> Unit,
     onNavigateBack: () -> Unit,
     onStartNewChat: () -> Unit,
     viewModel: ChatViewModel = hiltViewModel()
 ) {
+    val role = rememberAppRole()
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
 
@@ -56,7 +61,9 @@ fun MessagesScreen(
         }
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = role,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Сообщения",
@@ -67,7 +74,7 @@ fun MessagesScreen(
                     }
                 },
             )
-        }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -79,7 +86,7 @@ fun MessagesScreen(
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = AppSpacing.screen, vertical = AppSpacing.s),
                 placeholder = { Text("Поиск по имени или сообщению") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 singleLine = true

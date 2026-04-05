@@ -14,7 +14,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -25,7 +24,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppSpacing
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.components.picker.MuPickerField
 import com.example.app_my_university.ui.components.picker.MuSearchablePickerSheet
 import com.example.app_my_university.ui.components.picker.PickerListItem
@@ -34,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.core.logging.AppLogger
 import com.example.app_my_university.data.api.model.DirectionStatisticsResponse
 import com.example.app_my_university.data.api.model.GroupStatisticsResponse
@@ -65,6 +68,7 @@ private enum class AdminStatTab(val label: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminStatisticsScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: AdminStatisticsViewModel = hiltViewModel()
 ) {
@@ -152,20 +156,22 @@ fun AdminStatisticsScreen(
         },
     )
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Аналитика",
                 onBackPressed = onNavigateBack,
             )
-        }
+        },
     ) { padding ->
         Column(
             Modifier
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(AppSpacing.screen),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.m)
         ) {
             Text(
                 text = "Выберите тип аналитики, затем сущность по названию и нажмите «Загрузить». Для вуза используется ваш вуз автоматически.",

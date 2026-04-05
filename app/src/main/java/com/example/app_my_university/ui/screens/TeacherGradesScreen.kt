@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -20,8 +19,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import com.example.app_my_university.core.logging.AppLogger
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.components.common.MuErrorState
 import com.example.app_my_university.ui.components.common.MuLoadingState
@@ -39,6 +41,7 @@ import com.example.app_my_university.ui.viewmodel.TeacherGradingViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherGradesScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: TeacherGradingViewModel,
 ) {
@@ -65,7 +68,9 @@ fun TeacherGradesScreen(
         viewModel.filteredStudents()
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Teacher,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Выставление оценок",

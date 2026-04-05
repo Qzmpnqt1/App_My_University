@@ -24,7 +24,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -40,17 +39,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.ClassroomRequest
 import com.example.app_my_university.data.api.model.ClassroomResponse
 import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.components.common.MuLoadingState
 import com.example.app_my_university.ui.theme.Dimens
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminClassroomManagementScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: AdminViewModel = hiltViewModel()
 ) {
@@ -93,7 +96,9 @@ fun AdminClassroomManagementScreen(
         }
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Аудитории",
@@ -113,56 +118,58 @@ fun AdminClassroomManagementScreen(
                 ) { Icon(Icons.Default.Add, "Добавить") }
             }
         },
-        snackbarHost = { SnackbarHost(snackbar) }
+        snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
-        if (uniId == null && !uiState.isLoading) {
-            MuEmptyState(
-                title = "Вуз не определён",
-                subtitle = "Не удалось загрузить контекст администратора.",
-                modifier = Modifier.fillMaxSize().padding(padding)
-            )
-            return@Scaffold
-        }
-        if (uiState.isLoading && uiState.classrooms.isEmpty()) {
-            MuLoadingState(Modifier.fillMaxSize().padding(padding))
-            return@Scaffold
-        }
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(Dimens.screenPadding),
-            verticalArrangement = Arrangement.spacedBy(Dimens.spaceM)
-        ) {
-            item {
-                OutlinedTextField(
-                    value = search,
-                    onValueChange = { search = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Поиск по корпусу или номеру") },
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
-                    singleLine = true
+        when {
+            uniId == null && !uiState.isLoading -> {
+                MuEmptyState(
+                    title = "Вуз не определён",
+                    subtitle = "Не удалось загрузить контекст администратора.",
+                    modifier = Modifier.fillMaxSize().padding(padding)
                 )
             }
-            if (filtered.isEmpty()) {
-                item {
-                    Text(
-                        "Нет аудиторий — добавьте первую.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                items(filtered, key = { it.id }) { c ->
-                    ClassroomRow(
-                        c = c,
-                        onEdit = {
-                            editing = c
-                            building = c.building ?: ""
-                            room = c.roomNumber ?: ""
-                            capacity = c.capacity?.toString() ?: ""
-                            showForm = true
-                        },
-                        onDelete = { deleteTarget = c }
-                    )
+            uiState.isLoading && uiState.classrooms.isEmpty() -> {
+                MuLoadingState(Modifier.fillMaxSize().padding(padding))
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                    contentPadding = PaddingValues(Dimens.screenPadding),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.spaceM)
+                ) {
+                    item {
+                        OutlinedTextField(
+                            value = search,
+                            onValueChange = { search = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Поиск по корпусу или номеру") },
+                            leadingIcon = { Icon(Icons.Default.Search, null) },
+                            singleLine = true
+                        )
+                    }
+                    if (filtered.isEmpty()) {
+                        item {
+                            Text(
+                                "Нет аудиторий — добавьте первую.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        items(filtered, key = { it.id }) { c ->
+                            ClassroomRow(
+                                c = c,
+                                onEdit = {
+                                    editing = c
+                                    building = c.building ?: ""
+                                    room = c.roomNumber ?: ""
+                                    capacity = c.capacity?.toString() ?: ""
+                                    showForm = true
+                                },
+                                onDelete = { deleteTarget = c }
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -216,7 +216,15 @@ fun RegistrationScreen(
                     }
                 }
 
-                if (uiState.selectedUserType == "STUDENT" || uiState.selectedUserType == "TEACHER") {
+                if (uiState.selectedUserType == "TEACHER") {
+                    Text(
+                        text = "Институты и предметы назначит администратор после одобрения заявки.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                if (uiState.selectedUserType == "STUDENT") {
                     if (uiState.institutes.isNotEmpty()) {
                         ExposedDropdownMenuBox(
                             expanded = instituteExpanded,
@@ -249,7 +257,7 @@ fun RegistrationScreen(
                         }
                     }
 
-                    if (uiState.selectedUserType == "STUDENT" && uiState.directions.isNotEmpty()) {
+                    if (uiState.directions.isNotEmpty()) {
                         ExposedDropdownMenuBox(
                             expanded = directionExpanded,
                             onExpandedChange = { directionExpanded = it }
@@ -281,7 +289,7 @@ fun RegistrationScreen(
                         }
                     }
 
-                    if (uiState.selectedUserType == "STUDENT" && uiState.groups.isNotEmpty()) {
+                    if (uiState.groups.isNotEmpty()) {
                         ExposedDropdownMenuBox(
                             expanded = groupExpanded,
                             onExpandedChange = { groupExpanded = it }

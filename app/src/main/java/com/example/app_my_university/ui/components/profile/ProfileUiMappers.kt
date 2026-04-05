@@ -24,6 +24,20 @@ fun UserProfileResponse.userInitials(): String {
     }
 }
 
+/** Краткая строка вуза и институтов для списков и дашборда преподавателя. */
+fun UserProfileResponse.teacherWorkplaceSummary(): String? {
+    val tp = teacherProfile ?: return null
+    val parts = buildList {
+        tp.universityName?.trim()?.takeIf { it.isNotEmpty() }?.let { add(it) }
+        if (!tp.institutesFromAssignments.isNullOrEmpty()) {
+            add(tp.institutesFromAssignments.joinToString(", "))
+        } else {
+            tp.instituteName?.trim()?.takeIf { it.isNotEmpty() }?.let { add(it) }
+        }
+    }
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+}
+
 fun userRoleLabelRu(userType: String): String = when (userType) {
     "STUDENT" -> "Студент"
     "TEACHER" -> "Преподаватель"
@@ -40,7 +54,7 @@ fun UserProfileResponse.roleSectionTitle(): String = when (userType) {
 
 fun UserProfileResponse.roleSectionSubtitle(): String? = when (userType) {
     "STUDENT" -> "Группа и подразделение"
-    "TEACHER" -> "Подразделение и должность"
+    "TEACHER" -> "Вуз, институты по нагрузке и должность"
     "ADMIN" -> "Ваш вуз и роль в системе"
     else -> null
 }
@@ -53,8 +67,14 @@ fun UserProfileResponse.heroContextLines(): List<String> = when (userType) {
         studentProfile?.instituteName?.let { add(it) }
     }
     "TEACHER" -> buildList {
+        teacherProfile?.universityName?.takeIf { it.isNotBlank() }?.let { add(it) }
+        val fromAssign = teacherProfile?.institutesFromAssignments
+        if (!fromAssign.isNullOrEmpty()) {
+            add(fromAssign.joinToString(", "))
+        } else {
+            teacherProfile?.instituteName?.takeIf { it.isNotBlank() }?.let { add(it) }
+        }
         teacherProfile?.position?.let { add(it) }
-        teacherProfile?.instituteName?.let { add(it) }
     }
     "ADMIN" -> buildList {
         val uni = adminProfile?.universityName?.trim().orEmpty()

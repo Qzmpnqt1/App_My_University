@@ -32,7 +32,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -51,6 +50,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.UserProfileResponse
 import com.example.app_my_university.ui.components.common.MuErrorState
 import com.example.app_my_university.ui.components.common.MuLoadingState
@@ -66,17 +66,22 @@ import com.example.app_my_university.ui.components.profile.roleSectionTitle
 import com.example.app_my_university.ui.components.profile.userInitials
 import com.example.app_my_university.ui.components.profile.userRoleLabelRu
 import com.example.app_my_university.ui.components.theme.AppThemeSelectorRow
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppLayout
+import com.example.app_my_university.ui.navigation.rememberAppRole
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    navController: NavHostController,
     onLogout: () -> Unit,
     onNavigateBack: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
+    val role = rememberAppRole()
     val uiState by viewModel.uiState.collectAsState()
     var newEmail by remember { mutableStateOf("") }
     var emailConfirmPassword by remember { mutableStateOf("") }
@@ -146,7 +151,9 @@ fun ProfileScreen(
         }
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = role,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Профиль",
@@ -155,13 +162,14 @@ fun ProfileScreen(
                     IconButton(onClick = { requestLogout() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.Logout,
-                            contentDescription = "Выйти из аккаунта"
+                            contentDescription = "Выйти из аккаунта",
+                            modifier = Modifier.size(AppLayout.barIconSize),
                         )
                     }
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         when {
             uiState.isLoading && uiState.profile == null -> {
@@ -537,17 +545,31 @@ private fun RoleSpecificSection(profile: UserProfileResponse) {
                 }
             }
             "TEACHER" -> {
-                profile.teacherProfile?.instituteName?.let {
-                    ProfileReadOnlyField(label = "Институт", value = it)
+                val tp = profile.teacherProfile
+                tp?.universityName?.let {
+                    ProfileReadOnlyField(label = "Вуз", value = it)
                 }
-                profile.teacherProfile?.position?.let {
+                val fromAssign = tp?.institutesFromAssignments
+                if (!fromAssign.isNullOrEmpty()) {
+                    ProfileReadOnlyField(
+                        label = "Институты (по назначенным дисциплинам)",
+                        value = fromAssign.joinToString(", "),
+                    )
+                } else {
+                    tp?.instituteName?.let {
+                        ProfileReadOnlyField(label = "Институт", value = it)
+                    }
+                }
+                tp?.position?.let {
                     ProfileReadOnlyField(label = "Должность", value = it)
                 }
-                if (profile.teacherProfile?.instituteName == null &&
-                    profile.teacherProfile?.position == null
+                if (tp?.universityName == null &&
+                    fromAssign.isNullOrEmpty() &&
+                    tp?.instituteName == null &&
+                    tp?.position == null
                 ) {
                     Text(
-                        text = "Служебные данные будут доступны после заполнения карточки преподавателя.",
+                        text = "После одобрения заявки администратор назначит дисциплины; вуз указан при регистрации.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -23,7 +23,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,9 +31,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.app_my_university.ui.components.AdminBottomBar
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppSpacing
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.navigation.Screen
+import com.example.app_my_university.ui.navigation.navigateWithinAdminFlow
 import com.example.app_my_university.ui.theme.Dimens
 
 private data class StructureEntry(
@@ -47,7 +49,6 @@ private data class StructureEntry(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminStructureHubScreen(navController: NavHostController) {
-    val currentRoute = navController.currentDestination?.route
     val entries = listOf(
         StructureEntry(
             "Вуз и институты",
@@ -81,31 +82,21 @@ fun AdminStructureHubScreen(navController: NavHostController) {
         )
     )
 
-    Scaffold(
-        bottomBar = {
-            AdminBottomBar(
-                currentRoute = currentRoute,
-                onNavigate = { route ->
-                    navController.navigate(route) {
-                        popUpTo(Screen.AdminHome.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        },
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Учебная структура",
                 onBackPressed = { navController.navigateUp() },
             )
-        }
+        },
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(Dimens.screenPadding),
+            contentPadding = PaddingValues(AppSpacing.screen),
             verticalArrangement = Arrangement.spacedBy(Dimens.spaceM)
         ) {
             item {
@@ -118,11 +109,7 @@ fun AdminStructureHubScreen(navController: NavHostController) {
             }
             items(entries, key = { it.route }) { e ->
                 StructureHubCard(entry = e) {
-                    navController.navigate(e.route) {
-                        popUpTo(Screen.AdminStructure.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    navController.navigateWithinAdminFlow(e.route)
                 }
             }
         }

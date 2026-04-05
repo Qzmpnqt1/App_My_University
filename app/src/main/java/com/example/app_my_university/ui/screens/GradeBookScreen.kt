@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import com.example.app_my_university.ui.designsystem.AppLayout
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -34,7 +35,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,10 +48,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.GradeResponse
 import com.example.app_my_university.data.api.model.StudentPerformanceSummaryResponse
 import com.example.app_my_university.data.api.model.StudentPracticeSlotResponse
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
 import com.example.app_my_university.ui.components.analytics.MuDonutChart
 import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
@@ -76,6 +79,7 @@ private const val SORT_UNKNOWN_COURSE = 999
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GradeBookScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: GradeBookViewModel = hiltViewModel(),
 ) {
@@ -101,7 +105,9 @@ fun GradeBookScreen(
             .sortedWith(compareBy({ it.key.first }, { it.key.second }))
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Student,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Зачётная книжка",
@@ -111,7 +117,11 @@ fun GradeBookScreen(
                         onClick = { viewModel.refresh() },
                         enabled = !uiState.initialLoading,
                     ) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Обновить")
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Обновить",
+                            modifier = Modifier.size(AppLayout.barIconSize),
+                        )
                     }
                 },
             )

@@ -34,7 +34,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SuggestionChip
@@ -57,9 +56,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.RegistrationRequestResponse
-import com.example.app_my_university.ui.components.AdminBottomBar
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
-import com.example.app_my_university.ui.navigation.Screen
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +69,6 @@ fun RegistrationRequestsScreen(
     viewModel: AdminViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentRoute = navController.currentDestination?.route
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Все", "Студенты", "Преподаватели")
     var statusFilter by remember { mutableIntStateOf(0) }
@@ -130,26 +128,16 @@ fun RegistrationRequestsScreen(
         }
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Заявки на регистрацию",
                 onBackPressed = onNavigateBack,
             )
         },
-        bottomBar = {
-            AdminBottomBar(
-                currentRoute = currentRoute,
-                onNavigate = { route ->
-                    navController.navigate(route) {
-                        popUpTo(Screen.AdminHome.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         when {
             uiState.isLoading && uiState.registrationRequests.isEmpty() -> {

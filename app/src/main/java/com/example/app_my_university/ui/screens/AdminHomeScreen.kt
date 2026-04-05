@@ -35,7 +35,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -52,10 +51,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
-import com.example.app_my_university.ui.components.AdminBottomBar
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.components.common.MuStatBlock
+import com.example.app_my_university.ui.designsystem.AppLayout
+import com.example.app_my_university.ui.designsystem.AppSpacing
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.navigation.Screen
+import com.example.app_my_university.ui.navigation.navigateWithinAdminFlow
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,7 +68,6 @@ fun AdminHomeScreen(
     adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     val adminState by adminViewModel.uiState.collectAsState()
-    val currentRoute = navController.currentDestination?.route
     val lifecycleOwner = LocalLifecycleOwner.current
 
     LaunchedEffect(Unit) {
@@ -86,11 +88,7 @@ fun AdminHomeScreen(
     }
 
     fun navigateTo(route: String) {
-        navController.navigate(route) {
-            popUpTo(Screen.AdminHome.route) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
-        }
+        navController.navigateWithinAdminFlow(route)
     }
 
     val pending = adminState.pendingRegistrationCount
@@ -98,31 +96,23 @@ fun AdminHomeScreen(
     val uniName = adminState.adminUniversityName ?: "Ваш вуз"
     val instituteCount = adminState.institutes.size
 
-    Scaffold(
-        bottomBar = {
-            AdminBottomBar(
-                currentRoute = currentRoute,
-                onNavigate = { route ->
-                    navController.navigate(route) {
-                        popUpTo(Screen.AdminHome.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        }
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
+        topBar = {
+            UniformTopAppBar(title = "Администрирование")
+        },
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(
+                horizontal = AppSpacing.screen,
+                vertical = AppSpacing.m,
+            ),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.m)
         ) {
-            UniformTopAppBar(title = "Администрирование")
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
                 item {
                     Text(
                         text = uniName,
@@ -334,13 +324,7 @@ fun AdminHomeScreen(
                         title = "Справочник дисциплин",
                         subtitle = "Предметы и связи с направлениями",
                         icon = Icons.Default.Subject,
-                        onClick = {
-                            navController.navigate(Screen.AdminSubjects.route) {
-                                popUpTo(Screen.AdminHome.route) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
+                        onClick = { navigateTo(Screen.AdminSubjects.route) }
                     )
                 }
                 item {
@@ -351,7 +335,6 @@ fun AdminHomeScreen(
                         onClick = { navigateTo(Screen.AdminMore.route) }
                     )
                 }
-            }
         }
     }
 }
@@ -379,7 +362,7 @@ private fun AdminHomeLinkRow(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(AppLayout.barIconSize),
                 tint = MaterialTheme.colorScheme.primary
             )
             Column(modifier = Modifier.weight(1f)) {

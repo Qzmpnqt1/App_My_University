@@ -12,7 +12,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,12 +23,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppSpacing
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminAuditViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminAuditLogsScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: AdminAuditViewModel = hiltViewModel()
 ) {
@@ -41,20 +45,22 @@ fun AdminAuditLogsScreen(
         viewModel.load()
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Журнал аудита",
                 onBackPressed = onNavigateBack,
             )
-        }
+        },
     ) { padding ->
         Column(
             Modifier
                 .padding(padding)
-                .padding(16.dp)
+                .padding(AppSpacing.screen)
                 .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.s)
         ) {
             OutlinedTextField(
                 value = action,

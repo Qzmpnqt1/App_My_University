@@ -16,7 +16,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,7 +29,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppSpacing
+import com.example.app_my_university.ui.navigation.rememberAppRole
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsEmptyState
 import com.example.app_my_university.ui.components.analytics.MuDonutChart
@@ -42,9 +45,11 @@ import com.example.app_my_university.ui.viewmodel.StudentPerformanceViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentPerformanceScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: StudentPerformanceViewModel = hiltViewModel()
 ) {
+    val role = rememberAppRole()
     val state by viewModel.uiState.collectAsState()
     var course by remember { mutableStateOf("") }
     var semester by remember { mutableStateOf("") }
@@ -53,21 +58,23 @@ fun StudentPerformanceScreen(
         viewModel.load()
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = role,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Успеваемость",
                 onBackPressed = onNavigateBack,
             )
-        }
+        },
     ) { padding ->
         Column(
             Modifier
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = AppSpacing.screen, vertical = AppSpacing.m),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.m)
         ) {
             RowFields(course, semester, onCourse = { course = it }, onSemester = { semester = it })
             Button(

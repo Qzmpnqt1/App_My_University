@@ -32,15 +32,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.AcademicGroupRequest
 import com.example.app_my_university.data.api.model.AcademicGroupResponse
 import com.example.app_my_university.data.api.model.StudyDirectionResponse
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupManagementScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: AdminViewModel = hiltViewModel()
 ) {
@@ -76,7 +80,9 @@ fun GroupManagementScreen(
             (it.directionName?.contains(searchQuery, ignoreCase = true) == true)
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Управление группами",
@@ -93,7 +99,7 @@ fun GroupManagementScreen(
                 Icon(Icons.Default.Add, contentDescription = "Добавить группу")
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(
             modifier = Modifier

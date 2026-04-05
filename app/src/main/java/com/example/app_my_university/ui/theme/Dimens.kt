@@ -16,9 +16,4 @@ object Dimens {
     val listItemSpacing = 12.dp
     val iconM = 24.dp
     val iconL = 40.dp
-
-    val topAppBarHeight = 64.dp
-    val topAppBarIconSize = 24.dp
-
-    val navigationBarCompactMin = 68.dp
 }

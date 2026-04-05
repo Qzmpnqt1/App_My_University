@@ -26,8 +26,12 @@ data class StudentProfileInfo(
 data class TeacherProfileInfo(
     /** teacher_profiles.id — для API назначений и расписания, не путать с users.id */
     val teacherProfileId: Long? = null,
+    val universityId: Long? = null,
+    val universityName: String? = null,
     val instituteId: Long?,
     val instituteName: String?,
+    /** Институты по назначенным дисциплинам (несколько возможны). */
+    val institutesFromAssignments: List<String>? = null,
     val position: String?
 )
 

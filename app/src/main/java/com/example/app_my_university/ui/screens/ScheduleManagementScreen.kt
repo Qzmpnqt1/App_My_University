@@ -35,7 +35,7 @@ import com.example.app_my_university.data.api.model.ScheduleResponse
 import com.example.app_my_university.data.api.model.SubjectInDirectionResponse
 import com.example.app_my_university.data.api.model.UserProfileResponse
 import com.example.app_my_university.core.logging.AppLogger
-import com.example.app_my_university.ui.components.AdminBottomBar
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.components.common.MuErrorState
@@ -45,7 +45,7 @@ import com.example.app_my_university.ui.components.picker.PickerListItem
 import com.example.app_my_university.ui.components.schedule.ScheduleCompareSegmentCard
 import com.example.app_my_university.ui.components.schedule.ScheduleCompareSummaryCard
 import com.example.app_my_university.ui.components.schedule.ScheduleLessonCard
-import com.example.app_my_university.ui.navigation.Screen
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 import com.example.app_my_university.ui.viewmodel.ScheduleScreenMode
 import com.example.app_my_university.ui.viewmodel.ScheduleUiState
@@ -75,7 +75,6 @@ fun ScheduleManagementScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val adminState by adminViewModel.uiState.collectAsState()
-    val currentRoute = navController.currentDestination?.route
     var showAddDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var deletingEntry by remember { mutableStateOf<ScheduleResponse?>(null) }
@@ -132,7 +131,9 @@ fun ScheduleManagementScreen(
         }
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = when (mainTab) {
@@ -149,19 +150,7 @@ fun ScheduleManagementScreen(
                 }
             }
         },
-        bottomBar = {
-            AdminBottomBar(
-                currentRoute = currentRoute,
-                onNavigate = { route ->
-                    navController.navigate(route) {
-                        popUpTo(Screen.AdminHome.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(
             modifier = Modifier

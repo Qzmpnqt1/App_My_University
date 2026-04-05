@@ -29,7 +29,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,8 +48,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.GradeResponse
 import com.example.app_my_university.data.api.model.ScheduleResponse
-import com.example.app_my_university.ui.components.StudentBottomBar
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.navigation.AppRole
+import com.example.app_my_university.ui.navigation.navigateWithinStudentFlow
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
 import com.example.app_my_university.ui.components.analytics.MuDonutChart
 import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
@@ -86,28 +87,16 @@ fun HomeScreen(
 ) {
     val profileState by profileViewModel.uiState.collectAsState()
     val dash by dashboardViewModel.uiState.collectAsState()
-    val currentRoute = navController.currentDestination?.route
-
     LaunchedEffect(Unit) {
         dashboardViewModel.load(includeGrades = true, includeStudentPerformance = true)
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Student,
+        navController = navController,
         topBar = {
             UniformTopAppBar(title = "Мой ВУЗ", subtitle = "Студент")
         },
-        bottomBar = {
-            StudentBottomBar(
-                currentRoute = currentRoute,
-                onNavigate = { route ->
-                    navController.navigate(route) {
-                        popUpTo(Screen.StudentHome.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        }
     ) { padding ->
         when {
             dash.isLoading && dash.scheduleByDay.isEmpty() -> {
@@ -136,10 +125,10 @@ fun HomeScreen(
                     groupLabel = profileState.profile?.studentProfile?.groupName,
                     dash = dash,
                     onWeek = { dashboardViewModel.setWeek(it) },
-                    onOpenSchedule = { navController.navigate(Screen.Schedule.route) },
-                    onOpenGradeBook = { navController.navigate(Screen.GradeBook.route) },
-                    onOpenPerformance = { navController.navigate(Screen.StudentPerformance.route) },
-                    onOpenMessages = { navController.navigate(Screen.Dialogs.route) },
+                    onOpenSchedule = { navController.navigateWithinStudentFlow(Screen.Schedule.route) },
+                    onOpenGradeBook = { navController.navigateWithinStudentFlow(Screen.GradeBook.route) },
+                    onOpenPerformance = { navController.navigateWithinStudentFlow(Screen.StudentPerformance.route) },
+                    onOpenMessages = { navController.navigateWithinStudentFlow(Screen.Dialogs.route) },
                     scheduleByDay = dash.scheduleByDay
                 )
             }

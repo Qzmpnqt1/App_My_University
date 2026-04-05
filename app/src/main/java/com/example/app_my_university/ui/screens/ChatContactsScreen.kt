@@ -1,12 +1,29 @@
 package com.example.app_my_university.ui.screens
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -15,8 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.ChatContactResponse
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppSpacing
+import com.example.app_my_university.ui.navigation.rememberAppRole
 import com.example.app_my_university.ui.viewmodel.ChatContactsViewModel
 
 private fun displayName(c: ChatContactResponse): String {
@@ -27,19 +48,23 @@ private fun displayName(c: ChatContactResponse): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatContactsScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     onContactSelected: (userId: Long, displayName: String) -> Unit,
     viewModel: ChatContactsViewModel = hiltViewModel()
 ) {
+    val role = rememberAppRole()
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
+    RoleShellScaffold(
+        role = role,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Новое сообщение",
                 onBackPressed = onNavigateBack,
             )
-        }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -51,7 +76,7 @@ fun ChatContactsScreen(
                 onValueChange = { viewModel.setQuery(it) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = AppSpacing.screen, vertical = AppSpacing.s),
                 placeholder = { Text("Поиск по имени или email") },
                 singleLine = true
             )
@@ -131,7 +156,7 @@ private fun ContactRow(contact: ChatContactResponse, onClick: () -> Unit) {
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        Icons.Default.Person,
+                        Icons.Filled.Person,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                     )

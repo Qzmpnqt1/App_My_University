@@ -25,7 +25,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,8 +41,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.ScheduleResponse
-import com.example.app_my_university.ui.components.TeacherBottomBar
+import com.example.app_my_university.ui.components.profile.teacherWorkplaceSummary
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.navigation.AppRole
+import com.example.app_my_university.ui.navigation.navigateWithinTeacherFlow
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
 import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
 import com.example.app_my_university.ui.components.common.MuErrorState
@@ -70,28 +72,16 @@ fun TeacherHomeScreen(
 ) {
     val profileState by profileViewModel.uiState.collectAsState()
     val dash by dashboardViewModel.uiState.collectAsState()
-    val currentRoute = navController.currentDestination?.route
-
     LaunchedEffect(Unit) {
         dashboardViewModel.load(includeGrades = false)
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Teacher,
+        navController = navController,
         topBar = {
             UniformTopAppBar(title = "Мой ВУЗ", subtitle = "Преподаватель")
         },
-        bottomBar = {
-            TeacherBottomBar(
-                currentRoute = currentRoute,
-                onNavigate = { route ->
-                    navController.navigate(route) {
-                        popUpTo(Screen.TeacherHome.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        }
     ) { padding ->
         when {
             dash.isLoading && dash.scheduleByDay.isEmpty() -> {
@@ -118,14 +108,14 @@ fun TeacherHomeScreen(
                     padding = padding,
                     userName = profileState.profile?.let { "${it.firstName} ${it.lastName}" }
                         ?: "Преподаватель",
-                    institute = profileState.profile?.teacherProfile?.instituteName,
+                    institute = profileState.profile?.teacherWorkplaceSummary(),
                     dash = dash,
                     scheduleByDay = dash.scheduleByDay,
                     onWeek = { dashboardViewModel.setWeek(it) },
-                    onSchedule = { navController.navigate(Screen.Schedule.route) },
-                    onGrades = { navController.navigate(Screen.TeacherGrades.route) },
-                    onAnalytics = { navController.navigate(Screen.TeacherStatistics.route) },
-                    onChats = { navController.navigate(Screen.Dialogs.route) }
+                    onSchedule = { navController.navigateWithinTeacherFlow(Screen.Schedule.route) },
+                    onGrades = { navController.navigateWithinTeacherFlow(Screen.TeacherGrades.route) },
+                    onAnalytics = { navController.navigateWithinTeacherFlow(Screen.TeacherStatistics.route) },
+                    onChats = { navController.navigateWithinTeacherFlow(Screen.Dialogs.route) }
                 )
             }
         }

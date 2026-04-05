@@ -14,6 +14,7 @@ object AppSpacing {
     val m = Dimens.spaceM
     val l = Dimens.spaceL
     val xl = Dimens.spaceXL
+    /** Горизонтальные отступы корневого контента экранов. */
     val screen = Dimens.screenPadding
     val card = Dimens.cardPadding
     val listItem = Dimens.listItemSpacing
@@ -26,14 +27,31 @@ object AppRadius {
     val sheet = 16.dp
 }
 
-object AppNav {
-    /** Нижняя панель: достаточная высота, чтобы не обрезать иконки сверху. */
-    val bottomBarMinHeight = 68.dp
-    val bottomIconSize = 24.dp
+/**
+ * Единый источник размеров для верхней и нижней навигационных панелей и их иконок.
+ */
+object AppLayout {
+    val topAppBarMinHeight = 64.dp
+    val bottomNavigationMinHeight = 68.dp
+    val barIconSize = 24.dp
+    val titleSp = 20f
+    /** Нижние action-панели (ввод в чате, кнопки в sheet): горизонтальный отступ. */
+    val bottomActionBarHorizontalPadding = AppSpacing.m
+    val bottomActionBarVerticalPadding = AppSpacing.s
+    val bottomActionBarTonalElevation = 3.dp
+    val bottomActionBarDividerElevation = 2.dp
 }
 
+/** @deprecated Используйте [AppLayout]. */
+@Deprecated("Используйте AppLayout", ReplaceWith("AppLayout.bottomNavigationMinHeight"))
+object AppNav {
+    val bottomBarMinHeight get() = AppLayout.bottomNavigationMinHeight
+    val bottomIconSize get() = AppLayout.barIconSize
+}
+
+/** @deprecated Используйте [AppLayout]. */
+@Deprecated("Используйте AppLayout", ReplaceWith("AppLayout.topAppBarMinHeight"))
 object AppBar {
-    /** Единая минимальная высота контента top bar (без status bar). */
-    val minHeight = 64.dp
-    val titleSp = 20f
+    val minHeight get() = AppLayout.topAppBarMinHeight
+    val titleSp get() = AppLayout.titleSp
 }

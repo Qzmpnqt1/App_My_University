@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.app_my_university.ui.designsystem.AppNav
+import com.example.app_my_university.ui.designsystem.AppLayout
 
 data class MuBottomNavDestination(
     val route: String,
@@ -32,7 +32,7 @@ fun MuBottomNavigationBar(
     isSelected: (MuBottomNavDestination, String?) -> Boolean = { dest, route -> route == dest.route },
 ) {
     NavigationBar(
-        modifier = modifier.heightIn(min = AppNav.bottomBarMinHeight),
+        modifier = modifier.heightIn(min = AppLayout.bottomNavigationMinHeight),
         tonalElevation = 1.dp,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
@@ -45,7 +45,7 @@ fun MuBottomNavigationBar(
                     Icon(
                         imageVector = item.icon,
                         contentDescription = item.contentDescription,
-                        modifier = Modifier.size(AppNav.bottomIconSize),
+                        modifier = Modifier.size(AppLayout.barIconSize),
                     )
                 },
                 label = {

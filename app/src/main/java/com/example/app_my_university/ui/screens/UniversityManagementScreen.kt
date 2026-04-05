@@ -26,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -43,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.InstituteRequest
 import com.example.app_my_university.data.api.model.InstituteResponse
 import com.example.app_my_university.data.api.model.UniversityRequest
@@ -51,7 +51,9 @@ import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.components.common.MuErrorState
 import com.example.app_my_university.ui.components.common.MuLoadingState
 import com.example.app_my_university.ui.theme.Dimens
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 /**
@@ -60,6 +62,7 @@ import com.example.app_my_university.ui.viewmodel.AdminViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UniversityManagementScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: AdminViewModel = hiltViewModel()
 ) {
@@ -96,7 +99,9 @@ fun UniversityManagementScreen(
         }
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Мой вуз",
@@ -116,7 +121,7 @@ fun UniversityManagementScreen(
                 }
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         when {
             uiState.isLoading && myUniversity == null && uiState.error == null -> {

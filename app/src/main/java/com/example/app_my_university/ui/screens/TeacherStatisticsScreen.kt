@@ -13,7 +13,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,10 +27,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.PracticeStatisticsDetail
 import com.example.app_my_university.data.api.model.SubjectInDirectionResponse
 import com.example.app_my_university.data.api.model.TeacherGradingPickResponse
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppSpacing
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsEmptyState
 import com.example.app_my_university.ui.components.analytics.MuHorizontalBarChart
@@ -50,6 +53,7 @@ import com.example.app_my_university.ui.viewmodel.TeacherStatsSection
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherStatisticsScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: TeacherStatisticsViewModel = hiltViewModel(),
 ) {
@@ -152,20 +156,22 @@ fun TeacherStatisticsScreen(
         },
     )
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Teacher,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Аналитика",
                 onBackPressed = onNavigateBack,
             )
-        }
+        },
     ) { padding ->
         Column(
             Modifier
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = AppSpacing.screen, vertical = AppSpacing.m),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.m)
         ) {
             Text(
                 text = "Нагрузка по расписанию, успеваемость по дисциплинам, группам и направлениям, к которым у вас есть доступ.",

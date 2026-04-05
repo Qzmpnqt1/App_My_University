@@ -33,7 +33,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -49,9 +48,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.example.app_my_university.data.api.model.TeacherSubjectResponse
 import com.example.app_my_university.data.api.model.UserProfileResponse
+import com.example.app_my_university.ui.components.profile.teacherWorkplaceSummary
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.components.common.MuLoadingState
 import com.example.app_my_university.ui.screens.adminassignment.AdminTeacherAssignmentSheet
@@ -92,6 +95,7 @@ private fun teacherInitials(name: String): String {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminTeacherAssignmentScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: AdminTeacherAssignmentViewModel,
 ) {
@@ -125,7 +129,9 @@ fun AdminTeacherAssignmentScreen(
         }
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = "Назначение дисциплин",
@@ -136,7 +142,7 @@ fun AdminTeacherAssignmentScreen(
     ) { padding ->
         if (uiState.isLoading && uiState.allTeachers.isEmpty()) {
             MuLoadingState(Modifier.fillMaxSize().padding(padding))
-            return@Scaffold
+            return@RoleShellScaffold
         }
         if (uiState.adminUniversityId == null && !uiState.isLoading) {
             MuEmptyState(
@@ -144,7 +150,7 @@ fun AdminTeacherAssignmentScreen(
                 subtitle = uiState.error ?: "Проверьте профиль администратора.",
                 modifier = Modifier.fillMaxSize().padding(padding),
             )
-            return@Scaffold
+            return@RoleShellScaffold
         }
 
         LazyColumn(
@@ -388,9 +394,9 @@ private fun TeacherPickCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                teacher.teacherProfile?.instituteName?.let { inst ->
+                teacher.teacherWorkplaceSummary()?.let { workplace ->
                     Text(
-                        inst,
+                        workplace,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 2,
@@ -456,7 +462,7 @@ private fun SelectedTeacherSummaryCard(teacher: UserProfileResponse) {
                 teacher.email?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                teacher.teacherProfile?.instituteName?.let {
+                teacher.teacherWorkplaceSummary()?.let {
                     Text(
                         it,
                         style = MaterialTheme.typography.bodyMedium,

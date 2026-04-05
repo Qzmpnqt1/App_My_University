@@ -23,7 +23,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,9 +31,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.app_my_university.ui.components.AdminBottomBar
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppSpacing
+import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.navigation.Screen
+import com.example.app_my_university.ui.navigation.navigateWithinAdminFlow
 import com.example.app_my_university.ui.theme.Dimens
 
 private data class MoreEntry(val title: String, val subtitle: String, val icon: ImageVector, val route: String)
@@ -42,7 +44,6 @@ private data class MoreEntry(val title: String, val subtitle: String, val icon: 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminMoreScreen(navController: NavHostController) {
-    val currentRoute = navController.currentDestination?.route
     val fixed = listOf(
         MoreEntry("Сообщения", "Чаты с пользователями", Icons.AutoMirrored.Filled.Chat, Screen.Dialogs.route),
         MoreEntry("Пользователи", "Активация и деактивация", Icons.Default.Person, Screen.AdminUsers.route),
@@ -51,35 +52,19 @@ fun AdminMoreScreen(navController: NavHostController) {
         MoreEntry("Профиль", "Личные данные и выход", Icons.Default.Settings, Screen.Profile.route)
     )
 
-    Scaffold(
-        bottomBar = {
-            AdminBottomBar(
-                currentRoute = currentRoute,
-                onNavigate = { route ->
-                    navController.navigate(route) {
-                        popUpTo(Screen.AdminHome.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
-            )
-        },
-        topBar = {
-            UniformTopAppBar(title = "Ещё")
-        }
+    RoleShellScaffold(
+        role = AppRole.Admin,
+        navController = navController,
+        topBar = { UniformTopAppBar(title = "Ещё") },
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(Dimens.screenPadding),
+            contentPadding = PaddingValues(AppSpacing.screen),
             verticalArrangement = Arrangement.spacedBy(Dimens.spaceM)
         ) {
             items(fixed, key = { it.route }) { item ->
                 MoreRowCard(item) {
-                    navController.navigate(item.route) {
-                        popUpTo(Screen.AdminMore.route) { saveState = true }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
+                    navController.navigateWithinAdminFlow(item.route)
                 }
             }
         }

@@ -131,6 +131,7 @@ fun AppNavigation() {
 
         composable(Screen.Profile.route) {
             ProfileScreen(
+                navController = navController,
                 onLogout = {
                     loginViewModel.logout()
                     navController.navigate(Screen.Login.route) {
@@ -142,26 +143,37 @@ fun AppNavigation() {
         }
 
         composable(Screen.Schedule.route) {
-            ScheduleScreen(onNavigateBack = { navController.navigateUp() })
+            ScheduleScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable(Screen.GradeBook.route) {
-            GradeBookScreen(onNavigateBack = { navController.navigateUp() })
+            GradeBookScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable(Screen.TeacherGrades.route) { backStackEntry ->
             TeacherGradesScreen(
+                navController = navController,
                 onNavigateBack = { navController.navigateUp() },
                 viewModel = hiltViewModel(backStackEntry),
             )
         }
 
         composable(Screen.TeacherStatistics.route) {
-            TeacherStatisticsScreen(onNavigateBack = { navController.navigateUp() })
+            TeacherStatisticsScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable(Screen.Dialogs.route) {
             MessagesScreen(
+                navController = navController,
                 onChatSelected = { conversationId, participantName, participantId ->
                     navController.navigate(Screen.Chat.createRoute(conversationId, participantName, participantId))
                 },
@@ -172,6 +184,7 @@ fun AppNavigation() {
 
         composable(Screen.ChatContacts.route) {
             ChatContactsScreen(
+                navController = navController,
                 onNavigateBack = { navController.navigateUp() },
                 onContactSelected = { userId, displayName ->
                     navController.navigate(Screen.Chat.createRoute("NEW", displayName, userId))
@@ -208,11 +221,17 @@ fun AppNavigation() {
         }
 
         composable(Screen.AdminUsers.route) {
-            UserManagementScreen(onNavigateBack = { navController.navigateUp() })
+            UserManagementScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable(Screen.AdminUniversities.route) {
-            UniversityManagementScreen(onNavigateBack = { navController.navigateUp() })
+            UniversityManagementScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable(Screen.AdminSchedule.route) {
@@ -227,11 +246,15 @@ fun AppNavigation() {
         }
 
         composable(Screen.AdminClassrooms.route) {
-            AdminClassroomManagementScreen(onNavigateBack = { navController.navigateUp() })
+            AdminClassroomManagementScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable(Screen.AdminTeacherSubjects.route) { backStackEntry ->
             AdminTeacherAssignmentScreen(
+                navController = navController,
                 onNavigateBack = { navController.navigateUp() },
                 viewModel = hiltViewModel(backStackEntry),
             )
@@ -242,23 +265,38 @@ fun AppNavigation() {
         }
 
         composable(Screen.AdminSubjects.route) {
-            SubjectManagementScreen(onNavigateBack = { navController.navigateUp() })
+            SubjectManagementScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable(Screen.AdminGroups.route) {
-            GroupManagementScreen(onNavigateBack = { navController.navigateUp() })
+            GroupManagementScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable(Screen.AdminAudit.route) {
-            AdminAuditLogsScreen(onNavigateBack = { navController.navigateUp() })
+            AdminAuditLogsScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable(Screen.AdminStatistics.route) {
-            AdminStatisticsScreen(onNavigateBack = { navController.navigateUp() })
+            AdminStatisticsScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
 
         composable(Screen.StudentPerformance.route) {
-            StudentPerformanceScreen(onNavigateBack = { navController.navigateUp() })
+            StudentPerformanceScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
         }
     }
 

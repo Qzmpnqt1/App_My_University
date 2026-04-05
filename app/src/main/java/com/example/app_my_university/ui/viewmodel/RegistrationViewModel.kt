@@ -49,6 +49,7 @@ class RegistrationViewModel @Inject constructor(
     }
 
     fun selectUniversity(universityId: Long) {
+        val forStudent = _uiState.value.selectedUserType == "STUDENT"
         _uiState.value = _uiState.value.copy(
             selectedUniversityId = universityId,
             selectedInstituteId = null,
@@ -58,6 +59,7 @@ class RegistrationViewModel @Inject constructor(
             directions = emptyList(),
             groups = emptyList()
         )
+        if (!forStudent) return
         viewModelScope.launch {
             educationRepository.getInstitutes(universityId).fold(
                 onSuccess = { _uiState.value = _uiState.value.copy(institutes = it) },
@@ -101,7 +103,15 @@ class RegistrationViewModel @Inject constructor(
     }
 
     fun selectUserType(userType: String) {
-        _uiState.value = _uiState.value.copy(selectedUserType = userType)
+        _uiState.value = _uiState.value.copy(
+            selectedUserType = userType,
+            selectedInstituteId = null,
+            selectedDirectionId = null,
+            selectedGroupId = null,
+            institutes = emptyList(),
+            directions = emptyList(),
+            groups = emptyList(),
+        )
     }
 
     fun register(
@@ -124,11 +134,6 @@ class RegistrationViewModel @Inject constructor(
             _uiState.value = state.copy(error = "Выберите группу")
             return
         }
-        if (state.selectedUserType == "TEACHER" && state.selectedInstituteId == null) {
-            _uiState.value = state.copy(error = "Выберите институт")
-            return
-        }
-
         viewModelScope.launch {
             _uiState.value = state.copy(isLoading = true, error = null)
             val request = RegisterRequest(
@@ -140,7 +145,7 @@ class RegistrationViewModel @Inject constructor(
                 userType = state.selectedUserType,
                 universityId = state.selectedUniversityId,
                 groupId = if (state.selectedUserType == "STUDENT") state.selectedGroupId else null,
-                instituteId = if (state.selectedUserType == "TEACHER") state.selectedInstituteId else null
+                instituteId = null,
             )
             authRepository.register(request).fold(
                 onSuccess = { _uiState.value = _uiState.value.copy(isLoading = false, isRegistered = true) },

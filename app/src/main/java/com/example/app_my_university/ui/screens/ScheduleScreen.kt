@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -20,7 +21,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -38,8 +38,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.example.app_my_university.core.logging.AppLogger
+import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppLayout
+import com.example.app_my_university.ui.navigation.rememberAppRole
 import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.components.common.MuErrorState
 import com.example.app_my_university.ui.components.common.MuLoadingState
@@ -74,9 +78,11 @@ private val dayNamesLong = mapOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleScreen(
+    navController: NavHostController,
     onNavigateBack: () -> Unit,
     viewModel: ScheduleViewModel = hiltViewModel()
 ) {
+    val role = rememberAppRole()
     val uiState by viewModel.uiState.collectAsState()
     var showToolsSheet by remember { mutableStateOf(false) }
     var showGroupPick by remember { mutableStateOf(false) }
@@ -136,7 +142,9 @@ fun ScheduleScreen(
         }
     }
 
-    Scaffold(
+    RoleShellScaffold(
+        role = role,
+        navController = navController,
         topBar = {
             UniformTopAppBar(
                 title = when (uiState.screenMode) {
@@ -158,6 +166,7 @@ fun ScheduleScreen(
                                 Icon(
                                     Icons.Default.SwapHoriz,
                                     contentDescription = "Сравнение и аудитории",
+                                    modifier = Modifier.size(AppLayout.barIconSize),
                                 )
                             }
                         }
@@ -174,7 +183,7 @@ fun ScheduleScreen(
                     }
                 }
             )
-        }
+        },
     ) { padding ->
         Column(
             modifier = Modifier

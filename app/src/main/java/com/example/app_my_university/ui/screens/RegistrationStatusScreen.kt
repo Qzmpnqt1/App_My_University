@@ -151,7 +151,8 @@ private fun PendingEditForm(
         viewModel.loadGuestInstitutes(uid)
     }
 
-    LaunchedEffect(catalogState.guestInstitutes, status.instituteId) {
+    LaunchedEffect(catalogState.guestInstitutes, status.instituteId, status.userType) {
+        if (!status.userType.equals("STUDENT", ignoreCase = true)) return@LaunchedEffect
         val iid = status.instituteId ?: return@LaunchedEffect
         catalogState.guestInstitutes.find { it.id == iid }?.let { labInstitute = it.name }
         viewModel.loadGuestDirections(iid)
@@ -167,15 +168,19 @@ private fun PendingEditForm(
         labGroup = g.name
     }
 
-    LaunchedEffect(selUniversityId) {
+    LaunchedEffect(selUniversityId, userType) {
         val uid = selUniversityId ?: return@LaunchedEffect
-        viewModel.loadGuestInstitutes(uid)
+        if (userType == "STUDENT") {
+            viewModel.loadGuestInstitutes(uid)
+        }
     }
-    LaunchedEffect(selInstituteId) {
+    LaunchedEffect(selInstituteId, userType) {
+        if (userType != "STUDENT") return@LaunchedEffect
         val iid = selInstituteId ?: return@LaunchedEffect
         viewModel.loadGuestDirections(iid)
     }
-    LaunchedEffect(selDirectionId) {
+    LaunchedEffect(selDirectionId, userType) {
+        if (userType != "STUDENT") return@LaunchedEffect
         val did = selDirectionId ?: return@LaunchedEffect
         viewModel.loadGuestGroups(did)
     }
@@ -276,6 +281,14 @@ private fun PendingEditForm(
                         onClick = {
                             userType = code
                             userTypeMenu = false
+                            if (code == "TEACHER") {
+                                selInstituteId = null
+                                labInstitute = ""
+                                selDirectionId = null
+                                labDirection = ""
+                                selGroupId = null
+                                labGroup = ""
+                            }
                         },
                     )
                 }
@@ -289,13 +302,15 @@ private fun PendingEditForm(
             enabled = catalogState.guestUniversities.isNotEmpty(),
             onClick = { guestPick = GuestEntityPick.University },
         )
-        MuPickerField(
-            label = "Институт (необязательно)",
-            valueText = labInstitute,
-            placeholder = "Сначала вуз",
-            enabled = selUniversityId != null && catalogState.guestInstitutes.isNotEmpty(),
-            onClick = { guestPick = GuestEntityPick.Institute },
-        )
+        if (userType == "STUDENT") {
+            MuPickerField(
+                label = "Институт *",
+                valueText = labInstitute,
+                placeholder = "Сначала вуз",
+                enabled = selUniversityId != null && catalogState.guestInstitutes.isNotEmpty(),
+                onClick = { guestPick = GuestEntityPick.Institute },
+            )
+        }
         if (userType == "STUDENT") {
             MuPickerField(
                 label = "Направление",
@@ -328,11 +343,11 @@ private fun PendingEditForm(
                         userType = userType,
                         universityId = u,
                         groupId = if (userType == "STUDENT") selGroupId else null,
-                        instituteId = selInstituteId,
+                        instituteId = if (userType == "STUDENT") selInstituteId else null,
                     )
                 )
             },
-            enabled = !isLoading && selUniversityId != null && (userType != "STUDENT" || selGroupId != null),
+            enabled = !isLoading && selUniversityId != null && (userType != "STUDENT" || (selGroupId != null && selInstituteId != null)),
             modifier = Modifier.fillMaxWidth()
         ) { Text("Сохранить изменения заявки") }
     }

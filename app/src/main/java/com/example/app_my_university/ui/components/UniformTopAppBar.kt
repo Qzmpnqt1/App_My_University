@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -21,7 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
-import com.example.app_my_university.ui.designsystem.AppBar
+import com.example.app_my_university.ui.designsystem.AppLayout
 
 /**
  * Единая верхняя панель: выравнивание по центру, фиксированная минимальная высота,
@@ -42,7 +43,7 @@ fun UniformTopAppBar(
 
     val titleStyle = MaterialTheme.typography.titleLarge.copy(
         fontWeight = FontWeight.SemiBold,
-        fontSize = AppBar.titleSp.sp,
+        fontSize = AppLayout.titleSp.sp,
         color = onBar,
     )
     val titleComposable: @Composable () -> Unit = {
@@ -91,13 +92,14 @@ fun UniformTopAppBar(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Назад",
                         tint = onBar,
+                        modifier = Modifier.size(AppLayout.barIconSize),
                     )
                 }
             }
         },
         actions = actions,
         colors = barColors,
-        modifier = Modifier.heightIn(min = AppBar.minHeight),
+        modifier = Modifier.heightIn(min = AppLayout.topAppBarMinHeight),
         windowInsets = WindowInsets.statusBars,
     )
 }

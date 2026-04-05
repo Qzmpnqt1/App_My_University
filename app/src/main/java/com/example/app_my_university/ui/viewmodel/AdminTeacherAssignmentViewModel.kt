@@ -11,6 +11,7 @@ import com.example.app_my_university.data.api.model.TeacherSubjectResponse
 import com.example.app_my_university.data.api.model.UserProfileResponse
 import com.example.app_my_university.data.repository.EducationRepository
 import com.example.app_my_university.data.repository.ProfileRepository
+import com.example.app_my_university.ui.components.profile.teacherWorkplaceSummary
 import com.example.app_my_university.ui.components.picker.PickerListItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -92,7 +93,13 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
         val q = state.teacherSearchQuery.trim().lowercase()
         if (q.isEmpty()) return state.allTeachers
         return state.allTeachers.filter { t ->
-            listOfNotNull(t.lastName, t.firstName, t.middleName, t.email, t.teacherProfile?.instituteName)
+            val tp = t.teacherProfile
+            val workplace = listOfNotNull(
+                tp?.universityName,
+                tp?.instituteName,
+                tp?.institutesFromAssignments?.joinToString(" "),
+            ).joinToString(" ")
+            listOfNotNull(t.lastName, t.firstName, t.middleName, t.email, workplace)
                 .joinToString(" ").lowercase().contains(q)
         }
     }
@@ -103,7 +110,7 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
             PickerListItem(
                 id = t.id,
                 primary = name.ifBlank { t.email },
-                secondary = t.teacherProfile?.instituteName,
+                secondary = t.teacherWorkplaceSummary(),
             )
         }
     }
