@@ -325,6 +325,7 @@ fun MuLineChart(
 ) {
     val lineColor = MaterialTheme.colorScheme.primary
     val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+    val pointInner = MaterialTheme.colorScheme.surface
     if (points.isEmpty()) {
         MuAnalyticsEmptyState("Нет данных для динамики")
         return
@@ -371,7 +372,7 @@ fun MuLineChart(
                 val x = pad + (w - 2 * pad) * i / denom
                 val y = h - pad - (h - 2 * pad) * ((v - minV) / range)
                 drawCircle(lineColor, 5.dp.toPx(), Offset(x, y))
-                drawCircle(Color.White, 2.5.dp.toPx(), Offset(x, y))
+                drawCircle(pointInner, 2.5.dp.toPx(), Offset(x, y))
             }
         }
         Row(

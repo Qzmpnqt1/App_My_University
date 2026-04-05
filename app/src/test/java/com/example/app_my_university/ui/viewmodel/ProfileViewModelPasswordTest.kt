@@ -1,9 +1,13 @@
 package com.example.app_my_university.ui.viewmodel
 
 import com.example.app_my_university.data.repository.ProfileRepository
+import com.example.app_my_university.data.theme.AppThemePreference
+import com.example.app_my_university.data.theme.ThemePreferenceRepository
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -19,12 +23,15 @@ class ProfileViewModelPasswordTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: ProfileRepository
+    private lateinit var themePreferenceRepository: ThemePreferenceRepository
     private lateinit var viewModel: ProfileViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         repository = mockk()
+        themePreferenceRepository = mockk(relaxed = true)
+        every { themePreferenceRepository.observeThemePreference() } returns flowOf(AppThemePreference.SYSTEM)
         coEvery { repository.getProfile() } returns Result.success(
             com.example.app_my_university.data.api.model.UserProfileResponse(
                 id = 1L,
@@ -40,7 +47,7 @@ class ProfileViewModelPasswordTest {
                 adminProfile = null
             )
         )
-        viewModel = ProfileViewModel(repository)
+        viewModel = ProfileViewModel(repository, themePreferenceRepository)
     }
 
     @After

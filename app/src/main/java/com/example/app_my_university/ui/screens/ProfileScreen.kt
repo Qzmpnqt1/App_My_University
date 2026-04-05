@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -64,6 +65,7 @@ import com.example.app_my_university.ui.components.profile.roleSectionSubtitle
 import com.example.app_my_university.ui.components.profile.roleSectionTitle
 import com.example.app_my_university.ui.components.profile.userInitials
 import com.example.app_my_university.ui.components.profile.userRoleLabelRu
+import com.example.app_my_university.ui.components.theme.AppThemeSelectorRow
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.ProfileViewModel
@@ -95,6 +97,7 @@ fun ProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val busy = uiState.isLoading
     val profile = uiState.profile
+    val themePreference by viewModel.themePreference.collectAsState()
 
     LaunchedEffect(profile?.id, profile?.lastName, profile?.firstName, profile?.middleName) {
         val p = profile ?: return@LaunchedEffect
@@ -221,6 +224,18 @@ fun ProfileScreen(
                         contextLines = profile.heroContextLines(),
                         isActive = profile.isActive
                     )
+
+                    ProfileSectionCard(
+                        title = "Тема приложения",
+                        subtitle = "Сохраняется для вашей учётной записи на этом устройстве. По умолчанию используется тема системы.",
+                        icon = Icons.Outlined.Palette
+                    ) {
+                        AppThemeSelectorRow(
+                            selected = themePreference,
+                            onSelect = { viewModel.setThemePreference(it) },
+                            enabled = !busy,
+                        )
+                    }
 
                     RoleSpecificSection(profile)
 

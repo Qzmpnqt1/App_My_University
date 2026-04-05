@@ -43,6 +43,8 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
 
     suspend fun getUserType(): String? = context.dataStore.data.map { it[USER_TYPE_KEY] }.first()
 
+    suspend fun getUserId(): Long? = context.dataStore.data.map { it[USER_ID_KEY] }.first()
+
     suspend fun clearAuthData() {
         context.dataStore.edit { it.clear() }
     }

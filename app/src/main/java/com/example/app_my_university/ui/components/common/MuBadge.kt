@@ -9,33 +9,38 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.app_my_university.ui.theme.MuPalette
+import com.example.app_my_university.ui.theme.AppThemeExtras
 
 enum class MuBadgeTone {
     Neutral,
     Primary,
     Success,
     Warning,
-    Error
+    Error,
+    Info,
 }
 
 @Composable
 fun MuStatusBadge(
     text: String,
     modifier: Modifier = Modifier,
-    tone: MuBadgeTone = MuBadgeTone.Neutral
+    tone: MuBadgeTone = MuBadgeTone.Neutral,
 ) {
-    val (bg, fg) = when (tone) {
+    val scheme = MaterialTheme.colorScheme
+    val ext = AppThemeExtras.extendedColors
+    val (bg: Color, fg: Color) = when (tone) {
         MuBadgeTone.Neutral ->
-            MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+            scheme.surfaceVariant to scheme.onSurfaceVariant
         MuBadgeTone.Primary ->
-            MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+            scheme.primaryContainer to scheme.onPrimaryContainer
         MuBadgeTone.Success ->
-            MuPalette.AccentLight.copy(alpha = 0.85f) to MuPalette.Success
+            ext.successContainer to ext.onSuccessContainer
         MuBadgeTone.Warning ->
-            Color(0xFFFFF3E0) to MuPalette.Warning
+            ext.warningContainer to ext.onWarningContainer
         MuBadgeTone.Error ->
-            MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+            scheme.errorContainer to scheme.onErrorContainer
+        MuBadgeTone.Info ->
+            ext.infoContainer to ext.onInfoContainer
     }
     Text(
         text = text,
@@ -43,7 +48,7 @@ fun MuStatusBadge(
         color = fg,
         modifier = modifier
             .background(bg, RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
     )
 }
 

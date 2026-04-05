@@ -1,109 +1,133 @@
 package com.example.app_my_university.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.*
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = MuPalette.Accent,
-    onPrimary = Color.White,
-    primaryContainer = MuPalette.AccentLight,
-    onPrimaryContainer = MuPalette.Ink,
+    primary = Color(0xFF1F4D7A),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFD0E4FF),
+    onPrimaryContainer = Color(0xFF001D36),
 
-    secondary = MuPalette.InkMuted,
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE3E8EE),
-    onSecondaryContainer = MuPalette.Ink,
+    secondary = Color(0xFF445968),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFD2DBE5),
+    onSecondaryContainer = Color(0xFF1B2832),
 
-    tertiary = MuPalette.TealAccent,
-    onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFD5F0EA),
+    tertiary = Color(0xFF2A6B5F),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFB8EBE3),
     onTertiaryContainer = Color(0xFF002019),
 
-    background = MuPalette.Surface,
-    onBackground = MuPalette.Ink,
-    surface = MuPalette.SurfaceCard,
-    onSurface = MuPalette.Ink,
-    surfaceVariant = Color(0xFFEEF1F5),
-    onSurfaceVariant = MuPalette.InkMuted,
-
-    error = MuPalette.Error,
-    onError = Color.White,
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
     errorContainer = Color(0xFFFFDAD6),
     onErrorContainer = Color(0xFF410002),
 
-    outline = MuPalette.OutlineSoft,
-    outlineVariant = Color(0xFFE2E5E9)
+    background = Color(0xFFF4F6FA),
+    onBackground = Color(0xFF191C20),
+    surface = Color(0xFFFAFAFC),
+    onSurface = Color(0xFF191C20),
+    surfaceVariant = Color(0xFFDEE3EB),
+    onSurfaceVariant = Color(0xFF3F4A57),
+
+    outline = Color(0xFF6F7888),
+    outlineVariant = Color(0xFFBFC6D1),
+    scrim = Color(0xFF000000),
+
+    inverseSurface = Color(0xFF2E3136),
+    inverseOnSurface = Color(0xFFF0F0F4),
+    inversePrimary = Color(0xFF9ECAFF),
+
+    surfaceDim = Color(0xFFD4D9E0),
+    surfaceBright = Color(0xFFFAFAFC),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFEFF1F6),
+    surfaceContainer = Color(0xFFE8EBF2),
+    surfaceContainerHigh = Color(0xFFE2E6ED),
+    surfaceContainerHighest = Color(0xFFDCE1E9),
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF9ECAFF),
+    primary = Color(0xFFB0C8F0),
     onPrimary = Color(0xFF003258),
-    primaryContainer = Color(0xFF00497E),
-    onPrimaryContainer = Color(0xFFD1E4FF),
+    primaryContainer = Color(0xFF2E5280),
+    onPrimaryContainer = Color(0xFFD4E4FF),
 
-    secondary = Color(0xFFB4CAD6),
-    onSecondary = Color(0xFF1F333D),
-    secondaryContainer = Color(0xFF364955),
-    onSecondaryContainer = Color(0xFFCFE4EF),
+    secondary = Color(0xFFB6C4D0),
+    onSecondary = Color(0xFF1F2A32),
+    secondaryContainer = Color(0xFF364855),
+    onSecondaryContainer = Color(0xFFD2DBE5),
 
-    tertiary = Color(0xFF8BD4C6),
+    tertiary = Color(0xFF8FD4C8),
     onTertiary = Color(0xFF00382F),
-    tertiaryContainer = Color(0xFF005045),
-    onTertiaryContainer = Color(0xFFA7F0E2),
-
-    background = Color(0xFF1A1C1E),
-    onBackground = Color(0xFFE2E2E6),
-    surface = Color(0xFF1A1C1E),
-    onSurface = Color(0xFFE2E2E6),
-    surfaceVariant = Color(0xFF44474E),
-    onSurfaceVariant = Color(0xFFC4C6CF),
+    tertiaryContainer = Color(0xFF1A5C52),
+    onTertiaryContainer = Color(0xFFA8F0E5),
 
     error = Color(0xFFFFB4AB),
     onError = Color(0xFF690005),
     errorContainer = Color(0xFF93000A),
     onErrorContainer = Color(0xFFFFDAD6),
 
-    outline = Color(0xFF8E9099),
-    outlineVariant = Color(0xFF44474E)
+    background = Color(0xFF12161C),
+    onBackground = Color(0xFFE1E4EA),
+    surface = Color(0xFF12161C),
+    onSurface = Color(0xFFE1E4EA),
+    surfaceVariant = Color(0xFF3D4450),
+    onSurfaceVariant = Color(0xFFBFC6D4),
+
+    outline = Color(0xFF89909C),
+    outlineVariant = Color(0xFF3D4450),
+    scrim = Color(0xFF000000),
+
+    inverseSurface = Color(0xFFE1E4EA),
+    inverseOnSurface = Color(0xFF2E3136),
+    inversePrimary = Color(0xFF1F4D7A),
+
+    surfaceDim = Color(0xFF12161C),
+    surfaceBright = Color(0xFF383F4A),
+    surfaceContainerLowest = Color(0xFF0D1015),
+    surfaceContainerLow = Color(0xFF1A1F27),
+    surfaceContainer = Color(0xFF1E242D),
+    surfaceContainerHigh = Color(0xFF282F39),
+    surfaceContainerHighest = Color(0xFF333A45),
 )
 
 @Composable
 fun AppMyUniversityTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
-    val colorScheme = when {
-        dynamicColor && !darkTheme -> dynamicLightColorScheme(context)
-        dynamicColor && darkTheme  -> dynamicDarkColorScheme(context)
-        darkTheme                  -> DarkColorScheme
-        else                       -> LightColorScheme
+    val colorScheme: ColorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
     }
 
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view)
-                .isAppearanceLightStatusBars = !darkTheme
-        }
-    }
+    val extended = remember(darkTheme) { appExtendedColors(darkTheme) }
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
         shapes = AppShapes,
-        content = content
-    )
+    ) {
+        CompositionLocalProvider(LocalAppExtendedColors provides extended) {
+            content()
+        }
+    }
 }

@@ -4,9 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_my_university.data.api.model.UserProfileResponse
 import com.example.app_my_university.data.repository.ProfileRepository
+import com.example.app_my_university.data.theme.AppThemePreference
+import com.example.app_my_university.data.theme.ThemePreferenceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,11 +25,24 @@ data class ProfileUiState(
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val themePreferenceRepository: ThemePreferenceRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState
+
+    val themePreference: StateFlow<AppThemePreference> =
+        themePreferenceRepository.observeThemePreference()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = AppThemePreference.SYSTEM,
+            )
+
+    fun setThemePreference(mode: AppThemePreference) {
+        viewModelScope.launch { themePreferenceRepository.setThemePreference(mode) }
+    }
 
     init {
         loadProfile()

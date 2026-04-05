@@ -17,17 +17,15 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.example.app_my_university.ui.designsystem.AppBar
-import com.example.app_my_university.ui.theme.MuPalette
 
 /**
- * Единая верхняя панель: один и тот же тип (center-aligned), одна минимальная высота,
- * тёмный фирменный фон [MuPalette.Ink] и светлый текст на всех экранах.
+ * Единая верхняя панель: выравнивание по центру, фиксированная минимальная высота,
+ * цвета из [MaterialTheme.colorScheme] (surface tier + onSurface), без отдельной «чужой» полосы.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,7 +35,11 @@ fun UniformTopAppBar(
     onBackPressed: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    val onBar = Color.White
+    val scheme = MaterialTheme.colorScheme
+    val onBar = scheme.onSurface
+    val onBarMuted = scheme.onSurfaceVariant
+    val barBackground = scheme.surfaceContainerHigh
+
     val titleStyle = MaterialTheme.typography.titleLarge.copy(
         fontWeight = FontWeight.SemiBold,
         fontSize = AppBar.titleSp.sp,
@@ -64,7 +66,7 @@ fun UniformTopAppBar(
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.labelMedium,
-                    color = onBar.copy(alpha = 0.88f),
+                    color = onBarMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -73,8 +75,8 @@ fun UniformTopAppBar(
         }
     }
 
-    val barColors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-        containerColor = MuPalette.Ink,
+    val barColors = TopAppBarDefaults.topAppBarColors(
+        containerColor = barBackground,
         titleContentColor = onBar,
         navigationIconContentColor = onBar,
         actionIconContentColor = onBar,

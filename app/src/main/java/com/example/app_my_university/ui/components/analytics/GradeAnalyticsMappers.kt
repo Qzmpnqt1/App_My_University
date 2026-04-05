@@ -61,7 +61,9 @@ fun creditBreakdown(grades: List<GradeResponse>): CreditBreakdown {
 fun creditDonutSegments(breakdown: CreditBreakdown, scheme: ColorScheme): List<MuDonutSegment> = buildList {
     if (breakdown.passed > 0) add(MuDonutSegment("Зачтено", breakdown.passed.toFloat(), scheme.primary))
     if (breakdown.failed > 0) add(MuDonutSegment("Незачёт", breakdown.failed.toFloat(), scheme.error))
-    if (breakdown.pending > 0) add(MuDonutSegment("Нет оценки", breakdown.pending.toFloat(), scheme.outline.copy(alpha = 0.6f)))
+    if (breakdown.pending > 0) {
+        add(MuDonutSegment("Нет оценки", breakdown.pending.toFloat(), scheme.outlineVariant))
+    }
 }
 
 fun examAverage(grades: List<GradeResponse>): Double? {
