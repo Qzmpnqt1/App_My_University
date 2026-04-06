@@ -38,7 +38,7 @@ import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.navigation.Screen
-import com.example.app_my_university.ui.navigation.navigateWithinAdminFlow
+import com.example.app_my_university.ui.navigation.openAdminNested
 import com.example.app_my_university.ui.theme.Dimens
 
 private data class StructureEntry(
@@ -123,7 +123,7 @@ fun AdminStructureHubScreen(navController: NavHostController) {
             }
             items(entries, key = { it.route }) { e ->
                 StructureHubCard(entry = e) {
-                    navController.navigateWithinAdminFlow(e.route)
+                    navController.openAdminNested(e.route)
                 }
             }
         }

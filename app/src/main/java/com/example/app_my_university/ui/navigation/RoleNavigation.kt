@@ -3,10 +3,19 @@ package com.example.app_my_university.ui.navigation
 import androidx.navigation.NavController
 
 /**
- * Единые правила переходов внутри основного контура роли (bottom nav + связанные маршруты).
- * Всегда: [popUpTo] на корень роли, [saveState], [launchSingleTop], [restoreState].
+ * Навигация внутри роли: два режима.
+ *
+ * **Переключение top-level вкладок** ([switchStudentTab] / [switchTeacherTab] / [switchAdminTab]):
+ * используется для bottom bar и для переходов «на другую вкладку» с главного экрана.
+ * [popUpTo] на домашний экран роли, [saveState], [launchSingleTop], [restoreState] —
+ * как у прежнего `navigateWithin*Flow`.
+ *
+ * **Вложенные экраны** ([openStudentNested] / [openTeacherNested] / [openAdminNested]):
+ * открытие поверх текущего destination без среза стека до home — сохраняется логический родитель
+ * (хаб «Структура», «Ещё» и т.д.). Только [launchSingleTop], чтобы не дублировать тот же экран наверху.
  */
-fun NavController.navigateWithinStudentFlow(route: String) {
+
+fun NavController.switchStudentTab(route: String) {
     navigate(route) {
         popUpTo(Screen.StudentHome.route) { saveState = true }
         launchSingleTop = true
@@ -14,7 +23,7 @@ fun NavController.navigateWithinStudentFlow(route: String) {
     }
 }
 
-fun NavController.navigateWithinTeacherFlow(route: String) {
+fun NavController.switchTeacherTab(route: String) {
     navigate(route) {
         popUpTo(Screen.TeacherHome.route) { saveState = true }
         launchSingleTop = true
@@ -22,10 +31,28 @@ fun NavController.navigateWithinTeacherFlow(route: String) {
     }
 }
 
-fun NavController.navigateWithinAdminFlow(route: String) {
+fun NavController.switchAdminTab(route: String) {
     navigate(route) {
         popUpTo(Screen.AdminHome.route) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+fun NavController.openStudentNested(route: String) {
+    navigate(route) {
+        launchSingleTop = true
+    }
+}
+
+fun NavController.openTeacherNested(route: String) {
+    navigate(route) {
+        launchSingleTop = true
+    }
+}
+
+fun NavController.openAdminNested(route: String) {
+    navigate(route) {
+        launchSingleTop = true
     }
 }

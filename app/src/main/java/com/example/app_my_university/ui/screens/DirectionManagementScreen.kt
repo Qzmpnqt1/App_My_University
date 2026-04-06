@@ -1,6 +1,5 @@
 package com.example.app_my_university.ui.screens
 
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,7 +29,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -132,21 +130,6 @@ fun DirectionManagementScreen(
                 .padding(padding)
                 .padding(horizontal = Dimens.screenPadding),
         ) {
-            if (uiState.isSuperAdmin && uiState.adminUniversityId == null) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = Dimens.spaceM),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
-                ) {
-                    Text(
-                        "Глобальный режим: доступны направления всех вузов. При создании выберите институт из списка.",
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
             OutlinedTextField(
                 value = search,
                 onValueChange = { search = it },

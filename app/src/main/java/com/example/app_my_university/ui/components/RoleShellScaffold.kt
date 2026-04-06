@@ -7,9 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.example.app_my_university.ui.navigation.AppRole
-import com.example.app_my_university.ui.navigation.navigateWithinAdminFlow
-import com.example.app_my_university.ui.navigation.navigateWithinStudentFlow
-import com.example.app_my_university.ui.navigation.navigateWithinTeacherFlow
+import com.example.app_my_university.ui.navigation.switchAdminTab
+import com.example.app_my_university.ui.navigation.switchStudentTab
+import com.example.app_my_university.ui.navigation.switchTeacherTab
 
 /**
  * Оболочка основных экранов роли: единый [AppScaffold], нижняя навигация и те же правила переходов.
@@ -37,15 +37,15 @@ fun RoleShellScaffold(
                 when (role) {
                     AppRole.Student -> StudentBottomBar(
                         currentRoute = currentRoute,
-                        onNavigate = { navController.navigateWithinStudentFlow(it) },
+                        onNavigate = { navController.switchStudentTab(it) },
                     )
                     AppRole.Teacher -> TeacherBottomBar(
                         currentRoute = currentRoute,
-                        onNavigate = { navController.navigateWithinTeacherFlow(it) },
+                        onNavigate = { navController.switchTeacherTab(it) },
                     )
                     AppRole.Admin -> AdminBottomBar(
                         currentRoute = currentRoute,
-                        onNavigate = { navController.navigateWithinAdminFlow(it) },
+                        onNavigate = { navController.switchAdminTab(it) },
                     )
                 }
             }

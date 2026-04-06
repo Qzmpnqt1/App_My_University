@@ -36,7 +36,7 @@ import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.navigation.Screen
-import com.example.app_my_university.ui.navigation.navigateWithinAdminFlow
+import com.example.app_my_university.ui.navigation.openAdminNested
 import com.example.app_my_university.ui.theme.Dimens
 
 private data class MoreEntry(val title: String, val subtitle: String, val icon: ImageVector, val route: String)
@@ -55,7 +55,12 @@ fun AdminMoreScreen(navController: NavHostController) {
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
-        topBar = { UniformTopAppBar(title = "Ещё") },
+        topBar = {
+            UniformTopAppBar(
+                title = "Ещё",
+                onBackPressed = { navController.navigateUp() },
+            )
+        },
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
@@ -64,7 +69,7 @@ fun AdminMoreScreen(navController: NavHostController) {
         ) {
             items(fixed, key = { it.route }) { item ->
                 MoreRowCard(item) {
-                    navController.navigateWithinAdminFlow(item.route)
+                    navController.openAdminNested(item.route)
                 }
             }
         }

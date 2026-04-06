@@ -65,7 +65,8 @@ import com.example.app_my_university.ui.designsystem.AppLayout
 import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.navigation.Screen
-import com.example.app_my_university.ui.navigation.navigateWithinAdminFlow
+import com.example.app_my_university.ui.navigation.openAdminNested
+import com.example.app_my_university.ui.navigation.switchAdminTab
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,8 +95,12 @@ fun AdminHomeScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    fun navigateTo(route: String) {
-        navController.navigateWithinAdminFlow(route)
+    fun goToTab(route: String) {
+        navController.switchAdminTab(route)
+    }
+
+    fun goDeeper(route: String) {
+        navController.openAdminNested(route)
     }
 
     val pending = adminState.pendingRegistrationCount
@@ -133,19 +138,17 @@ fun AdminHomeScreen(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Text(
-                        text = if (adminState.isSuperAdmin) {
-                            if (adminState.adminUniversityId == null) {
-                                "Режим «Все вузы»: списки и заявки по всей системе. Выберите вуз ниже, чтобы ограничить область."
+                    if (!adminState.isSuperAdmin || adminState.adminUniversityId != null) {
+                        Text(
+                            text = if (adminState.isSuperAdmin) {
+                                "Данные выбранного вуза. Сбросьте выбор в поле ниже, чтобы снова видеть все вузы."
                             } else {
-                                "Режим выбранного вуза: данные только этого вуза. Сбросьте выбор, чтобы снова видеть все вузы."
-                            }
-                        } else {
-                            "Панель управления данными вашего вуза"
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                                "Панель управления данными вашего вуза"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
 
                 if (adminState.isSuperAdmin) {
@@ -171,7 +174,7 @@ fun AdminHomeScreen(
                                 onDismissRequest = { superAdminUniMenuExpanded = false },
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Все вузы (глобальный режим)") },
+                                    text = { Text("Все вузы") },
                                     onClick = {
                                         superAdminUniMenuExpanded = false
                                         adminViewModel.clearSuperAdminScope()
@@ -216,7 +219,7 @@ fun AdminHomeScreen(
                 item {
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = { navigateTo(Screen.AdminRequests.route) }
+                        onClick = { goToTab(Screen.AdminRequests.route) }
                     ) {
                         Row(
                             modifier = Modifier
@@ -278,22 +281,22 @@ fun AdminHomeScreen(
                             .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        FilledTonalButton(onClick = { navigateTo(Screen.AdminRequests.route) }) {
+                        FilledTonalButton(onClick = { goToTab(Screen.AdminRequests.route) }) {
                             Text("Заявки")
                         }
-                        FilledTonalButton(onClick = { navigateTo(Screen.AdminStructure.route) }) {
+                        FilledTonalButton(onClick = { goToTab(Screen.AdminStructure.route) }) {
                             Text("Структура")
                         }
-                        FilledTonalButton(onClick = { navigateTo(Screen.AdminSchedule.route) }) {
+                        FilledTonalButton(onClick = { goToTab(Screen.AdminSchedule.route) }) {
                             Text("Расписание")
                         }
-                        FilledTonalButton(onClick = { navigateTo(Screen.AdminClassrooms.route) }) {
+                        FilledTonalButton(onClick = { goDeeper(Screen.AdminClassrooms.route) }) {
                             Text("Аудитории")
                         }
-                        FilledTonalButton(onClick = { navigateTo(Screen.AdminTeacherSubjects.route) }) {
+                        FilledTonalButton(onClick = { goDeeper(Screen.AdminTeacherSubjects.route) }) {
                             Text("Преподаватели")
                         }
-                        FilledTonalButton(onClick = { navigateTo(Screen.Dialogs.route) }) {
+                        FilledTonalButton(onClick = { goToTab(Screen.Dialogs.route) }) {
                             Text("Сообщения")
                         }
                     }
@@ -338,7 +341,7 @@ fun AdminHomeScreen(
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             Button(
-                                onClick = { navigateTo(Screen.AdminStructure.route) },
+                                onClick = { goToTab(Screen.AdminStructure.route) },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("Учебная структура")
@@ -360,7 +363,7 @@ fun AdminHomeScreen(
                         title = "Расписание занятий",
                         subtitle = "Создание и редактирование записей",
                         icon = Icons.Default.CalendarMonth,
-                        onClick = { navigateTo(Screen.AdminSchedule.route) }
+                        onClick = { goToTab(Screen.AdminSchedule.route) }
                     )
                 }
                 item {
@@ -368,7 +371,7 @@ fun AdminHomeScreen(
                         title = "Аудитории",
                         subtitle = "Корпуса, номера, вместимость",
                         icon = Icons.Default.MeetingRoom,
-                        onClick = { navigateTo(Screen.AdminClassrooms.route) }
+                        onClick = { goDeeper(Screen.AdminClassrooms.route) }
                     )
                 }
                 item {
@@ -376,7 +379,7 @@ fun AdminHomeScreen(
                         title = "Преподаватели и дисциплины",
                         subtitle = "Назначение ведения предметов",
                         icon = Icons.Default.PersonAdd,
-                        onClick = { navigateTo(Screen.AdminTeacherSubjects.route) }
+                        onClick = { goDeeper(Screen.AdminTeacherSubjects.route) }
                     )
                 }
                 item {
@@ -384,7 +387,7 @@ fun AdminHomeScreen(
                         title = "Группы и дисциплины",
                         subtitle = "Через раздел «Структура»",
                         icon = Icons.Default.Group,
-                        onClick = { navigateTo(Screen.AdminStructure.route) }
+                        onClick = { goToTab(Screen.AdminStructure.route) }
                     )
                 }
                 item {
@@ -392,7 +395,7 @@ fun AdminHomeScreen(
                         title = "Справочник дисциплин",
                         subtitle = "Предметы и связи с направлениями",
                         icon = Icons.Default.Subject,
-                        onClick = { navigateTo(Screen.AdminSubjects.route) }
+                        onClick = { goDeeper(Screen.AdminSubjects.route) }
                     )
                 }
                 item {
@@ -400,7 +403,7 @@ fun AdminHomeScreen(
                         title = "Сообщения и прочее",
                         subtitle = "Пользователи, аналитика, профиль",
                         icon = Icons.Outlined.Message,
-                        onClick = { navigateTo(Screen.AdminMore.route) }
+                        onClick = { goToTab(Screen.AdminMore.route) }
                     )
                 }
         }

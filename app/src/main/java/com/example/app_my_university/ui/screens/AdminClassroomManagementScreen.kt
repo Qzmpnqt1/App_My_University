@@ -31,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -160,20 +159,6 @@ fun AdminClassroomManagementScreen(
                     contentPadding = PaddingValues(Dimens.screenPadding),
                     verticalArrangement = Arrangement.spacedBy(Dimens.spaceM)
                 ) {
-                    if (uiState.isSuperAdmin && uniId == null) {
-                        item {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
-                            ) {
-                                Text(
-                                    "Глобальный режим: отображаются аудитории всех вузов. Для новой аудитории выберите вуз в форме.",
-                                    modifier = Modifier.padding(12.dp),
-                                    style = MaterialTheme.typography.bodySmall,
-                                )
-                            }
-                        }
-                    }
                     item {
                         OutlinedTextField(
                             value = search,

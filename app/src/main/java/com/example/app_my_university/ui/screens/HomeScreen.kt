@@ -51,7 +51,7 @@ import com.example.app_my_university.data.api.model.ScheduleResponse
 import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.navigation.AppRole
-import com.example.app_my_university.ui.navigation.navigateWithinStudentFlow
+import com.example.app_my_university.ui.navigation.switchStudentTab
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
 import com.example.app_my_university.ui.components.analytics.MuDonutChart
 import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
@@ -125,10 +125,10 @@ fun HomeScreen(
                     groupLabel = profileState.profile?.studentProfile?.groupName,
                     dash = dash,
                     onWeek = { dashboardViewModel.setWeek(it) },
-                    onOpenSchedule = { navController.navigateWithinStudentFlow(Screen.Schedule.route) },
-                    onOpenGradeBook = { navController.navigateWithinStudentFlow(Screen.GradeBook.route) },
-                    onOpenPerformance = { navController.navigateWithinStudentFlow(Screen.StudentPerformance.route) },
-                    onOpenMessages = { navController.navigateWithinStudentFlow(Screen.Dialogs.route) },
+                    onOpenSchedule = { navController.switchStudentTab(Screen.Schedule.route) },
+                    onOpenGradeBook = { navController.switchStudentTab(Screen.GradeBook.route) },
+                    onOpenPerformance = { navController.switchStudentTab(Screen.StudentPerformance.route) },
+                    onOpenMessages = { navController.switchStudentTab(Screen.Dialogs.route) },
                     scheduleByDay = dash.scheduleByDay
                 )
             }

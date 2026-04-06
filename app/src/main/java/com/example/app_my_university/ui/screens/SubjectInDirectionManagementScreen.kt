@@ -31,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -156,21 +155,6 @@ fun SubjectInDirectionManagementScreen(
                 .padding(padding)
                 .padding(horizontal = Dimens.screenPadding),
         ) {
-            if (uiState.isSuperAdmin && scopeUni == null) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = Dimens.spaceM),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
-                ) {
-                    Text(
-                        "Глобальный режим: отображаются связи всех вузов. Используйте фильтр по направлению, чтобы сузить список.",
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
             Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS)) {
                 FilterChip(
                     selected = filterAllDirections,

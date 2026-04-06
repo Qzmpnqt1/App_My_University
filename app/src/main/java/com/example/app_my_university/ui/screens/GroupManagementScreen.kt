@@ -115,21 +115,6 @@ fun GroupManagementScreen(
                 .padding(padding)
                 .padding(Dimens.screenPadding)
         ) {
-            if (uiState.isSuperAdmin && uiState.adminUniversityId == null) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = Dimens.spaceM),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
-                ) {
-                    Text(
-                        "Глобальный режим: группы и направления всех вузов. Выберите вуз в профиле администратора для фильтрации.",
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },

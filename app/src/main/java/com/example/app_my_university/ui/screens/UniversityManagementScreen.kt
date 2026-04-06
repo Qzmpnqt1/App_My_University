@@ -30,7 +30,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -521,19 +520,6 @@ private fun GlobalUniversitiesBody(
                 contentPadding = PaddingValues(Dimens.screenPadding),
                 verticalArrangement = Arrangement.spacedBy(Dimens.spaceM),
             ) {
-                item {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
-                    ) {
-                        Text(
-                            "Глобальный режим: ни один вуз не выбран для администрирования. " +
-                                "Нажмите «Управлять», чтобы работать с институтами и структурой конкретного вуза.",
-                            modifier = Modifier.padding(12.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                }
                 item {
                     OutlinedTextField(
                         value = searchQuery,

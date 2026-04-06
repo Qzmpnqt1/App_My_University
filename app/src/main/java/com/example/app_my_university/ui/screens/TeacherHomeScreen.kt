@@ -45,7 +45,7 @@ import com.example.app_my_university.ui.components.profile.teacherWorkplaceSumma
 import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.navigation.AppRole
-import com.example.app_my_university.ui.navigation.navigateWithinTeacherFlow
+import com.example.app_my_university.ui.navigation.switchTeacherTab
 import com.example.app_my_university.ui.components.analytics.MuAnalyticsCard
 import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
 import com.example.app_my_university.ui.components.common.MuErrorState
@@ -112,10 +112,10 @@ fun TeacherHomeScreen(
                     dash = dash,
                     scheduleByDay = dash.scheduleByDay,
                     onWeek = { dashboardViewModel.setWeek(it) },
-                    onSchedule = { navController.navigateWithinTeacherFlow(Screen.Schedule.route) },
-                    onGrades = { navController.navigateWithinTeacherFlow(Screen.TeacherGrades.route) },
-                    onAnalytics = { navController.navigateWithinTeacherFlow(Screen.TeacherStatistics.route) },
-                    onChats = { navController.navigateWithinTeacherFlow(Screen.Dialogs.route) }
+                    onSchedule = { navController.switchTeacherTab(Screen.Schedule.route) },
+                    onGrades = { navController.switchTeacherTab(Screen.TeacherGrades.route) },
+                    onAnalytics = { navController.switchTeacherTab(Screen.TeacherStatistics.route) },
+                    onChats = { navController.switchTeacherTab(Screen.Dialogs.route) }
                 )
             }
         }

@@ -53,7 +53,7 @@ import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.navigation.Screen
-import com.example.app_my_university.ui.navigation.navigateWithinAdminFlow
+import com.example.app_my_university.ui.navigation.openAdminNested
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
@@ -116,7 +116,7 @@ fun SubjectManagementScreen(
                 .padding(Dimens.screenPadding)
         ) {
             OutlinedButton(
-                onClick = { navController.navigateWithinAdminFlow(Screen.AdminSubjectPlan.route) },
+                onClick = { navController.openAdminNested(Screen.AdminSubjectPlan.route) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
             ) {
