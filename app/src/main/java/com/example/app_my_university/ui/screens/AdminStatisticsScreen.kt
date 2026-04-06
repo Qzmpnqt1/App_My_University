@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -174,9 +176,13 @@ fun AdminStatisticsScreen(
             verticalArrangement = Arrangement.spacedBy(AppSpacing.m)
         ) {
             Text(
-                text = "Выберите тип аналитики, затем сущность по названию и нажмите «Загрузить». Для вуза используется ваш вуз автоматически.",
+                text = if (state.isSuperAdmin) {
+                    "Выберите тип аналитики и сущность, затем нажмите «Загрузить». В глобальном режиме («Все вузы») сводная статистика по одному вузу доступна после выбора вуза в блоке «Вуз для администрирования» на главном экране администрирования."
+                } else {
+                    "Выберите тип аналитики и сущность, затем нажмите «Загрузить». На вкладке «Вуз» используется вуз из вашего профиля."
+                },
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (state.catalogLoading) {
                 Text("Загрузка справочников…", style = MaterialTheme.typography.bodySmall)
@@ -206,20 +212,54 @@ fun AdminStatisticsScreen(
             when (currentTab) {
                 AdminStatTab.UNIVERSITY -> {
                     val uniId = state.adminUniversityId
-                    val label = state.adminUniversityName ?: "Вуз не определён в профиле"
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Button(
-                        onClick = {
-                            if (uniId != null) viewModel.loadUniversity(uniId)
-                        },
-                        enabled = uniId != null && !state.isLoading,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Загрузить статистику вуза")
+                    val superGlobal = state.isSuperAdmin && uniId == null
+                    if (superGlobal) {
+                        OutlinedCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.outlinedCardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                            ),
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(AppSpacing.m),
+                                verticalArrangement = Arrangement.spacedBy(AppSpacing.s),
+                            ) {
+                                Text(
+                                    text = "Выберите вуз для этой вкладки",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = "Сейчас активен глобальный режим («Все вузы»). Чтобы загрузить сводную статистику по конкретному вузу, на главном экране администрирования укажите «Вуз для администрирования», затем вернитесь в «Аналитику» и нажмите «Загрузить».",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        Button(
+                            onClick = { },
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Загрузить статистику вуза")
+                        }
+                    } else {
+                        val label = state.adminUniversityName ?: "Вуз не определён в профиле"
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Button(
+                            onClick = {
+                                if (uniId != null) viewModel.loadUniversity(uniId)
+                            },
+                            enabled = uniId != null && !state.isLoading,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Загрузить статистику вуза")
+                        }
                     }
                 }
                 else -> {
@@ -254,25 +294,28 @@ fun AdminStatisticsScreen(
                         enabled = selectionId != null && !state.isLoading && state.catalogReady && pickerItems.isNotEmpty(),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        if (state.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.padding(4.dp),
-                                strokeWidth = 2.dp,
-                            )
-                        } else {
-                            Text("Загрузить")
-                        }
+                        Text("Загрузить")
                     }
                 }
             }
 
             if (state.isLoading) {
                 Row(
-                    Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = AppSpacing.s),
                     horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(
+                        modifier = Modifier.padding(end = AppSpacing.m),
+                        strokeWidth = 2.5.dp,
+                    )
+                    Text(
+                        text = "Загрузка статистики…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 

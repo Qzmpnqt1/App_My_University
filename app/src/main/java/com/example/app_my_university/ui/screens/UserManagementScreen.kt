@@ -1,5 +1,6 @@
 package com.example.app_my_university.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,17 +11,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.PeopleOutline
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -28,17 +32,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -51,8 +56,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -61,6 +67,7 @@ import com.example.app_my_university.data.api.model.UniversityResponse
 import com.example.app_my_university.data.api.model.UserProfileResponse
 import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
@@ -143,6 +150,8 @@ fun UserManagementScreen(
         )
     }
 
+    val listBottomPadding = if (uiState.isSuperAdmin) 88.dp else AppSpacing.xl
+
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
@@ -163,117 +172,437 @@ fun UserManagementScreen(
     ) { padding ->
         when {
             uiState.isLoading && uiState.users.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+                UserManagementLoadingState(modifier = Modifier.padding(padding))
             }
             uiState.error != null && uiState.users.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = uiState.error ?: "Ошибка загрузки",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.loadUsers() }) {
-                            Text("Повторить")
-                        }
-                    }
-                }
-            }
-            uiState.users.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Нет пользователей",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                UserManagementErrorState(
+                    modifier = Modifier.padding(padding),
+                    message = uiState.error ?: "Ошибка загрузки",
+                    onRetry = { viewModel.loadUsers() },
+                )
             }
             else -> {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
+                        .padding(horizontal = AppSpacing.screen),
                 ) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        placeholder = { Text("Поиск по имени или email") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        singleLine = true
+                    Spacer(modifier = Modifier.height(AppSpacing.s))
+                    UserManagementControlsSection(
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = { searchQuery = it },
+                        filterLabels = filterLabels,
+                        filterTab = filterTab,
+                        onFilterTabChange = { filterTab = it },
+                        resultCount = filteredUsers.size,
+                        totalLoaded = uiState.users.size,
                     )
-                    SingleChoiceSegmentedButtonRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        filterLabels.forEachIndexed { index, label ->
-                            SegmentedButton(
-                                selected = filterTab == index,
-                                onClick = { filterTab = index },
-                                shape = SegmentedButtonDefaults.itemShape(
-                                    index = index,
-                                    count = filterLabels.size
-                                ),
-                                label = { Text(label) }
+                    Spacer(modifier = Modifier.height(AppSpacing.s))
+                    when {
+                        uiState.users.isEmpty() -> {
+                            UserManagementEmptyUsersPlaceholder(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth(),
                             )
                         }
-                    }
-                    Text(
-                        text = "Найдено: ${filteredUsers.size}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
-                    )
-                    if (filteredUsers.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                "Ничего не найдено",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        filteredUsers.isEmpty() -> {
+                            UserManagementNoResultsPlaceholder(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth(),
                             )
                         }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(filteredUsers) { user ->
-                                UserCard(
-                                    user = user,
-                                    onActivate = { viewModel.activateUser(user.id) },
-                                    onDeactivate = { viewModel.deactivateUser(user.id) },
-                                    isLoading = uiState.isLoading
-                                )
+                        else -> {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth(),
+                                contentPadding = PaddingValues(bottom = listBottomPadding),
+                                verticalArrangement = Arrangement.spacedBy(AppSpacing.listItem),
+                            ) {
+                                items(
+                                    items = filteredUsers,
+                                    key = { it.id },
+                                ) { user ->
+                                    UserManagementUserCard(
+                                        user = user,
+                                        onActivate = { viewModel.activateUser(user.id) },
+                                        onDeactivate = { viewModel.deactivateUser(user.id) },
+                                        isLoading = uiState.isLoading,
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun UserManagementLoadingState(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator()
+            Spacer(modifier = Modifier.height(AppSpacing.m))
+            Text(
+                text = "Загрузка пользователей…",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun UserManagementErrorState(
+    modifier: Modifier = Modifier,
+    message: String,
+    onRetry: () -> Unit,
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        OutlinedCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppSpacing.screen),
+            colors = CardDefaults.outlinedCardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f),
+            ),
+        ) {
+            Column(
+                modifier = Modifier.padding(AppSpacing.l),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.ErrorOutline,
+                    contentDescription = null,
+                    modifier = Modifier.padding(bottom = AppSpacing.s),
+                    tint = MaterialTheme.colorScheme.error,
+                )
+                Text(
+                    text = "Не удалось загрузить список",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.xs))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.m))
+                Button(onClick = onRetry) {
+                    Text("Повторить")
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun UserManagementControlsSection(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    filterLabels: List<String>,
+    filterTab: Int,
+    onFilterTabChange: (Int) -> Unit,
+    resultCount: Int,
+    totalLoaded: Int,
+) {
+    val scrollState = rememberScrollState()
+    val summaryText = if (totalLoaded > 0) {
+        "Найдено $resultCount из $totalLoaded"
+    } else {
+        "Найдено: $resultCount"
+    }
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = AppSpacing.m,
+                vertical = AppSpacing.s,
+            ),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.s),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Поиск и фильтр",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = AppSpacing.s),
+                )
+                Text(
+                    text = summaryText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text(
+                        text = "Имя или email",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                },
+                leadingIcon = {
+                    Icon(Icons.Default.Search, contentDescription = null)
+                },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                ),
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(scrollState),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs),
+            ) {
+                filterLabels.forEachIndexed { index, label ->
+                    FilterChip(
+                        selected = filterTab == index,
+                        onClick = { onFilterTabChange(index) },
+                        label = {
+                            Text(
+                                text = label,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UserManagementEmptyUsersPlaceholder(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        OutlinedCard(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.outlinedCardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
+        ) {
+            Column(
+                modifier = Modifier.padding(AppSpacing.l),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.PeopleOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = AppSpacing.s),
+                )
+                Text(
+                    text = "Пока нет пользователей",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.xs))
+                Text(
+                    text = "В выбранной области видимости список пуст. Измените фильтр или попробуйте позже.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun UserManagementNoResultsPlaceholder(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        OutlinedCard(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.outlinedCardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
+        ) {
+            Column(
+                modifier = Modifier.padding(AppSpacing.l),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.SearchOff,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = AppSpacing.s),
+                )
+                Text(
+                    text = "Ничего не найдено",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.xs))
+                Text(
+                    text = "Попробуйте изменить запрос поиска или тип пользователя.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun UserManagementUserCard(
+    user: UserProfileResponse,
+    onActivate: () -> Unit,
+    onDeactivate: () -> Unit,
+    isLoading: Boolean,
+) {
+    val fullName = "${user.lastName} ${user.firstName}" +
+        (user.middleName?.let { " $it" } ?: "")
+    val roleLabel = when (user.userType) {
+        "STUDENT" -> "Студент"
+        "TEACHER" -> "Преподаватель"
+        "ADMIN" -> "Администратор"
+        "SUPER_ADMIN" -> "Супер-администратор"
+        else -> user.userType
+    }
+    val isActive = user.isActive ?: false
+
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(AppSpacing.m),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.s),
+        ) {
+            Text(
+                text = fullName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                text = user.email,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = roleLabel,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = AppSpacing.s),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                UserStatusBadge(isActive = isActive)
+            }
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = AppSpacing.s),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                if (isActive) {
+                    OutlinedButton(
+                        onClick = onDeactivate,
+                        enabled = !isLoading,
+                        shape = MaterialTheme.shapes.medium,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) {
+                        Text("Деактивировать")
+                    }
+                } else {
+                    Button(
+                        onClick = onActivate,
+                        enabled = !isLoading,
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        Text("Активировать")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UserStatusBadge(isActive: Boolean) {
+    val scheme = MaterialTheme.colorScheme
+    val (container, content) = if (isActive) {
+        scheme.primaryContainer to scheme.onPrimaryContainer
+    } else {
+        scheme.errorContainer to scheme.onErrorContainer
+    }
+    Surface(
+        modifier = Modifier.wrapContentWidth(),
+        shape = MaterialTheme.shapes.small,
+        color = container,
+        tonalElevation = 0.dp,
+    ) {
+        Text(
+            text = if (isActive) "Активен" else "Неактивен",
+            modifier = Modifier.padding(horizontal = AppSpacing.s, vertical = AppSpacing.xs),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = content,
+        )
     }
 }
 
@@ -430,90 +759,4 @@ private fun CreateAdminAccountDialog(
             }
         },
     )
-}
-
-@Composable
-private fun UserCard(
-    user: UserProfileResponse,
-    onActivate: () -> Unit,
-    onDeactivate: () -> Unit,
-    isLoading: Boolean
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${user.lastName} ${user.firstName}" +
-                            (user.middleName?.let { " $it" } ?: ""),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium
-                )
-
-                val isActive = user.isActive ?: false
-                SuggestionChip(
-                    onClick = {},
-                    label = {
-                        Text(
-                            text = if (isActive) "Активен" else "Неактивен",
-                            color = if (isActive) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.error
-                        )
-                    }
-                )
-            }
-
-            Text(
-                text = user.email,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = when (user.userType) {
-                    "STUDENT" -> "Студент"
-                    "TEACHER" -> "Преподаватель"
-                    "ADMIN" -> "Администратор"
-                    "SUPER_ADMIN" -> "Супер-администратор"
-                    else -> user.userType
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                val isActive = user.isActive ?: false
-                if (isActive) {
-                    OutlinedButton(
-                        onClick = onDeactivate,
-                        enabled = !isLoading,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text("Деактивировать")
-                    }
-                } else {
-                    Button(
-                        onClick = onActivate,
-                        enabled = !isLoading
-                    ) {
-                        Text("Активировать")
-                    }
-                }
-            }
-        }
-    }
 }

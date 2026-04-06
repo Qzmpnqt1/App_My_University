@@ -3,6 +3,7 @@ package com.example.app_my_university.util
 import com.example.app_my_university.data.api.model.*
 import java.text.Collator
 import java.util.Locale
+import kotlin.jvm.JvmName
 
 /**
  * Единая защитная сортировка для списков сущностей на клиенте (ru-RU, без учёта регистра).
@@ -32,18 +33,21 @@ object AlphabeticalSort {
         return if (parts.isNotEmpty()) parts.joinToString(" ") else u.email
     }
 
+    @JvmName("sortedUniversitiesForDisplayRu")
     fun List<UniversityResponse>.sortedForDisplayRu(): List<UniversityResponse> =
         sortedWith { a, b ->
             val c = compareText(a.name, b.name)
             if (c != 0) c else a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedInstitutesForDisplayRu")
     fun List<InstituteResponse>.sortedForDisplayRu(): List<InstituteResponse> =
         sortedWith { a, b ->
             val c = compareText(a.name, b.name)
             if (c != 0) c else a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedStudyDirectionsForDisplayRu")
     fun List<StudyDirectionResponse>.sortedForDisplayRu(): List<StudyDirectionResponse> =
         sortedWith { a, b ->
             val c = compareText(a.name, b.name)
@@ -53,18 +57,21 @@ object AlphabeticalSort {
             }
         }
 
+    @JvmName("sortedAcademicGroupsForDisplayRu")
     fun List<AcademicGroupResponse>.sortedForDisplayRu(): List<AcademicGroupResponse> =
         sortedWith { a, b ->
             val c = compareText(a.name, b.name)
             if (c != 0) c else a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedSubjectsForDisplayRu")
     fun List<SubjectResponse>.sortedForDisplayRu(): List<SubjectResponse> =
         sortedWith { a, b ->
             val c = compareText(a.name, b.name)
             if (c != 0) c else a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedSubjectInDirectionsForDisplayRu")
     fun List<SubjectInDirectionResponse>.sortedForDisplayRu(): List<SubjectInDirectionResponse> =
         sortedWith { a, b ->
             val c = compareText(a.subjectName, b.subjectName)
@@ -78,6 +85,7 @@ object AlphabeticalSort {
             a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedSubjectLessonTypesForDisplayRu")
     fun List<SubjectLessonTypeResponse>.sortedForDisplayRu(): List<SubjectLessonTypeResponse> =
         sortedWith { a, b ->
             val c = compareText(a.lessonType, b.lessonType)
@@ -85,6 +93,7 @@ object AlphabeticalSort {
         }
 
     /** Учебный порядок практик: номер, затем название. */
+    @JvmName("sortedSubjectPracticesBySequenceRu")
     fun List<SubjectPracticeResponse>.sortedByPracticeSequenceRu(): List<SubjectPracticeResponse> =
         sortedWith { a, b ->
             val n = compareNullableIntNullsLast(a.practiceNumber, b.practiceNumber)
@@ -94,6 +103,7 @@ object AlphabeticalSort {
             a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedTeacherSubjectsForDisplayRu")
     fun List<TeacherSubjectResponse>.sortedForDisplayRu(): List<TeacherSubjectResponse> =
         sortedWith { a, b ->
             val c = compareText(a.subjectName, b.subjectName)
@@ -105,6 +115,7 @@ object AlphabeticalSort {
             a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedClassroomsForDisplayRu")
     fun List<ClassroomResponse>.sortedForDisplayRu(): List<ClassroomResponse> =
         sortedWith { a, b ->
             val c = compareText(a.building, b.building)
@@ -114,18 +125,21 @@ object AlphabeticalSort {
             a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedUserProfilesForDisplayRu")
     fun List<UserProfileResponse>.sortedForDisplayRu(): List<UserProfileResponse> =
         sortedWith { a, b ->
             val c = compareText(userProfileSortKey(a), userProfileSortKey(b))
             if (c != 0) c else a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedChatContactsForDisplayRu")
     fun List<ChatContactResponse>.sortedForDisplayRu(): List<ChatContactResponse> =
         sortedWith { a, b ->
             val c = compareText(chatContactSortKey(a), chatContactSortKey(b))
             if (c != 0) c else a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedTeacherGradingPicksForDisplayRu")
     fun List<TeacherGradingPickResponse>.sortedForDisplayRu(): List<TeacherGradingPickResponse> =
         sortedWith { a, b ->
             val c = compareText(a.name, b.name)
@@ -143,18 +157,21 @@ object AlphabeticalSort {
             a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedGradesByStudentNameRu")
     fun List<GradeResponse>.sortedByStudentNameRu(): List<GradeResponse> =
         sortedWith { a, b ->
             val c = compareText(a.studentName, b.studentName)
             if (c != 0) c else a.studentId.compareTo(b.studentId)
         }
 
+    @JvmName("sortedPracticeGradesByStudentNameRu")
     fun List<PracticeGradeResponse>.sortedByStudentNameRu(): List<PracticeGradeResponse> =
         sortedWith { a, b ->
             val c = compareText(a.studentName, b.studentName)
             if (c != 0) c else a.studentId.compareTo(b.studentId)
         }
 
+    @JvmName("sortedPracticeGradesByPracticeSequenceRu")
     fun List<PracticeGradeResponse>.sortedByPracticeSequenceRu(): List<PracticeGradeResponse> =
         sortedWith { a, b ->
             val n = compareNullableIntNullsLast(a.practiceNumber, b.practiceNumber)
@@ -164,6 +181,7 @@ object AlphabeticalSort {
             a.id.compareTo(b.id)
         }
 
+    @JvmName("sortedStudentPracticeSlotsBySequenceRu")
     fun List<StudentPracticeSlotResponse>.sortedByPracticeSequenceRu(): List<StudentPracticeSlotResponse> =
         sortedWith { a, b ->
             val n = compareNullableIntNullsLast(a.practiceNumber, b.practiceNumber)
@@ -171,12 +189,14 @@ object AlphabeticalSort {
             a.practiceId.compareTo(b.practiceId)
         }
 
+    @JvmName("sortedScheduleCompareInstitutesForDisplayRu")
     fun List<ScheduleCompareInstituteOptionResponse>.sortedForDisplayRu(): List<ScheduleCompareInstituteOptionResponse> =
         sortedWith { a, b ->
             val c = compareText(a.name, b.name)
             if (c != 0) c else compareValues(a.id, b.id)
         }
 
+    @JvmName("sortedScheduleCompareDirectionsForDisplayRu")
     fun List<ScheduleCompareDirectionOptionResponse>.sortedForDisplayRu(): List<ScheduleCompareDirectionOptionResponse> =
         sortedWith { a, b ->
             val c = compareText(a.name, b.name)
@@ -186,6 +206,7 @@ object AlphabeticalSort {
             compareValues(a.id, b.id)
         }
 
+    @JvmName("sortedScheduleCompareGroupsForDisplayRu")
     fun List<ScheduleCompareGroupOptionResponse>.sortedForDisplayRu(): List<ScheduleCompareGroupOptionResponse> =
         sortedWith { a, b ->
             val c = compareText(a.name, b.name)
@@ -195,12 +216,14 @@ object AlphabeticalSort {
             compareValues(a.id, b.id)
         }
 
+    @JvmName("sortedScheduleCompareTeachersForDisplayRu")
     fun List<ScheduleCompareTeacherOptionResponse>.sortedForDisplayRu(): List<ScheduleCompareTeacherOptionResponse> =
         sortedWith { a, b ->
             val c = compareText(a.displayName, b.displayName)
             if (c != 0) c else compareValues(a.userId, b.userId)
         }
 
+    @JvmName("sortedScheduleCompareClassroomsForDisplayRu")
     fun List<ScheduleCompareClassroomOptionResponse>.sortedForDisplayRu(): List<ScheduleCompareClassroomOptionResponse> =
         sortedWith { a, b ->
             val c = compareText(a.building, b.building)

@@ -4,7 +4,6 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -23,6 +22,10 @@ import androidx.compose.ui.semantics.Role
  * [OutlinedTextField] сам перехватывает касания по области ввода — из‑за этого тап «по плейсхолдеру»
  * часто не доходит до [Modifier.clickable] на том же модификаторе. Накладываем прозрачный слой
  * на весь размер поля, который получает все нажатия, когда [enabled] = true.
+ *
+ * Оверлей измеряется через [Modifier.matchParentSize] в [BoxScope]: при родителе в [verticalScroll]/
+ * [Column] с неограниченной высотой [androidx.compose.foundation.layout.fillMaxSize] на оверлее даёт
+ * неверный hitbox (часто только верхняя полоса поля).
  */
 @Composable
 fun MuPickerField(
@@ -60,7 +63,7 @@ fun MuPickerField(
             val interactionSource = remember { MutableInteractionSource() }
             Box(
                 Modifier
-                    .fillMaxSize()
+                    .matchParentSize()
                     .clickable(
                         interactionSource = interactionSource,
                         indication = LocalIndication.current,
