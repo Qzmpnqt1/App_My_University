@@ -10,6 +10,7 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.example.app_my_university.ui.designsystem.withBelowTopBarContentGap
 
 /**
  * Единый каркас экрана: те же insets, что и у Material3 по умолчанию (safe drawing, IME),
@@ -26,6 +27,8 @@ fun AppScaffold(
     floatingActionButtonPosition: FabPosition = FabPosition.End,
     containerColor: Color = MaterialTheme.colorScheme.background,
     contentColor: Color = contentColorFor(containerColor),
+    /** Ложное значение — для экранов без верхней панели, где не нужен дополнительный зазор. */
+    addBelowTopBarContentGap: Boolean = true,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
@@ -38,6 +41,8 @@ fun AppScaffold(
         containerColor = containerColor,
         contentColor = contentColor,
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
-        content = content,
+        content = { paddingValues ->
+            content(paddingValues.withBelowTopBarContentGap(enabled = addBelowTopBarContentGap))
+        },
     )
 }

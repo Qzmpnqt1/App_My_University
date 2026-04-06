@@ -3,6 +3,7 @@ package com.example.app_my_university.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_my_university.data.api.model.*
+import com.example.app_my_university.data.auth.TokenManager
 import com.example.app_my_university.data.repository.ChatRepository
 import com.example.app_my_university.data.repository.EducationRepository
 import com.example.app_my_university.data.repository.ProfileRepository
@@ -15,6 +16,7 @@ import javax.inject.Inject
 data class AdminUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
+    val isSuperAdmin: Boolean = false,
     /** Вуз текущего администратора (область видимости). */
     val adminUniversityId: Long? = null,
     val adminUniversityName: String? = null,
@@ -38,7 +40,8 @@ data class AdminUiState(
 class AdminViewModel @Inject constructor(
     private val educationRepository: EducationRepository,
     private val chatRepository: ChatRepository,
-    private val profileRepository: ProfileRepository
+    private val profileRepository: ProfileRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminUiState())
@@ -49,16 +52,49 @@ class AdminViewModel @Inject constructor(
         viewModelScope.launch {
             profileRepository.getProfile().fold(
                 onSuccess = { p ->
-                    val uid = p.adminProfile?.universityId
-                    val uname = p.adminProfile?.universityName
+                    val superUser = p.userType.equals("SUPER_ADMIN", ignoreCase = true)
+                    val prevName = _uiState.value.adminUniversityName
+                    var uid = p.adminProfile?.universityId
+                    var uname = p.adminProfile?.universityName
+                    if (superUser) {
+                        val saved = tokenManager.getSuperAdminScopeUniversityId()
+                        if (saved != null) {
+                            uid = saved
+                            uname = prevName ?: uname
+                        }
+                    }
                     _uiState.value = _uiState.value.copy(
+                        isSuperAdmin = superUser,
                         adminUniversityId = uid,
                         adminUniversityName = uname
                     )
+                    if (superUser) {
+                        loadUniversities()
+                        uid?.let { syncUniversityNameForScope(it) }
+                    }
                 },
                 onFailure = { /* оставляем null */ }
             )
         }
+    }
+
+    fun setSuperAdminScopeUniversity(universityId: Long, universityName: String) {
+        viewModelScope.launch {
+            tokenManager.setSuperAdminScopeUniversityId(universityId)
+            _uiState.value = _uiState.value.copy(
+                adminUniversityId = universityId,
+                adminUniversityName = universityName
+            )
+        }
+    }
+
+    private suspend fun syncUniversityNameForScope(universityId: Long) {
+        educationRepository.getUniversity(universityId).fold(
+            onSuccess = { u ->
+                _uiState.value = _uiState.value.copy(adminUniversityName = u.name)
+            },
+            onFailure = { }
+        )
     }
 
     fun loadRegistrationRequests() {
@@ -160,6 +196,25 @@ class AdminViewModel @Inject constructor(
         }
     }
 
+    fun createAdminAccount(request: CreateAdminAccountRequest) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.createAdminAccount(request).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Учётная запись создана"
+                    )
+                    loadUsers()
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
     fun activateUser(id: Long) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
@@ -218,18 +273,28 @@ class AdminViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             profileRepository.getProfile().fold(
                 onSuccess = { p ->
-                    val uid = p.adminProfile?.universityId
-                    val uname = p.adminProfile?.universityName
+                    val superUser = p.userType.equals("SUPER_ADMIN", ignoreCase = true)
+                    var uid = p.adminProfile?.universityId
+                    var uname = p.adminProfile?.universityName
+                    if (superUser) {
+                        uid = _uiState.value.adminUniversityId ?: tokenManager.getSuperAdminScopeUniversityId()
+                        uname = _uiState.value.adminUniversityName
+                    }
                     if (uid == null) {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = "В профиле не указан вуз",
-                            universities = emptyList(),
+                            error = if (superUser) {
+                                "Выберите вуз для работы (суперадминистратор)"
+                            } else {
+                                "В профиле не указан вуз"
+                            },
+                            universities = if (superUser) _uiState.value.universities else emptyList(),
                             institutes = emptyList()
                         )
                         return@launch
                     }
                     _uiState.value = _uiState.value.copy(
+                        isSuperAdmin = superUser,
                         adminUniversityId = uid,
                         adminUniversityName = uname
                     )
@@ -237,16 +302,28 @@ class AdminViewModel @Inject constructor(
                         onSuccess = { u ->
                             educationRepository.getInstitutes(uid).fold(
                                 onSuccess = { inst ->
+                                    val keepUnis = if (superUser) {
+                                        val cur = _uiState.value.universities
+                                        if (cur.isEmpty()) listOf(u) else cur
+                                    } else {
+                                        listOf(u)
+                                    }
                                     _uiState.value = _uiState.value.copy(
                                         isLoading = false,
-                                        universities = listOf(u),
+                                        universities = keepUnis,
                                         institutes = inst
                                     )
                                 },
                                 onFailure = { e ->
+                                    val keepUnis = if (superUser) {
+                                        val cur = _uiState.value.universities
+                                        if (cur.isEmpty()) listOf(u) else cur
+                                    } else {
+                                        listOf(u)
+                                    }
                                     _uiState.value = _uiState.value.copy(
                                         isLoading = false,
-                                        universities = listOf(u),
+                                        universities = keepUnis,
                                         error = e.message
                                     )
                                 }

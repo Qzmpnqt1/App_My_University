@@ -88,9 +88,11 @@ class EducationRepository @Inject constructor(private val apiService: ApiService
     suspend fun querySchedule(
         groupId: Long? = null,
         teacherId: Long? = null,
+        universityId: Long? = null,
         weekNumber: Int? = null,
         dayOfWeek: Int? = null
-    ): Result<List<ScheduleResponse>> = safeApiCall { apiService.querySchedule(groupId, teacherId, weekNumber, dayOfWeek) }
+    ): Result<List<ScheduleResponse>> =
+        safeApiCall { apiService.querySchedule(groupId, teacherId, universityId, weekNumber, dayOfWeek) }
 
     suspend fun createSchedule(request: ScheduleRequest): Result<ScheduleResponse> = safeApiCall { apiService.createSchedule(request) }
     suspend fun updateSchedule(id: Long, request: ScheduleRequest): Result<ScheduleResponse> =
@@ -126,4 +128,7 @@ class EducationRepository @Inject constructor(private val apiService: ApiService
     suspend fun getUser(id: Long): Result<UserProfileResponse> = safeApiCall { apiService.getUser(id) }
     suspend fun activateUser(id: Long): Result<Unit> = safeApiCall { apiService.activateUser(id) }
     suspend fun deactivateUser(id: Long): Result<Unit> = safeApiCall { apiService.deactivateUser(id) }
+
+    suspend fun createAdminAccount(body: CreateAdminAccountRequest): Result<UserProfileResponse> =
+        safeApiCall { apiService.createAdminAccount(body) }
 }

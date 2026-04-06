@@ -18,6 +18,12 @@ object AppSpacing {
     val screen = Dimens.screenPadding
     val card = Dimens.cardPadding
     val listItem = Dimens.listItemSpacing
+
+    /**
+     * Вертикальный зазор между нижним краем области top bar (padding от [androidx.compose.material3.Scaffold])
+     * и первым содержательным блоком. Подмешивается в [withBelowTopBarContentGap].
+     */
+    val belowTopAppBar = Dimens.spaceM
 }
 
 object AppRadius {

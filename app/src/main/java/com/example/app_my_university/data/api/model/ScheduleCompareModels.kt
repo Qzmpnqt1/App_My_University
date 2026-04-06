@@ -8,6 +8,7 @@ data class ScheduleCompareRequest(
     val rightId: Long,
     val weekNumber: Int,
     val dayOfWeek: Int? = null,
+    val scopeUniversityId: Long? = null,
 )
 
 data class ScheduleCompareResultResponse(

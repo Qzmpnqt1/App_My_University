@@ -20,7 +20,7 @@ fun rememberAppRole(): AppRole {
     val userType by entryPoint.tokenManager().userType.collectAsState(initial = null)
     return when (userType) {
         "TEACHER" -> AppRole.Teacher
-        "ADMIN" -> AppRole.Admin
+        "ADMIN", "SUPER_ADMIN" -> AppRole.Admin
         else -> AppRole.Student
     }
 }

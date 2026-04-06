@@ -219,6 +219,7 @@ interface ApiService {
     suspend fun querySchedule(
         @Query("groupId") groupId: Long? = null,
         @Query("teacherId") teacherId: Long? = null,
+        @Query("universityId") universityId: Long? = null,
         @Query("weekNumber") weekNumber: Int? = null,
         @Query("dayOfWeek") dayOfWeek: Int? = null
     ): Response<List<ScheduleResponse>>
@@ -260,25 +261,35 @@ interface ApiService {
     suspend fun compareSchedule(@Body body: ScheduleCompareRequest): Response<ScheduleCompareResultResponse>
 
     @GET("api/v1/schedule/compare/institutes")
-    suspend fun listScheduleCompareInstitutes(): Response<List<ScheduleCompareInstituteOptionResponse>>
+    suspend fun listScheduleCompareInstitutes(
+        @Query("universityId") universityId: Long? = null
+    ): Response<List<ScheduleCompareInstituteOptionResponse>>
 
     @GET("api/v1/schedule/compare/directions")
     suspend fun listScheduleCompareDirections(
+        @Query("universityId") universityId: Long? = null,
         @Query("instituteId") instituteId: Long
     ): Response<List<ScheduleCompareDirectionOptionResponse>>
 
     @GET("api/v1/schedule/compare/groups")
     suspend fun listScheduleCompareGroups(
+        @Query("universityId") universityId: Long? = null,
         @Query("instituteId") instituteId: Long? = null,
         @Query("directionId") directionId: Long? = null,
         @Query("q") q: String? = null
     ): Response<List<ScheduleCompareGroupOptionResponse>>
 
     @GET("api/v1/schedule/compare/teachers")
-    suspend fun listScheduleCompareTeachers(@Query("q") q: String? = null): Response<List<ScheduleCompareTeacherOptionResponse>>
+    suspend fun listScheduleCompareTeachers(
+        @Query("universityId") universityId: Long? = null,
+        @Query("q") q: String? = null
+    ): Response<List<ScheduleCompareTeacherOptionResponse>>
 
     @GET("api/v1/schedule/compare/classrooms")
-    suspend fun listScheduleCompareClassrooms(@Query("q") q: String? = null): Response<List<ScheduleCompareClassroomOptionResponse>>
+    suspend fun listScheduleCompareClassrooms(
+        @Query("universityId") universityId: Long? = null,
+        @Query("q") q: String? = null
+    ): Response<List<ScheduleCompareClassroomOptionResponse>>
 
     @GET("api/v1/schedule/{id}")
     suspend fun getScheduleById(@Path("id") id: Long): Response<ScheduleResponse>
@@ -393,7 +404,8 @@ interface ApiService {
         @Query("action") action: String? = null,
         @Query("entityType") entityType: String? = null,
         @Query("from") from: String? = null,
-        @Query("to") to: String? = null
+        @Query("to") to: String? = null,
+        @Query("universityId") universityId: Long? = null
     ): Response<List<AuditLogResponse>>
 
     // ── Chat ──────────────────────────────────────────────────────
@@ -435,4 +447,7 @@ interface ApiService {
 
     @PUT("api/v1/users/{id}/deactivate")
     suspend fun deactivateUser(@Path("id") id: Long): Response<Unit>
+
+    @POST("api/v1/users")
+    suspend fun createAdminAccount(@Body body: CreateAdminAccountRequest): Response<UserProfileResponse>
 }

@@ -24,6 +24,7 @@ fun SystemAwareScaffold(
     floatingActionButtonPosition: FabPosition = FabPosition.End,
     containerColor: Color = MaterialTheme.colorScheme.background,
     contentColor: Color = contentColorFor(containerColor),
+    addBelowTopBarContentGap: Boolean = true,
     content: @Composable (paddingValues: PaddingValues) -> Unit,
 ) {
     AppScaffold(
@@ -35,6 +36,7 @@ fun SystemAwareScaffold(
         floatingActionButtonPosition = floatingActionButtonPosition,
         containerColor = containerColor,
         contentColor = contentColor,
+        addBelowTopBarContentGap = addBelowTopBarContentGap,
         content = content,
     )
 }

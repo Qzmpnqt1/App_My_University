@@ -44,6 +44,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.app_my_university.data.api.model.UniversityResponse
 import com.example.app_my_university.ui.viewmodel.UniversitySelectionUiState
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.withBelowTopBarContentGap
 import com.example.app_my_university.ui.viewmodel.UniversitySelectionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,10 +79,11 @@ fun UniversitySelectionScreen(
             )
         }
     ) { padding ->
+        val contentPadding = padding.withBelowTopBarContentGap()
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(contentPadding)
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

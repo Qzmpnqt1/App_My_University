@@ -23,6 +23,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.app_my_university.data.api.model.GuestRegistrationStatusResponse
 import com.example.app_my_university.data.api.model.RegisterRequest
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.withBelowTopBarContentGap
 import com.example.app_my_university.ui.components.picker.MuPickerField
 import com.example.app_my_university.ui.components.picker.MuSearchablePickerSheet
 import com.example.app_my_university.ui.components.picker.PickerListItem
@@ -50,9 +51,10 @@ fun RegistrationStatusScreen(
             )
         }
     ) { padding ->
+        val contentPadding = padding.withBelowTopBarContentGap()
         Column(
             modifier = Modifier
-                .padding(padding)
+                .padding(contentPadding)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)

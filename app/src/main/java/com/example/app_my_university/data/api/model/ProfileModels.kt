@@ -54,3 +54,14 @@ data class UpdatePersonalProfileRequest(
     val lastName: String,
     val middleName: String?
 )
+
+/** Только ADMIN или SUPER_ADMIN; для ADMIN задайте universityId. */
+data class CreateAdminAccountRequest(
+    val email: String,
+    val password: String,
+    val firstName: String,
+    val lastName: String,
+    val middleName: String? = null,
+    val userType: String,
+    val universityId: Long? = null
+)

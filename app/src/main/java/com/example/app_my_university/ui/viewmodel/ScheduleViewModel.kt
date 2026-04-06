@@ -10,6 +10,7 @@ import com.example.app_my_university.data.api.model.ScheduleCompareResultRespons
 import com.example.app_my_university.data.api.model.ScheduleCompareTeacherOptionResponse
 import com.example.app_my_university.data.api.model.ScheduleRequest
 import com.example.app_my_university.data.api.model.ScheduleResponse
+import com.example.app_my_university.data.auth.TokenManager
 import com.example.app_my_university.data.repository.EducationRepository
 import com.example.app_my_university.data.repository.ScheduleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -69,7 +70,8 @@ data class ScheduleUiState(
 @HiltViewModel
 class ScheduleViewModel @Inject constructor(
     private val scheduleRepository: ScheduleRepository,
-    private val educationRepository: EducationRepository
+    private val educationRepository: EducationRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ScheduleUiState())
@@ -134,9 +136,13 @@ class ScheduleViewModel @Inject constructor(
         viewModelScope.launch {
             AppLogger.userAction("ScheduleCompare", "load picker lists")
             _uiState.update { it.copy(pickListLoading = true) }
-            val g = async { scheduleRepository.listCompareGroups(null, null, null) }
-            val t = async { scheduleRepository.listCompareTeachers(null) }
-            val c = async { scheduleRepository.listCompareClassrooms(null) }
+            val catalogUni = when (tokenManager.getUserType()?.uppercase()) {
+                "SUPER_ADMIN" -> tokenManager.getSuperAdminScopeUniversityId()
+                else -> null
+            }
+            val g = async { scheduleRepository.listCompareGroups(catalogUni, null, null, null) }
+            val t = async { scheduleRepository.listCompareTeachers(catalogUni, null) }
+            val c = async { scheduleRepository.listCompareClassrooms(catalogUni, null) }
             val gr = g.await().getOrElse { emptyList() }
             val tr = t.await().getOrElse { emptyList() }
             val cr = c.await().getOrElse { emptyList() }
@@ -212,6 +218,9 @@ class ScheduleViewModel @Inject constructor(
                 )
             }
             val s = _uiState.value
+            val scopeUni = if (tokenManager.getUserType()?.equals("SUPER_ADMIN", ignoreCase = true) == true) {
+                tokenManager.getSuperAdminScopeUniversityId()
+            } else null
             val req = ScheduleCompareRequest(
                 mode = "FULL",
                 leftKind = leftKind,
@@ -220,6 +229,7 @@ class ScheduleViewModel @Inject constructor(
                 rightId = rightId,
                 weekNumber = s.currentWeek,
                 dayOfWeek = s.selectedDayOfWeek,
+                scopeUniversityId = scopeUni,
             )
             scheduleRepository.compareSchedule(req).fold(
                 onSuccess = { res ->

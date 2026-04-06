@@ -18,10 +18,11 @@ class ScheduleRepository @Inject constructor(private val apiService: ApiService)
     suspend fun querySchedule(
         groupId: Long? = null,
         teacherId: Long? = null,
+        universityId: Long? = null,
         weekNumber: Int? = null,
         dayOfWeek: Int? = null
     ): Result<List<ScheduleResponse>> =
-        safeApiCall { apiService.querySchedule(groupId, teacherId, weekNumber, dayOfWeek) }
+        safeApiCall { apiService.querySchedule(groupId, teacherId, universityId, weekNumber, dayOfWeek) }
 
     suspend fun getMySchedule(weekNumber: Int? = null, dayOfWeek: Int? = null): Result<List<ScheduleResponse>> =
         safeApiCall { apiService.getMySchedule(weekNumber, dayOfWeek) }
@@ -48,22 +49,23 @@ class ScheduleRepository @Inject constructor(private val apiService: ApiService)
     suspend fun compareSchedule(body: ScheduleCompareRequest): Result<ScheduleCompareResultResponse> =
         safeApiCall { apiService.compareSchedule(body) }
 
-    suspend fun listCompareInstitutes(): Result<List<ScheduleCompareInstituteOptionResponse>> =
-        safeApiCall { apiService.listScheduleCompareInstitutes() }
+    suspend fun listCompareInstitutes(universityId: Long? = null): Result<List<ScheduleCompareInstituteOptionResponse>> =
+        safeApiCall { apiService.listScheduleCompareInstitutes(universityId) }
 
-    suspend fun listCompareDirections(instituteId: Long): Result<List<ScheduleCompareDirectionOptionResponse>> =
-        safeApiCall { apiService.listScheduleCompareDirections(instituteId) }
+    suspend fun listCompareDirections(universityId: Long?, instituteId: Long): Result<List<ScheduleCompareDirectionOptionResponse>> =
+        safeApiCall { apiService.listScheduleCompareDirections(universityId, instituteId) }
 
     suspend fun listCompareGroups(
+        universityId: Long? = null,
         instituteId: Long? = null,
         directionId: Long? = null,
         q: String? = null
     ): Result<List<ScheduleCompareGroupOptionResponse>> =
-        safeApiCall { apiService.listScheduleCompareGroups(instituteId, directionId, q) }
+        safeApiCall { apiService.listScheduleCompareGroups(universityId, instituteId, directionId, q) }
 
-    suspend fun listCompareTeachers(q: String? = null): Result<List<ScheduleCompareTeacherOptionResponse>> =
-        safeApiCall { apiService.listScheduleCompareTeachers(q) }
+    suspend fun listCompareTeachers(universityId: Long? = null, q: String? = null): Result<List<ScheduleCompareTeacherOptionResponse>> =
+        safeApiCall { apiService.listScheduleCompareTeachers(universityId, q) }
 
-    suspend fun listCompareClassrooms(q: String? = null): Result<List<ScheduleCompareClassroomOptionResponse>> =
-        safeApiCall { apiService.listScheduleCompareClassrooms(q) }
+    suspend fun listCompareClassrooms(universityId: Long? = null, q: String? = null): Result<List<ScheduleCompareClassroomOptionResponse>> =
+        safeApiCall { apiService.listScheduleCompareClassrooms(universityId, q) }
 }

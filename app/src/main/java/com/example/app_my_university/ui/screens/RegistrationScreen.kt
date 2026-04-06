@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.app_my_university.ui.components.UniformTopAppBar
+import com.example.app_my_university.ui.designsystem.withBelowTopBarContentGap
 import com.example.app_my_university.ui.viewmodel.RegistrationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,11 +64,12 @@ fun RegistrationScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
+        val contentPadding = padding.withBelowTopBarContentGap()
         if (uiState.isRegistered) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .padding(contentPadding),
                 contentAlignment = Alignment.Center
             ) {
                 Card(
@@ -101,7 +103,7 @@ fun RegistrationScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
+                    .padding(contentPadding)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)

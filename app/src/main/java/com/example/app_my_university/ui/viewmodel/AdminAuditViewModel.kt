@@ -3,6 +3,7 @@ package com.example.app_my_university.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_my_university.data.api.model.AuditLogResponse
+import com.example.app_my_university.data.auth.TokenManager
 import com.example.app_my_university.data.repository.AuditRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,8 @@ data class AdminAuditUiState(
 
 @HiltViewModel
 class AdminAuditViewModel @Inject constructor(
-    private val auditRepository: AuditRepository
+    private val auditRepository: AuditRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminAuditUiState())
@@ -33,7 +35,19 @@ class AdminAuditViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _uiState.value = AdminAuditUiState(isLoading = true)
-            auditRepository.searchLogs(userId, action?.ifBlank { null }, entityType?.ifBlank { null }, fromIso, toIso).fold(
+            val scopeUni = if (tokenManager.getUserType()?.equals("SUPER_ADMIN", ignoreCase = true) == true) {
+                tokenManager.getSuperAdminScopeUniversityId()
+            } else {
+                null
+            }
+            auditRepository.searchLogs(
+                userId,
+                action?.ifBlank { null },
+                entityType?.ifBlank { null },
+                fromIso,
+                toIso,
+                universityId = scopeUni
+            ).fold(
                 onSuccess = { _uiState.value = AdminAuditUiState(logs = it) },
                 onFailure = { _uiState.value = AdminAuditUiState(error = it.message) }
             )

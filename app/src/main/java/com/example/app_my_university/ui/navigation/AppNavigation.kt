@@ -96,7 +96,7 @@ fun AppNavigation() {
                 onLoginSuccess = { userType ->
                     val dest = when (userType) {
                         "TEACHER" -> Screen.TeacherHome.route
-                        "ADMIN" -> Screen.AdminHome.route
+                        "ADMIN", "SUPER_ADMIN" -> Screen.AdminHome.route
                         else -> Screen.StudentHome.route
                     }
                     navController.navigate(dest) {
@@ -310,7 +310,7 @@ fun AppNavigation() {
             if (atAuthFlow) {
                 val dest = when (loginState.userType) {
                     "TEACHER" -> Screen.TeacherHome.route
-                    "ADMIN" -> Screen.AdminHome.route
+                    "ADMIN", "SUPER_ADMIN" -> Screen.AdminHome.route
                     else -> Screen.StudentHome.route
                 }
                 navController.navigate(dest) {

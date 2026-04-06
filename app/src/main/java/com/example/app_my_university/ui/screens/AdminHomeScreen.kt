@@ -30,17 +30,24 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -93,8 +100,10 @@ fun AdminHomeScreen(
 
     val pending = adminState.pendingRegistrationCount
     val unread = adminState.unreadMessagesCount
-    val uniName = adminState.adminUniversityName ?: "Ваш вуз"
+    val uniName = adminState.adminUniversityName
+        ?: if (adminState.isSuperAdmin) "Выберите вуз" else "Ваш вуз"
     val instituteCount = adminState.institutes.size
+    var superAdminUniMenuExpanded by remember { mutableStateOf(false) }
 
     RoleShellScaffold(
         role = AppRole.Admin,
@@ -121,10 +130,52 @@ fun AdminHomeScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Панель управления данными вашего вуза",
+                        text = if (adminState.isSuperAdmin) {
+                            "Глобальный доступ: выберите вуз для работы с данными"
+                        } else {
+                            "Панель управления данными вашего вуза"
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+
+                if (adminState.isSuperAdmin) {
+                    item {
+                        ExposedDropdownMenuBox(
+                            expanded = superAdminUniMenuExpanded,
+                            onExpandedChange = { superAdminUniMenuExpanded = it },
+                        ) {
+                            OutlinedTextField(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(),
+                                readOnly = true,
+                                value = uniName,
+                                onValueChange = {},
+                                label = { Text("Вуз для администрирования") },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = superAdminUniMenuExpanded)
+                                },
+                            )
+                            ExposedDropdownMenu(
+                                expanded = superAdminUniMenuExpanded,
+                                onDismissRequest = { superAdminUniMenuExpanded = false },
+                            ) {
+                                adminState.universities.forEach { u ->
+                                    DropdownMenuItem(
+                                        text = { Text(u.name) },
+                                        onClick = {
+                                            superAdminUniMenuExpanded = false
+                                            adminViewModel.setSuperAdminScopeUniversity(u.id, u.name)
+                                            adminViewModel.loadMyUniversityAndInstitutes()
+                                            adminViewModel.refreshDashboardBadges()
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 item {

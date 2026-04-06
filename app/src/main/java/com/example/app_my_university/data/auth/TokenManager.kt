@@ -23,7 +23,11 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
         private val USER_TYPE_KEY = stringPreferencesKey("user_type")
         private val USER_EMAIL_KEY = stringPreferencesKey("user_email")
         private val USER_NAME_KEY = stringPreferencesKey("user_name")
+        private val SUPER_ADMIN_SCOPE_UNIVERSITY_KEY = longPreferencesKey("super_admin_scope_university_id")
     }
+
+    val superAdminScopeUniversityId: Flow<Long?> =
+        context.dataStore.data.map { it[SUPER_ADMIN_SCOPE_UNIVERSITY_KEY] }
 
     val token: Flow<String?> = context.dataStore.data.map { it[TOKEN_KEY] }
     val userType: Flow<String?> = context.dataStore.data.map { it[USER_TYPE_KEY] }
@@ -36,6 +40,9 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
             it[USER_TYPE_KEY] = userType
             it[USER_EMAIL_KEY] = email
             it[USER_NAME_KEY] = name
+            if (!userType.equals("SUPER_ADMIN", ignoreCase = true)) {
+                it.remove(SUPER_ADMIN_SCOPE_UNIVERSITY_KEY)
+            }
         }
     }
 
@@ -47,5 +54,15 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
 
     suspend fun clearAuthData() {
         context.dataStore.edit { it.clear() }
+    }
+
+    suspend fun getSuperAdminScopeUniversityId(): Long? =
+        context.dataStore.data.map { it[SUPER_ADMIN_SCOPE_UNIVERSITY_KEY] }.first()
+
+    suspend fun setSuperAdminScopeUniversityId(id: Long?) {
+        context.dataStore.edit {
+            if (id == null) it.remove(SUPER_ADMIN_SCOPE_UNIVERSITY_KEY)
+            else it[SUPER_ADMIN_SCOPE_UNIVERSITY_KEY] = id
+        }
     }
 }

@@ -25,6 +25,7 @@ fun RoleShellScaffold(
     snackbarHost: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     floatingActionButtonPosition: FabPosition = FabPosition.End,
+    addBelowTopBarContentGap: Boolean = true,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val currentRoute = navController.currentDestination?.route
@@ -52,6 +53,7 @@ fun RoleShellScaffold(
         snackbarHost = snackbarHost,
         floatingActionButton = floatingActionButton,
         floatingActionButtonPosition = floatingActionButtonPosition,
+        addBelowTopBarContentGap = addBelowTopBarContentGap,
         content = content,
     )
 }

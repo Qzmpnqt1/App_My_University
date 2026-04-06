@@ -13,7 +13,8 @@ class AuditRepository @Inject constructor(private val api: ApiService) {
         action: String? = null,
         entityType: String? = null,
         fromIso: String? = null,
-        toIso: String? = null
+        toIso: String? = null,
+        universityId: Long? = null
     ): Result<List<AuditLogResponse>> =
-        safeApiCall { api.getAuditLogs(userId, action, entityType, fromIso, toIso) }
+        safeApiCall { api.getAuditLogs(userId, action, entityType, fromIso, toIso, universityId) }
 }

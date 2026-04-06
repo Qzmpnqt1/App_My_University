@@ -79,7 +79,11 @@ fun UniversityManagementScreen(
     var instName by remember { mutableStateOf("") }
     var instShort by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
-    val myUniversity = uiState.universities.firstOrNull()
+    val myUniversity = if (uiState.isSuperAdmin && uiState.adminUniversityId != null) {
+        uiState.universities.find { it.id == uiState.adminUniversityId }
+    } else {
+        uiState.universities.firstOrNull()
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadMyUniversityAndInstitutes()
