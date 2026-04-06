@@ -15,6 +15,8 @@ import com.example.app_my_university.data.repository.ProfileRepository
 import com.example.app_my_university.ui.components.profile.teacherWorkplaceSummary
 import com.example.app_my_university.ui.components.picker.PickerListItem
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -70,6 +72,8 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AdminTeacherAssignmentUiState())
     val uiState: StateFlow<AdminTeacherAssignmentUiState> = _uiState
 
+    private var teacherSearchJob: Job? = null
+
     fun loadAdminContextAndTeachers() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
@@ -92,38 +96,44 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
                 adminUniversityId = uni,
                 isSuperAdmin = isSuper,
             )
-            educationRepository.getUsers(userType = "TEACHER", universityId = uni).fold(
-                onSuccess = { teachers ->
-                    _uiState.value = _uiState.value.copy(isLoading = false, allTeachers = teachers)
-                },
-                onFailure = {
-                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
-                }
-            )
+            teacherSearchJob?.cancel()
+            fetchTeachersFromServer(_uiState.value.teacherSearchQuery.trim())
         }
     }
 
     fun onTeacherSearchChange(q: String) {
         _uiState.value = _uiState.value.copy(teacherSearchQuery = q)
-    }
-
-    fun filteredTeachers(state: AdminTeacherAssignmentUiState = _uiState.value): List<UserProfileResponse> {
-        val q = state.teacherSearchQuery.trim().lowercase()
-        if (q.isEmpty()) return state.allTeachers
-        return state.allTeachers.filter { t ->
-            val tp = t.teacherProfile
-            val workplace = listOfNotNull(
-                tp?.universityName,
-                tp?.instituteName,
-                tp?.institutesFromAssignments?.joinToString(" "),
-            ).joinToString(" ")
-            listOfNotNull(t.lastName, t.firstName, t.middleName, t.email, workplace)
-                .joinToString(" ").lowercase().contains(q)
+        teacherSearchJob?.cancel()
+        teacherSearchJob = viewModelScope.launch {
+            delay(320)
+            fetchTeachersFromServer(q.trim())
         }
     }
 
+    private suspend fun fetchTeachersFromServer(query: String) {
+        val uni = _uiState.value.adminUniversityId
+        val isSuper = _uiState.value.isSuperAdmin
+        if (!isSuper && uni == null) return
+        val emptyList = _uiState.value.allTeachers.isEmpty()
+        if (emptyList) {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+        }
+        educationRepository.getUsers(
+            userType = "TEACHER",
+            universityId = uni,
+            searchQuery = query.ifBlank { null },
+        ).fold(
+            onSuccess = { teachers ->
+                _uiState.value = _uiState.value.copy(isLoading = false, allTeachers = teachers)
+            },
+            onFailure = {
+                _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+            },
+        )
+    }
+
     fun teacherPickerItems(state: AdminTeacherAssignmentUiState = _uiState.value): List<PickerListItem> {
-        return filteredTeachers(state).map { t ->
+        return state.allTeachers.map { t ->
             val name = "${t.lastName} ${t.firstName}".trim() + (t.middleName?.let { " $it" } ?: "")
             PickerListItem(
                 id = t.id,

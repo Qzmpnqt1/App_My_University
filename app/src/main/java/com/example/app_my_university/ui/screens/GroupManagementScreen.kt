@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -39,6 +40,7 @@ import com.example.app_my_university.data.api.model.StudyDirectionResponse
 import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.navigation.AppRole
+import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +58,12 @@ fun GroupManagementScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
+        viewModel.loadAdminContext()
+    }
+    LaunchedEffect(
+        uiState.adminUniversityId,
+        uiState.isSuperAdmin,
+    ) {
         viewModel.loadDirections(null)
         viewModel.loadGroups(null)
     }
@@ -105,8 +113,23 @@ fun GroupManagementScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .padding(Dimens.screenPadding)
         ) {
+            if (uiState.isSuperAdmin && uiState.adminUniversityId == null) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = Dimens.spaceM),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
+                ) {
+                    Text(
+                        "Глобальный режим: группы и направления всех вузов. Выберите вуз в профиле администратора для фильтрации.",
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -115,19 +138,20 @@ fun GroupManagementScreen(
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 singleLine = true
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(Dimens.spaceS))
             Text(
                 text = "Найдено: ${filtered.size}",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(modifier = Modifier.height(Dimens.spaceM))
             when {
                 uiState.isLoading && uiState.groups.isEmpty() -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                 }
                 else -> {
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.spaceM),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(filtered) { group ->
@@ -195,9 +219,11 @@ private fun GroupManagementCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(16.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(Dimens.spaceM)) {
             RowBetweenTitleActions(
                 title = group.name,
                 onEdit = onEdit,
@@ -205,14 +231,15 @@ private fun GroupManagementCard(
             )
             group.directionName?.let {
                 Text(
-                    text = "Направление: $it",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = it,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
             Text(
-                text = "Курс: ${group.course ?: "—"} • Год поступления: ${group.yearOfAdmission ?: "—"}",
-                style = MaterialTheme.typography.bodySmall
+                text = "Курс ${group.course ?: "—"} · Поступление ${group.yearOfAdmission ?: "—"}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -230,8 +257,8 @@ private fun RowBetweenTitleActions(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f)
         )
         IconButton(onClick = onEdit) {

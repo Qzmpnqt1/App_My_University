@@ -1,5 +1,6 @@
 package com.example.app_my_university.ui.screens
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -18,7 +20,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,10 +51,10 @@ import com.example.app_my_university.data.api.model.ClassroomRequest
 import com.example.app_my_university.data.api.model.ClassroomResponse
 import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.components.common.MuLoadingState
-import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.navigation.AppRole
+import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,14 +72,25 @@ fun AdminClassroomManagementScreen(
     var building by remember { mutableStateOf("") }
     var room by remember { mutableStateOf("") }
     var capacity by remember { mutableStateOf("") }
+    var createUniversityId by remember { mutableStateOf<Long?>(null) }
+    var universityMenuExpanded by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.loadAdminContext()
     }
     LaunchedEffect(uiState.adminUniversityId, uiState.isSuperAdmin) {
-        if (uiState.isSuperAdmin || uiState.adminUniversityId != null) {
-            viewModel.loadClassrooms(uiState.adminUniversityId)
+        when {
+            uiState.isSuperAdmin && uiState.adminUniversityId == null ->
+                viewModel.loadClassrooms(null)
+            uiState.isSuperAdmin || uiState.adminUniversityId != null ->
+                viewModel.loadClassrooms(uiState.adminUniversityId)
+            else -> Unit
+        }
+    }
+    LaunchedEffect(showForm) {
+        if (showForm && uiState.isSuperAdmin && uiState.adminUniversityId == null && uiState.universities.isEmpty()) {
+            viewModel.loadUniversities()
         }
     }
 
@@ -98,6 +116,8 @@ fun AdminClassroomManagementScreen(
         }
     }
 
+    val formTargetUniversityId = editing?.universityId ?: uniId ?: createUniversityId
+
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
@@ -108,13 +128,14 @@ fun AdminClassroomManagementScreen(
             )
         },
         floatingActionButton = {
-            if (uniId != null) {
+            if (uniId != null || uiState.isSuperAdmin) {
                 FloatingActionButton(
                     onClick = {
                         editing = null
                         building = ""
                         room = ""
                         capacity = ""
+                        createUniversityId = uniId
                         showForm = true
                     }
                 ) { Icon(Icons.Default.Add, "Добавить") }
@@ -139,6 +160,20 @@ fun AdminClassroomManagementScreen(
                     contentPadding = PaddingValues(Dimens.screenPadding),
                     verticalArrangement = Arrangement.spacedBy(Dimens.spaceM)
                 ) {
+                    if (uiState.isSuperAdmin && uniId == null) {
+                        item {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
+                            ) {
+                                Text(
+                                    "Глобальный режим: отображаются аудитории всех вузов. Для новой аудитории выберите вуз в форме.",
+                                    modifier = Modifier.padding(12.dp),
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
+                        }
+                    }
                     item {
                         OutlinedTextField(
                             value = search,
@@ -166,6 +201,7 @@ fun AdminClassroomManagementScreen(
                                     building = c.building ?: ""
                                     room = c.roomNumber ?: ""
                                     capacity = c.capacity?.toString() ?: ""
+                                    createUniversityId = null
                                     showForm = true
                                 },
                                 onDelete = { deleteTarget = c }
@@ -177,12 +213,47 @@ fun AdminClassroomManagementScreen(
         }
     }
 
-    if (showForm && uniId != null) {
+    if (showForm) {
+        val canSave = building.isNotBlank() && room.isNotBlank() && formTargetUniversityId != null
         AlertDialog(
-            onDismissRequest = { showForm = false },
+            onDismissRequest = {
+                showForm = false
+                createUniversityId = null
+            },
             title = { Text(if (editing == null) "Новая аудитория" else "Редактирование") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (editing == null && uiState.isSuperAdmin && uniId == null) {
+                        ExposedDropdownMenuBox(
+                            expanded = universityMenuExpanded,
+                            onExpandedChange = { universityMenuExpanded = it }
+                        ) {
+                            OutlinedTextField(
+                                value = uiState.universities.find { it.id == createUniversityId }?.name ?: "",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Вуз *") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = universityMenuExpanded) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = universityMenuExpanded,
+                                onDismissRequest = { universityMenuExpanded = false }
+                            ) {
+                                uiState.universities.forEach { u ->
+                                    DropdownMenuItem(
+                                        text = { Text(u.name) },
+                                        onClick = {
+                                            createUniversityId = u.id
+                                            universityMenuExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                     OutlinedTextField(
                         building,
                         { building = it },
@@ -210,20 +281,27 @@ fun AdminClassroomManagementScreen(
                 Button(
                     onClick = {
                         val cap = capacity.toIntOrNull()
+                        val uid = formTargetUniversityId ?: return@Button
                         val req = ClassroomRequest(
                             building = building.trim(),
                             roomNumber = room.trim(),
                             capacity = cap,
-                            universityId = uniId
+                            universityId = uid
                         )
                         if (editing == null) viewModel.createClassroom(req)
                         else viewModel.updateClassroom(editing!!.id, req)
                         showForm = false
+                        createUniversityId = null
                     },
-                    enabled = building.isNotBlank() && room.isNotBlank()
+                    enabled = canSave
                 ) { Text("Сохранить") }
             },
-            dismissButton = { TextButton({ showForm = false }) { Text("Отмена") } }
+            dismissButton = {
+                TextButton({
+                    showForm = false
+                    createUniversityId = null
+                }) { Text("Отмена") }
+            }
         )
     }
 
@@ -235,7 +313,7 @@ fun AdminClassroomManagementScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        deleteTarget?.let { viewModel.deleteClassroom(it.id) }
+                        deleteTarget?.let { viewModel.deleteClassroom(it.id, it.universityId) }
                         deleteTarget = null
                     },
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
@@ -256,13 +334,15 @@ private fun ClassroomRow(
 ) {
     Card(
         Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(1.dp)
+        elevation = CardDefaults.cardElevation(1.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Row(
             Modifier
                 .fillMaxWidth()
                 .padding(Dimens.spaceM),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
@@ -271,12 +351,20 @@ private fun ClassroomRow(
                     fontWeight = FontWeight.SemiBold
                 )
                 c.capacity?.let {
-                    Text("Вместимость: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "Вместимость: $it",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
-            IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, "Изменить") }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, "Удалить", tint = MaterialTheme.colorScheme.error)
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Default.Edit, "Изменить")
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(44.dp)) {
+                    Icon(Icons.Default.Delete, "Удалить", tint = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }

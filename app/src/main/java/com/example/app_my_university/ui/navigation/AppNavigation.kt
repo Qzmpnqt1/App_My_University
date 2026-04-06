@@ -38,6 +38,9 @@ sealed class Screen(val route: String) {
     object AdminUniversities : Screen("admin_universities")
     object AdminSchedule : Screen("admin_schedule")
     object AdminSubjects : Screen("admin_subjects")
+    /** Учебный план: предметы в направлениях (SubjectInDirection). */
+    object AdminSubjectPlan : Screen("admin_subject_plan")
+    object AdminDirections : Screen("admin_directions")
     object AdminGroups : Screen("admin_groups")
     object RegistrationStatus : Screen("registration_status")
     object AdminAudit : Screen("admin_audit")
@@ -266,6 +269,20 @@ fun AppNavigation() {
 
         composable(Screen.AdminSubjects.route) {
             SubjectManagementScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
+        }
+
+        composable(Screen.AdminSubjectPlan.route) {
+            SubjectInDirectionManagementScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
+            )
+        }
+
+        composable(Screen.AdminDirections.route) {
+            DirectionManagementScreen(
                 navController = navController,
                 onNavigateBack = { navController.navigateUp() },
             )

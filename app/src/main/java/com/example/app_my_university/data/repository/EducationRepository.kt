@@ -2,20 +2,24 @@ package com.example.app_my_university.data.repository
 
 import com.example.app_my_university.data.api.ApiService
 import com.example.app_my_university.data.api.model.*
+import com.example.app_my_university.util.AlphabeticalSort.sortedByPracticeSequenceRu
+import com.example.app_my_university.util.AlphabeticalSort.sortedForDisplayRu
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class EducationRepository @Inject constructor(private val apiService: ApiService) {
 
-    suspend fun getUniversities(): Result<List<UniversityResponse>> = safeApiCall { apiService.getUniversities() }
+    suspend fun getUniversities(): Result<List<UniversityResponse>> =
+        safeApiCall { apiService.getUniversities() }.map { it.sortedForDisplayRu() }
     suspend fun getUniversity(id: Long): Result<UniversityResponse> = safeApiCall { apiService.getUniversity(id) }
     suspend fun createUniversity(request: UniversityRequest): Result<UniversityResponse> = safeApiCall { apiService.createUniversity(request) }
     suspend fun updateUniversity(id: Long, request: UniversityRequest): Result<UniversityResponse> =
         safeApiCall { apiService.updateUniversity(id, request) }
     suspend fun deleteUniversity(id: Long): Result<Unit> = safeApiCall { apiService.deleteUniversity(id) }
 
-    suspend fun getInstitutes(universityId: Long? = null): Result<List<InstituteResponse>> = safeApiCall { apiService.getInstitutes(universityId) }
+    suspend fun getInstitutes(universityId: Long? = null): Result<List<InstituteResponse>> =
+        safeApiCall { apiService.getInstitutes(universityId) }.map { it.sortedForDisplayRu() }
     suspend fun getInstitute(id: Long): Result<InstituteResponse> = safeApiCall { apiService.getInstitute(id) }
     suspend fun createInstitute(request: InstituteRequest): Result<InstituteResponse> = safeApiCall { apiService.createInstitute(request) }
     suspend fun updateInstitute(id: Long, request: InstituteRequest): Result<InstituteResponse> =
@@ -23,7 +27,7 @@ class EducationRepository @Inject constructor(private val apiService: ApiService
     suspend fun deleteInstitute(id: Long): Result<Unit> = safeApiCall { apiService.deleteInstitute(id) }
 
     suspend fun getDirections(instituteId: Long? = null, universityId: Long? = null): Result<List<StudyDirectionResponse>> =
-        safeApiCall { apiService.getDirections(instituteId, universityId) }
+        safeApiCall { apiService.getDirections(instituteId, universityId) }.map { it.sortedForDisplayRu() }
     suspend fun getDirection(id: Long): Result<StudyDirectionResponse> = safeApiCall { apiService.getDirection(id) }
     suspend fun createDirection(request: StudyDirectionRequest): Result<StudyDirectionResponse> = safeApiCall { apiService.createDirection(request) }
     suspend fun updateDirection(id: Long, request: StudyDirectionRequest): Result<StudyDirectionResponse> =
@@ -31,22 +35,23 @@ class EducationRepository @Inject constructor(private val apiService: ApiService
     suspend fun deleteDirection(id: Long): Result<Unit> = safeApiCall { apiService.deleteDirection(id) }
 
     suspend fun getGroups(directionId: Long? = null, universityId: Long? = null): Result<List<AcademicGroupResponse>> =
-        safeApiCall { apiService.getGroups(directionId, universityId) }
+        safeApiCall { apiService.getGroups(directionId, universityId) }.map { it.sortedForDisplayRu() }
     suspend fun getGroup(id: Long): Result<AcademicGroupResponse> = safeApiCall { apiService.getGroup(id) }
     suspend fun createGroup(request: AcademicGroupRequest): Result<AcademicGroupResponse> = safeApiCall { apiService.createGroup(request) }
     suspend fun updateGroup(id: Long, request: AcademicGroupRequest): Result<AcademicGroupResponse> =
         safeApiCall { apiService.updateGroup(id, request) }
     suspend fun deleteGroup(id: Long): Result<Unit> = safeApiCall { apiService.deleteGroup(id) }
 
-    suspend fun getSubjects(): Result<List<SubjectResponse>> = safeApiCall { apiService.getSubjects() }
+    suspend fun getSubjects(universityId: Long? = null): Result<List<SubjectResponse>> =
+        safeApiCall { apiService.getSubjects(universityId) }.map { it.sortedForDisplayRu() }
     suspend fun getSubject(id: Long): Result<SubjectResponse> = safeApiCall { apiService.getSubject(id) }
     suspend fun createSubject(request: SubjectRequest): Result<SubjectResponse> = safeApiCall { apiService.createSubject(request) }
     suspend fun updateSubject(id: Long, request: SubjectRequest): Result<SubjectResponse> =
         safeApiCall { apiService.updateSubject(id, request) }
     suspend fun deleteSubject(id: Long): Result<Unit> = safeApiCall { apiService.deleteSubject(id) }
 
-    suspend fun getSubjectsInDirections(directionId: Long? = null): Result<List<SubjectInDirectionResponse>> =
-        safeApiCall { apiService.getSubjectsInDirections(directionId) }
+    suspend fun getSubjectsInDirections(directionId: Long? = null, universityId: Long? = null): Result<List<SubjectInDirectionResponse>> =
+        safeApiCall { apiService.getSubjectsInDirections(directionId, universityId) }.map { it.sortedForDisplayRu() }
     suspend fun getSubjectInDirection(id: Long): Result<SubjectInDirectionResponse> = safeApiCall { apiService.getSubjectInDirection(id) }
     suspend fun createSubjectInDirection(request: SubjectInDirectionRequest): Result<SubjectInDirectionResponse> =
         safeApiCall { apiService.createSubjectInDirection(request) }
@@ -55,13 +60,13 @@ class EducationRepository @Inject constructor(private val apiService: ApiService
     suspend fun deleteSubjectInDirection(id: Long): Result<Unit> = safeApiCall { apiService.deleteSubjectInDirection(id) }
 
     suspend fun getSubjectLessonTypes(subjectDirectionId: Long? = null): Result<List<SubjectLessonTypeResponse>> =
-        safeApiCall { apiService.getSubjectLessonTypes(subjectDirectionId) }
+        safeApiCall { apiService.getSubjectLessonTypes(subjectDirectionId) }.map { it.sortedForDisplayRu() }
     suspend fun createSubjectLessonType(request: SubjectLessonTypeRequest): Result<SubjectLessonTypeResponse> =
         safeApiCall { apiService.createSubjectLessonType(request) }
     suspend fun deleteSubjectLessonType(id: Long): Result<Unit> = safeApiCall { apiService.deleteSubjectLessonType(id) }
 
     suspend fun getSubjectPractices(subjectDirectionId: Long): Result<List<SubjectPracticeResponse>> =
-        safeApiCall { apiService.getSubjectPractices(subjectDirectionId) }
+        safeApiCall { apiService.getSubjectPractices(subjectDirectionId) }.map { it.sortedByPracticeSequenceRu() }
     suspend fun getSubjectPractice(id: Long): Result<SubjectPracticeResponse> = safeApiCall { apiService.getSubjectPractice(id) }
     suspend fun createSubjectPractice(request: SubjectPracticeRequest): Result<SubjectPracticeResponse> =
         safeApiCall { apiService.createSubjectPractice(request) }
@@ -70,17 +75,18 @@ class EducationRepository @Inject constructor(private val apiService: ApiService
     suspend fun deleteSubjectPractice(id: Long): Result<Unit> = safeApiCall { apiService.deleteSubjectPractice(id) }
 
     suspend fun getTeacherSubjects(teacherId: Long? = null): Result<List<TeacherSubjectResponse>> =
-        safeApiCall { apiService.getTeacherSubjects(teacherId) }
+        safeApiCall { apiService.getTeacherSubjects(teacherId) }.map { it.sortedForDisplayRu() }
     suspend fun createTeacherSubject(request: TeacherSubjectRequest): Result<TeacherSubjectResponse> =
         safeApiCall { apiService.createTeacherSubject(request) }
     suspend fun replaceTeacherAssignments(
         teacherProfileId: Long,
         request: TeacherSubjectReplaceRequest
     ): Result<List<TeacherSubjectResponse>> =
-        safeApiCall { apiService.replaceTeacherAssignments(teacherProfileId, request) }
+        safeApiCall { apiService.replaceTeacherAssignments(teacherProfileId, request) }.map { it.sortedForDisplayRu() }
     suspend fun deleteTeacherSubject(id: Long): Result<Unit> = safeApiCall { apiService.deleteTeacherSubject(id) }
 
-    suspend fun getClassrooms(universityId: Long? = null): Result<List<ClassroomResponse>> = safeApiCall { apiService.getClassrooms(universityId) }
+    suspend fun getClassrooms(universityId: Long? = null): Result<List<ClassroomResponse>> =
+        safeApiCall { apiService.getClassrooms(universityId) }.map { it.sortedForDisplayRu() }
     suspend fun getClassroom(id: Long): Result<ClassroomResponse> = safeApiCall { apiService.getClassroom(id) }
     suspend fun createClassroom(request: ClassroomRequest): Result<ClassroomResponse> = safeApiCall { apiService.createClassroom(request) }
     suspend fun updateClassroom(id: Long, request: ClassroomRequest): Result<ClassroomResponse> =
@@ -126,6 +132,7 @@ class EducationRepository @Inject constructor(private val apiService: ApiService
         searchQuery: String? = null
     ): Result<List<UserProfileResponse>> =
         safeApiCall { apiService.getUsers(userType, isActive, universityId, instituteId, groupId, searchQuery) }
+            .map { it.sortedForDisplayRu() }
 
     suspend fun getUser(id: Long): Result<UserProfileResponse> = safeApiCall { apiService.getUser(id) }
     suspend fun activateUser(id: Long): Result<Unit> = safeApiCall { apiService.activateUser(id) }

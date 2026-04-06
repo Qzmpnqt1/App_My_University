@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,11 +23,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -103,10 +104,6 @@ fun AdminTeacherAssignmentScreen(
     val snackbar = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val filteredTeachers = remember(uiState.allTeachers, uiState.teacherSearchQuery) {
-        viewModel.filteredTeachers(uiState)
-    }
-
     val assignmentSections = remember(uiState.assignments) {
         groupedAssignments(uiState.assignments)
     }
@@ -153,168 +150,183 @@ fun AdminTeacherAssignmentScreen(
             return@RoleShellScaffold
         }
 
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(Dimens.screenPadding),
-            verticalArrangement = Arrangement.spacedBy(Dimens.spaceM),
+                .padding(padding)
+                .padding(horizontal = Dimens.screenPadding),
         ) {
-            item {
-                Text(
-                    "Зона 1 — выбор преподавателя. Зона 2 — текущие назначения и изменение списка дисциплин.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            item {
+            if (uiState.isSuperAdmin && uiState.adminUniversityId == null) {
                 Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = Dimens.spaceM),
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
                 ) {
                     Text(
-                        "1. Выбор преподавателя",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
+                        "Глобальный режим: список преподавателей со всех вузов. В панели «Ещё» выберите вуз, чтобы работать в рамках одного кампуса.",
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
                     )
                 }
-            }
-            item {
-                OutlinedTextField(
-                    value = uiState.teacherSearchQuery,
-                    onValueChange = viewModel::onTeacherSearchChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Фамилия, имя, e-mail или институт") },
-                    label = { Text("Поиск преподавателя") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                )
-            }
-            if (filteredTeachers.isEmpty() && uiState.allTeachers.isNotEmpty()) {
-                item {
-                    MuEmptyState(
-                        title = "Никого не найдено",
-                        subtitle = "Измените запрос поиска.",
-                        modifier = Modifier.padding(vertical = 16.dp),
-                    )
-                }
-            }
-            if (uiState.allTeachers.isEmpty() && !uiState.isLoading) {
-                item {
-                    MuEmptyState(
-                        title = "Нет преподавателей",
-                        subtitle = "В вашем вузе пока нет учётных записей преподавателей.",
-                        modifier = Modifier.padding(vertical = 16.dp),
-                    )
-                }
-            }
-            items(filteredTeachers, key = { it.id }) { t ->
-                TeacherPickCard(
-                    teacher = t,
-                    selected = uiState.selectedTeacher?.id == t.id,
-                    onClick = { viewModel.selectTeacher(t) },
-                )
             }
 
-            if (uiState.selectedTeacher != null) {
-                item {
-                    Spacer(Modifier.padding(top = Dimens.spaceS))
-                    HorizontalDivider()
-                    Spacer(Modifier.padding(top = Dimens.spaceM))
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
-                    ) {
-                        Text(
-                            "2. Назначения выбранного преподавателя",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary,
+            Text(
+                "Поиск выполняется на сервере",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = Dimens.spaceS),
+            )
+            OutlinedTextField(
+                value = uiState.teacherSearchQuery,
+                onValueChange = viewModel::onTeacherSearchChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Фамилия, имя, e-mail…") },
+                label = { Text("Поиск преподавателя") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp),
+            )
+            Spacer(Modifier.height(Dimens.spaceM))
+
+            if (uiState.selectedTeacher == null) {
+                when {
+                    uiState.isLoading && uiState.allTeachers.isEmpty() -> {
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    uiState.allTeachers.isEmpty() && !uiState.isLoading -> {
+                        MuEmptyState(
+                            title = if (uiState.teacherSearchQuery.isBlank()) "Нет преподавателей" else "Никого не найдено",
+                            subtitle = if (uiState.teacherSearchQuery.isBlank()) {
+                                "В выбранной области нет учётных записей преподавателей."
+                            } else {
+                                "Попробуйте другой запрос."
+                            },
+                            modifier = Modifier.weight(1f),
                         )
                     }
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.spaceS),
+                            contentPadding = PaddingValues(bottom = Dimens.screenPadding),
+                        ) {
+                            items(uiState.allTeachers, key = { it.id }) { t ->
+                                TeacherPickCard(
+                                    teacher = t,
+                                    selected = false,
+                                    onClick = { viewModel.selectTeacher(t) },
+                                )
+                            }
+                        }
+                    }
                 }
-                item {
-                    SelectedTeacherSummaryCard(teacher = uiState.selectedTeacher!!)
+            } else {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = { viewModel.selectTeacher(null) }) {
+                        Text("Сменить преподавателя")
+                    }
                 }
-                item {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                SelectedTeacherSummaryCard(teacher = uiState.selectedTeacher!!)
+                Spacer(Modifier.height(Dimens.spaceM))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(Dimens.spaceM),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.spaceM),
                     ) {
                         Text(
                             "Текущие назначения",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                         )
+                        Text(
+                            "Добавьте или измените дисциплины по институтам и направлениям.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         Button(
                             onClick = { viewModel.openAssignmentSheet() },
+                            modifier = Modifier.fillMaxWidth(),
                             enabled = uiState.selectedTeacher?.teacherProfile?.teacherProfileId != null &&
                                 !uiState.catalogsLoading,
                             shape = RoundedCornerShape(12.dp),
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, Modifier.size(20.dp))
-                            Spacer(Modifier.size(6.dp))
-                            Text("Добавить / изменить", fontWeight = FontWeight.SemiBold)
+                            Spacer(Modifier.size(8.dp))
+                            Text("Добавить / изменить назначения", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
-                if (uiState.catalogsLoading && uiState.selectedTeacher != null) {
-                    item {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS),
-                        ) {
-                            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                            Text("Загрузка каталога…", style = MaterialTheme.typography.bodySmall)
-                        }
+
+                if (uiState.catalogsLoading) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = Dimens.spaceS),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS),
+                    ) {
+                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Text("Загрузка каталога…", style = MaterialTheme.typography.bodySmall)
                     }
                 }
                 if (uiState.assignmentsLoading) {
-                    item {
-                        Column {
-                            LinearProgressIndicator(Modifier.fillMaxWidth())
-                            Text(
-                                "Обновляем список назначений…",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
-                        }
+                    Column(Modifier.padding(top = Dimens.spaceS)) {
+                        LinearProgressIndicator(Modifier.fillMaxWidth())
+                        Text(
+                            "Обновляем список назначений…",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
                     }
                 }
                 if (!uiState.assignmentsLoading && assignmentSections.isEmpty()) {
-                    item {
-                        MuEmptyState(
-                            title = "Пока нет назначенных дисциплин",
-                            subtitle = "Нажмите «Добавить / изменить», чтобы собрать список по институтам и направлениям.",
-                            modifier = Modifier.padding(vertical = 16.dp),
-                        )
-                    }
-                }
-                assignmentSections.forEach { section ->
-                    item {
-                        AssignmentSectionHeader(
-                            instituteName = section.instituteName,
-                            directionName = section.directionName,
-                        )
-                    }
-                    items(section.rows, key = { it.id }) { row ->
-                        AssignmentRowCard(row = row, onDelete = { viewModel.deleteAssignment(row.id) })
-                    }
-                }
-            } else if (uiState.allTeachers.isNotEmpty()) {
-                item {
                     MuEmptyState(
-                        title = "Преподаватель не выбран",
-                        subtitle = "Выберите строку выше, чтобы увидеть и редактировать назначения.",
-                        modifier = Modifier.padding(vertical = 24.dp),
+                        title = "Пока нет назначенных дисциплин",
+                        subtitle = "Нажмите кнопку выше, чтобы собрать список по институтам и направлениям.",
+                        modifier = Modifier.padding(vertical = 12.dp),
                     )
+                }
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    contentPadding = PaddingValues(bottom = Dimens.screenPadding),
+                ) {
+                    assignmentSections.forEach { section ->
+                        item {
+                            AssignmentSectionHeader(
+                                instituteName = section.instituteName,
+                                directionName = section.directionName,
+                            )
+                        }
+                        items(section.rows, key = { it.id }) { row ->
+                            AssignmentRowCard(row = row, onDelete = { viewModel.deleteAssignment(row.id) })
+                        }
+                    }
                 }
             }
         }

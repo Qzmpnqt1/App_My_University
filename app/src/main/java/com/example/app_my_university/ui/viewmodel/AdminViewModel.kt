@@ -85,6 +85,7 @@ class AdminViewModel @Inject constructor(
                 adminUniversityId = universityId,
                 adminUniversityName = universityName
             )
+            loadMyUniversityAndInstitutes()
         }
     }
 
@@ -96,6 +97,8 @@ class AdminViewModel @Inject constructor(
                 adminUniversityId = null,
                 adminUniversityName = null
             )
+            loadUniversities()
+            loadMyUniversityAndInstitutes()
         }
     }
 
@@ -480,7 +483,7 @@ class AdminViewModel @Inject constructor(
                         actionSuccess = true,
                         actionMessage = "Институт создан"
                     )
-                    loadInstitutes(_uiState.value.adminUniversityId)
+                    loadInstitutes(request.universityId)
                 },
                 onFailure = {
                     _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
@@ -538,10 +541,15 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    fun loadSubjects() {
+    /**
+     * Справочник предметов. Для SUPER_ADMIN с выбранным вузом и для ADMIN передаётся [universityId] на API,
+     * чтобы не подгружать предметы, используемые только в других вузах.
+     */
+    fun loadSubjects(scopeUniversityId: Long? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            educationRepository.getSubjects().fold(
+            val effectiveUniversityId = scopeUniversityId ?: _uiState.value.adminUniversityId
+            educationRepository.getSubjects(effectiveUniversityId).fold(
                 onSuccess = {
                     _uiState.value = _uiState.value.copy(isLoading = false, subjects = it)
                 },
@@ -552,13 +560,144 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    fun loadSubjectsInDirections(directionId: Long? = null) {
+    /**
+     * @param universityId только если [directionId] == null: для SUPER_ADMIN в scoped-режиме ограничить вузом.
+     */
+    fun loadSubjectsInDirections(directionId: Long? = null, universityId: Long? = null) {
         viewModelScope.launch {
-            educationRepository.getSubjectsInDirections(directionId).fold(
+            val uni = if (directionId != null) null else (universityId ?: _uiState.value.adminUniversityId)
+            educationRepository.getSubjectsInDirections(directionId, uni).fold(
                 onSuccess = {
                     _uiState.value = _uiState.value.copy(subjectsInDirections = it)
                 },
                 onFailure = { /* не блокируем экран расписания */ }
+            )
+        }
+    }
+
+    fun createDirection(request: StudyDirectionRequest) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.createDirection(request).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Направление создано"
+                    )
+                    loadDirections(null)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
+    fun updateDirection(id: Long, request: StudyDirectionRequest) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.updateDirection(id, request).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Направление обновлено"
+                    )
+                    loadDirections(null)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
+    fun deleteDirection(id: Long) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.deleteDirection(id).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Направление удалено"
+                    )
+                    loadDirections(null)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
+    fun createSubjectInDirection(
+        request: SubjectInDirectionRequest,
+        reloadDirectionId: Long? = null,
+        reloadUniversityId: Long? = null,
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.createSubjectInDirection(request).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Связь предмет–направление создана"
+                    )
+                    loadSubjectsInDirections(reloadDirectionId, reloadUniversityId)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
+    fun updateSubjectInDirection(
+        id: Long,
+        request: SubjectInDirectionRequest,
+        reloadDirectionId: Long? = null,
+        reloadUniversityId: Long? = null,
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.updateSubjectInDirection(id, request).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Связь обновлена"
+                    )
+                    loadSubjectsInDirections(reloadDirectionId, reloadUniversityId)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
+            )
+        }
+    }
+
+    fun deleteSubjectInDirection(
+        id: Long,
+        reloadDirectionId: Long? = null,
+        reloadUniversityId: Long? = null,
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
+            educationRepository.deleteSubjectInDirection(id).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        actionSuccess = true,
+                        actionMessage = "Связь удалена"
+                    )
+                    loadSubjectsInDirections(reloadDirectionId, reloadUniversityId)
+                },
+                onFailure = {
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = it.message)
+                }
             )
         }
     }
@@ -701,7 +840,7 @@ class AdminViewModel @Inject constructor(
                         actionSuccess = true,
                         actionMessage = "Аудитория добавлена"
                     )
-                    loadClassrooms(_uiState.value.adminUniversityId)
+                    loadClassrooms(_uiState.value.adminUniversityId ?: request.universityId)
                 },
                 onFailure = { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message) }
             )
@@ -718,14 +857,14 @@ class AdminViewModel @Inject constructor(
                         actionSuccess = true,
                         actionMessage = "Аудитория обновлена"
                     )
-                    loadClassrooms(_uiState.value.adminUniversityId)
+                    loadClassrooms(_uiState.value.adminUniversityId ?: request.universityId)
                 },
                 onFailure = { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message) }
             )
         }
     }
 
-    fun deleteClassroom(id: Long) {
+    fun deleteClassroom(id: Long, listContextUniversityId: Long? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, actionSuccess = false)
             educationRepository.deleteClassroom(id).fold(
@@ -735,7 +874,7 @@ class AdminViewModel @Inject constructor(
                         actionSuccess = true,
                         actionMessage = "Аудитория удалена"
                     )
-                    loadClassrooms(_uiState.value.adminUniversityId)
+                    loadClassrooms(_uiState.value.adminUniversityId ?: listContextUniversityId)
                 },
                 onFailure = { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message) }
             )

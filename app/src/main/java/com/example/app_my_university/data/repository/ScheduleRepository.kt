@@ -9,6 +9,7 @@ import com.example.app_my_university.data.api.model.ScheduleCompareRequest
 import com.example.app_my_university.data.api.model.ScheduleCompareResultResponse
 import com.example.app_my_university.data.api.model.ScheduleCompareTeacherOptionResponse
 import com.example.app_my_university.data.api.model.ScheduleResponse
+import com.example.app_my_university.util.AlphabeticalSort.sortedForDisplayRu
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -50,10 +51,10 @@ class ScheduleRepository @Inject constructor(private val apiService: ApiService)
         safeApiCall { apiService.compareSchedule(body) }
 
     suspend fun listCompareInstitutes(universityId: Long? = null): Result<List<ScheduleCompareInstituteOptionResponse>> =
-        safeApiCall { apiService.listScheduleCompareInstitutes(universityId) }
+        safeApiCall { apiService.listScheduleCompareInstitutes(universityId) }.map { it.sortedForDisplayRu() }
 
     suspend fun listCompareDirections(universityId: Long?, instituteId: Long): Result<List<ScheduleCompareDirectionOptionResponse>> =
-        safeApiCall { apiService.listScheduleCompareDirections(universityId, instituteId) }
+        safeApiCall { apiService.listScheduleCompareDirections(universityId, instituteId) }.map { it.sortedForDisplayRu() }
 
     suspend fun listCompareGroups(
         universityId: Long? = null,
@@ -61,11 +62,11 @@ class ScheduleRepository @Inject constructor(private val apiService: ApiService)
         directionId: Long? = null,
         q: String? = null
     ): Result<List<ScheduleCompareGroupOptionResponse>> =
-        safeApiCall { apiService.listScheduleCompareGroups(universityId, instituteId, directionId, q) }
+        safeApiCall { apiService.listScheduleCompareGroups(universityId, instituteId, directionId, q) }.map { it.sortedForDisplayRu() }
 
     suspend fun listCompareTeachers(universityId: Long? = null, q: String? = null): Result<List<ScheduleCompareTeacherOptionResponse>> =
-        safeApiCall { apiService.listScheduleCompareTeachers(universityId, q) }
+        safeApiCall { apiService.listScheduleCompareTeachers(universityId, q) }.map { it.sortedForDisplayRu() }
 
     suspend fun listCompareClassrooms(universityId: Long? = null, q: String? = null): Result<List<ScheduleCompareClassroomOptionResponse>> =
-        safeApiCall { apiService.listScheduleCompareClassrooms(universityId, q) }
+        safeApiCall { apiService.listScheduleCompareClassrooms(universityId, q) }.map { it.sortedForDisplayRu() }
 }

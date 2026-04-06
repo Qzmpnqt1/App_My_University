@@ -30,6 +30,8 @@ object BottomNavTabMapping {
         Screen.AdminUniversities.route,
         Screen.AdminGroups.route,
         Screen.AdminSubjects.route,
+        Screen.AdminSubjectPlan.route,
+        Screen.AdminDirections.route,
         Screen.AdminClassrooms.route,
         Screen.AdminTeacherSubjects.route,
     )

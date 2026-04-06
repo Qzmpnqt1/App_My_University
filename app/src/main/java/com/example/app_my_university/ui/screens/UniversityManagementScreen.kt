@@ -1,5 +1,6 @@
 package com.example.app_my_university.ui.screens
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,19 +16,21 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,14 +53,17 @@ import com.example.app_my_university.data.api.model.UniversityResponse
 import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.components.common.MuErrorState
 import com.example.app_my_university.ui.components.common.MuLoadingState
-import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.navigation.AppRole
+import com.example.app_my_university.ui.theme.Dimens
+import com.example.app_my_university.ui.viewmodel.AdminUiState
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 
 /**
- * Администратор вуза: только свой вуз (без создания новых вузов) и институты внутри него.
+ * Кампусный админ: свой вуз и институты.
+ * SUPER_ADMIN без выбранного вуза: глобальный список вузов и создание вуза (без подстановки «первого» как текущего).
+ * SUPER_ADMIN с выбранным вузом: управление этим вузом и институтами.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +77,7 @@ fun UniversityManagementScreen(
     var showEditUniversityDialog by remember { mutableStateOf(false) }
     var showAddInstituteDialog by remember { mutableStateOf(false) }
     var showDeleteInstituteDialog by remember { mutableStateOf(false) }
+    var showCreateUniversityDialog by remember { mutableStateOf(false) }
     var deletingInstitute by remember { mutableStateOf<InstituteResponse?>(null) }
     var editingUniversity by remember { mutableStateOf<UniversityResponse?>(null) }
     var newUniName by remember { mutableStateOf("") }
@@ -79,13 +86,19 @@ fun UniversityManagementScreen(
     var instName by remember { mutableStateOf("") }
     var instShort by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
-    val myUniversity = if (uiState.isSuperAdmin && uiState.adminUniversityId != null) {
-        uiState.universities.find { it.id == uiState.adminUniversityId }
-    } else {
-        uiState.universities.firstOrNull()
+
+    val isGlobalSuper =
+        uiState.isSuperAdmin && uiState.adminUniversityId == null
+
+    val scopedUniversity: UniversityResponse? = when {
+        uiState.isSuperAdmin && uiState.adminUniversityId != null ->
+            uiState.universities.find { it.id == uiState.adminUniversityId }
+        !uiState.isSuperAdmin -> uiState.universities.firstOrNull()
+        else -> null
     }
 
     LaunchedEffect(Unit) {
+        viewModel.loadAdminContext()
         viewModel.loadMyUniversityAndInstitutes()
     }
 
@@ -103,35 +116,54 @@ fun UniversityManagementScreen(
         }
     }
 
+    val topTitle = when {
+        isGlobalSuper -> "Вузы"
+        else -> "Мой вуз"
+    }
+
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
         topBar = {
             UniformTopAppBar(
-                title = "Мой вуз",
+                title = topTitle,
                 onBackPressed = onNavigateBack,
             )
         },
         floatingActionButton = {
-            if (myUniversity != null) {
-                FloatingActionButton(
-                    onClick = {
-                        instName = ""
-                        instShort = ""
-                        showAddInstituteDialog = true
+            when {
+                isGlobalSuper -> {
+                    FloatingActionButton(
+                        onClick = {
+                            newUniName = ""
+                            newUniShort = ""
+                            newUniCity = ""
+                            showCreateUniversityDialog = true
+                        }
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Создать вуз")
                     }
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Добавить институт")
+                }
+                scopedUniversity != null -> {
+                    FloatingActionButton(
+                        onClick = {
+                            instName = ""
+                            instShort = ""
+                            showAddInstituteDialog = true
+                        }
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Добавить институт")
+                    }
                 }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         when {
-            uiState.isLoading && myUniversity == null && uiState.error == null -> {
+            uiState.isLoading && scopedUniversity == null && !isGlobalSuper && uiState.error == null -> {
                 MuLoadingState(Modifier.fillMaxSize().padding(padding))
             }
-            uiState.error != null && myUniversity == null -> {
+            uiState.error != null && scopedUniversity == null && !isGlobalSuper -> {
                 BoxWithPadding(padding) {
                     MuErrorState(
                         message = uiState.error ?: "Ошибка",
@@ -139,7 +171,19 @@ fun UniversityManagementScreen(
                     )
                 }
             }
-            myUniversity == null -> {
+            isGlobalSuper -> {
+                GlobalUniversitiesBody(
+                    padding = padding,
+                    uiState = uiState,
+                    searchQuery = searchQuery,
+                    onSearchChange = { searchQuery = it },
+                    onScopeUniversity = { id, name ->
+                        viewModel.setSuperAdminScopeUniversity(id, name)
+                    },
+                    onReload = { viewModel.loadUniversities(); viewModel.loadMyUniversityAndInstitutes() },
+                )
+            }
+            scopedUniversity == null && !uiState.isSuperAdmin -> {
                 BoxWithPadding(padding) {
                     MuEmptyState(
                         title = "Вуз не найден",
@@ -149,7 +193,8 @@ fun UniversityManagementScreen(
                     )
                 }
             }
-            else -> {
+            scopedUniversity != null -> {
+                val u = scopedUniversity
                 val filteredInstitutes = remember(searchQuery, uiState.institutes) {
                     if (searchQuery.isBlank()) uiState.institutes
                     else uiState.institutes.filter { i ->
@@ -164,6 +209,18 @@ fun UniversityManagementScreen(
                     contentPadding = PaddingValues(Dimens.screenPadding),
                     verticalArrangement = Arrangement.spacedBy(Dimens.spaceM)
                 ) {
+                    if (uiState.isSuperAdmin && uiState.adminUniversityId != null) {
+                        item {
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.clearSuperAdminScope()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text("Выйти в глобальный список вузов")
+                            }
+                        }
+                    }
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -180,23 +237,31 @@ fun UniversityManagementScreen(
                             ) {
                                 Column(Modifier.weight(1f)) {
                                     Text(
-                                        myUniversity.name,
+                                        u.name,
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.SemiBold
                                     )
-                                    myUniversity.shortName?.let {
-                                        Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    u.shortName?.let {
+                                        Text(
+                                            it,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
-                                    myUniversity.city?.let {
-                                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    u.city?.let {
+                                        Text(
+                                            it,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                 }
                                 IconButton(
                                     onClick = {
-                                        editingUniversity = myUniversity
-                                        newUniName = myUniversity.name
-                                        newUniShort = myUniversity.shortName ?: ""
-                                        newUniCity = myUniversity.city ?: ""
+                                        editingUniversity = u
+                                        newUniName = u.name
+                                        newUniShort = u.shortName ?: ""
+                                        newUniCity = u.city ?: ""
                                         showEditUniversityDialog = true
                                     }
                                 ) {
@@ -245,6 +310,56 @@ fun UniversityManagementScreen(
                 }
             }
         }
+    }
+
+    if (showCreateUniversityDialog) {
+        AlertDialog(
+            onDismissRequest = { showCreateUniversityDialog = false },
+            title = { Text("Новый вуз") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = newUniName,
+                        onValueChange = { newUniName = it },
+                        label = { Text("Название *") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newUniShort,
+                        onValueChange = { newUniShort = it },
+                        label = { Text("Сокращение") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newUniCity,
+                        onValueChange = { newUniCity = it },
+                        label = { Text("Город") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.createUniversity(
+                            UniversityRequest(
+                                name = newUniName.trim(),
+                                shortName = newUniShort.ifBlank { null },
+                                city = newUniCity.ifBlank { null }
+                            )
+                        )
+                        showCreateUniversityDialog = false
+                    },
+                    enabled = newUniName.isNotBlank()
+                ) { Text("Создать") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCreateUniversityDialog = false }) { Text("Отмена") }
+            }
+        )
     }
 
     if (showEditUniversityDialog && editingUniversity != null) {
@@ -300,7 +415,8 @@ fun UniversityManagementScreen(
         )
     }
 
-    if (showAddInstituteDialog && myUniversity != null) {
+    if (showAddInstituteDialog && scopedUniversity != null) {
+        val u = scopedUniversity
         AlertDialog(
             onDismissRequest = { showAddInstituteDialog = false },
             title = { Text("Новый институт") },
@@ -329,7 +445,7 @@ fun UniversityManagementScreen(
                             InstituteRequest(
                                 name = instName,
                                 shortName = instShort.ifBlank { null },
-                                universityId = myUniversity.id
+                                universityId = u.id
                             )
                         )
                         showAddInstituteDialog = false
@@ -363,6 +479,114 @@ fun UniversityManagementScreen(
                 TextButton(onClick = { showDeleteInstituteDialog = false }) { Text("Отмена") }
             }
         )
+    }
+}
+
+@Composable
+private fun GlobalUniversitiesBody(
+    padding: androidx.compose.foundation.layout.PaddingValues,
+    uiState: AdminUiState,
+    searchQuery: String,
+    onSearchChange: (String) -> Unit,
+    onScopeUniversity: (Long, String) -> Unit,
+    onReload: () -> Unit,
+) {
+    val filtered = remember(searchQuery, uiState.universities) {
+        if (searchQuery.isBlank()) uiState.universities
+        else uiState.universities.filter { u ->
+            u.name.contains(searchQuery, ignoreCase = true) ||
+                (u.shortName?.contains(searchQuery, ignoreCase = true) == true) ||
+                (u.city?.contains(searchQuery, ignoreCase = true) == true)
+        }
+    }
+    when {
+        uiState.isLoading && uiState.universities.isEmpty() -> {
+            MuLoadingState(Modifier.fillMaxSize().padding(padding))
+        }
+        uiState.universities.isEmpty() && !uiState.isLoading -> {
+            BoxWithPadding(padding) {
+                MuEmptyState(
+                    title = "Нет вузов",
+                    subtitle = "Создайте первый вуз с помощью кнопки «+».",
+                    actionLabel = "Обновить",
+                    onAction = onReload
+                )
+            }
+        }
+        else -> {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(Dimens.screenPadding),
+                verticalArrangement = Arrangement.spacedBy(Dimens.spaceM),
+            ) {
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                    ) {
+                        Text(
+                            "Глобальный режим: ни один вуз не выбран для администрирования. " +
+                                "Нажмите «Управлять», чтобы работать с институтами и структурой конкретного вуза.",
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+                item {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = onSearchChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Поиск вуза") },
+                        leadingIcon = { Icon(Icons.Default.Search, null) },
+                        singleLine = true,
+                    )
+                }
+                items(filtered, key = { it.id }) { u ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(1.dp),
+                    ) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(Dimens.spaceM),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(u.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                u.shortName?.let {
+                                    Text(
+                                        it,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                u.city?.let {
+                                    Text(
+                                        it,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Button(onClick = { onScopeUniversity(u.id, u.name) }) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Icon(Icons.Default.Settings, contentDescription = null)
+                                    Text("Управлять")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

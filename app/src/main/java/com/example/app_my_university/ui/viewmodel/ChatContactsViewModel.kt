@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_my_university.data.api.model.ChatContactResponse
 import com.example.app_my_university.data.repository.ChatRepository
+import com.example.app_my_university.util.AlphabeticalSort.sortedForDisplayRu
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,11 +54,12 @@ class ChatContactsViewModel @Inject constructor(
 
     fun filteredContacts(): List<ChatContactResponse> {
         val q = _uiState.value.query.trim().lowercase()
-        if (q.isEmpty()) return _uiState.value.contacts
-        return _uiState.value.contacts.filter { c ->
+        val base = _uiState.value.contacts
+        val filtered = if (q.isEmpty()) base else base.filter { c ->
             listOf(c.email, c.firstName, c.lastName, c.middleName, c.userType)
                 .filterNotNull()
                 .any { it.lowercase().contains(q) }
         }
+        return filtered.sortedForDisplayRu()
     }
 }

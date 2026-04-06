@@ -4,6 +4,7 @@ import com.example.app_my_university.core.database.CacheDao
 import com.example.app_my_university.core.database.CacheEntryEntity
 import com.example.app_my_university.data.api.ApiService
 import com.example.app_my_university.data.api.model.*
+import com.example.app_my_university.util.AlphabeticalSort.sortedForDisplayRu
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import javax.inject.Inject
@@ -23,7 +24,7 @@ class ChatRepository @Inject constructor(
     }
 
     suspend fun getChatContacts(): Result<List<ChatContactResponse>> =
-        safeApiCall { apiService.getChatContacts() }
+        safeApiCall { apiService.getChatContacts() }.map { it.sortedForDisplayRu() }
 
     suspend fun getConversations(): Result<List<ConversationResponse>> {
         val result = safeApiCall { apiService.getConversations() }

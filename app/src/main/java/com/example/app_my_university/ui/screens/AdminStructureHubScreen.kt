@@ -13,11 +13,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Subject
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,16 +59,28 @@ fun AdminStructureHubScreen(navController: NavHostController) {
             Screen.AdminUniversities.route
         ),
         StructureEntry(
+            "Направления подготовки",
+            "Код, название, привязка к институту",
+            Icons.Default.AccountTree,
+            Screen.AdminDirections.route
+        ),
+        StructureEntry(
             "Учебные группы",
             "Группы по направлениям",
             Icons.Default.Group,
             Screen.AdminGroups.route
         ),
         StructureEntry(
-            "Дисциплины",
-            "Справочник и связи с направлениями",
+            "Справочник предметов",
+            "Глобальные названия дисциплин",
             Icons.Default.Subject,
             Screen.AdminSubjects.route
+        ),
+        StructureEntry(
+            "Предметы в направлениях",
+            "Учебный план: курс, семестр, контроль",
+            Icons.Default.MenuBook,
+            Screen.AdminSubjectPlan.route
         ),
         StructureEntry(
             "Аудитории",

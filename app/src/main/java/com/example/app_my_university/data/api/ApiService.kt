@@ -132,7 +132,7 @@ interface ApiService {
 
     // ── Subjects ──────────────────────────────────────────────────
     @GET("api/v1/subjects")
-    suspend fun getSubjects(): Response<List<SubjectResponse>>
+    suspend fun getSubjects(@Query("universityId") universityId: Long? = null): Response<List<SubjectResponse>>
 
     @GET("api/v1/subjects/{id}")
     suspend fun getSubject(@Path("id") id: Long): Response<SubjectResponse>
@@ -148,7 +148,10 @@ interface ApiService {
 
     // ── Subjects in directions ───────────────────────────────────
     @GET("api/v1/subjects-in-directions")
-    suspend fun getSubjectsInDirections(@Query("directionId") directionId: Long? = null): Response<List<SubjectInDirectionResponse>>
+    suspend fun getSubjectsInDirections(
+        @Query("directionId") directionId: Long? = null,
+        @Query("universityId") universityId: Long? = null
+    ): Response<List<SubjectInDirectionResponse>>
 
     @GET("api/v1/subjects-in-directions/{id}")
     suspend fun getSubjectInDirection(@Path("id") id: Long): Response<SubjectInDirectionResponse>
