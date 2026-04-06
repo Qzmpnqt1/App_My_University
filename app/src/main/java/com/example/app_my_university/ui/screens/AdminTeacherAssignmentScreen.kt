@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -21,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.CardDefaults
@@ -156,23 +156,6 @@ fun AdminTeacherAssignmentScreen(
                 .padding(padding)
                 .padding(horizontal = Dimens.screenPadding),
         ) {
-            if (uiState.isSuperAdmin && uiState.adminUniversityId == null) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = Dimens.spaceM),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
-                ) {
-                    Text(
-                        "Глобальный режим: список преподавателей со всех вузов. В панели «Ещё» выберите вуз, чтобы работать в рамках одного кампуса.",
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    )
-                }
-            }
-
             Text(
                 "Поиск выполняется на сервере",
                 style = MaterialTheme.typography.labelMedium,
@@ -231,100 +214,87 @@ fun AdminTeacherAssignmentScreen(
                     }
                 }
             } else {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
+                val editAssignmentsEnabled =
+                    uiState.selectedTeacher?.teacherProfile?.teacherProfileId != null && !uiState.catalogsLoading
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentPadding = PaddingValues(bottom = Dimens.screenPadding),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.spaceS),
                 ) {
-                    TextButton(onClick = { viewModel.selectTeacher(null) }) {
-                        Text("Сменить преподавателя")
-                    }
-                }
-                SelectedTeacherSummaryCard(teacher = uiState.selectedTeacher!!)
-                Spacer(Modifier.height(Dimens.spaceM))
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                ) {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(Dimens.spaceM),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.spaceM),
-                    ) {
-                        Text(
-                            "Текущие назначения",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            "Добавьте или измените дисциплины по институтам и направлениям.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Button(
-                            onClick = { viewModel.openAssignmentSheet() },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = uiState.selectedTeacher?.teacherProfile?.teacherProfileId != null &&
-                                !uiState.catalogsLoading,
-                            shape = RoundedCornerShape(12.dp),
+                    item(key = "change_teacher") {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, Modifier.size(20.dp))
-                            Spacer(Modifier.size(8.dp))
-                            Text("Добавить / изменить назначения", fontWeight = FontWeight.SemiBold)
+                            TextButton(onClick = { viewModel.selectTeacher(null) }) {
+                                Text("Сменить преподавателя")
+                            }
                         }
                     }
-                }
-
-                if (uiState.catalogsLoading) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(top = Dimens.spaceS),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS),
-                    ) {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                        Text("Загрузка каталога…", style = MaterialTheme.typography.bodySmall)
+                    item(key = "teacher_card") {
+                        SelectedTeacherSummaryCard(teacher = uiState.selectedTeacher!!)
                     }
-                }
-                if (uiState.assignmentsLoading) {
-                    Column(Modifier.padding(top = Dimens.spaceS)) {
-                        LinearProgressIndicator(Modifier.fillMaxWidth())
-                        Text(
-                            "Обновляем список назначений…",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp),
+                    item(key = "assignments_intro") {
+                        CurrentAssignmentsIntroCard(
+                            enabled = editAssignmentsEnabled,
+                            onEditClick = { viewModel.openAssignmentSheet() },
                         )
                     }
-                }
-                if (!uiState.assignmentsLoading && assignmentSections.isEmpty()) {
-                    MuEmptyState(
-                        title = "Пока нет назначенных дисциплин",
-                        subtitle = "Нажмите кнопку выше, чтобы собрать список по институтам и направлениям.",
-                        modifier = Modifier.padding(vertical = 12.dp),
-                    )
-                }
-
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    contentPadding = PaddingValues(bottom = Dimens.screenPadding),
-                ) {
-                    assignmentSections.forEach { section ->
-                        item {
-                            AssignmentSectionHeader(
-                                instituteName = section.instituteName,
-                                directionName = section.directionName,
+                    if (uiState.catalogsLoading) {
+                        item(key = "catalog_loading") {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS),
+                            ) {
+                                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                                Text("Загрузка каталога…", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                    if (uiState.assignmentsLoading) {
+                        item(key = "assignments_loading") {
+                            Column(Modifier.fillMaxWidth()) {
+                                LinearProgressIndicator(Modifier.fillMaxWidth())
+                                Text(
+                                    "Обновляем список назначений…",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                        }
+                    }
+                    if (!uiState.assignmentsLoading && assignmentSections.isEmpty()) {
+                        item(key = "assignments_empty") {
+                            MuEmptyState(
+                                title = "Пока нет назначенных дисциплин",
+                                subtitle = "Нажмите «Изменить назначения», чтобы собрать список по институтам и направлениям.",
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
-                        items(section.rows, key = { it.id }) { row ->
-                            AssignmentRowCard(row = row, onDelete = { viewModel.deleteAssignment(row.id) })
+                    } else if (assignmentSections.isNotEmpty()) {
+                        assignmentSections.forEach { section ->
+                            item(
+                                key = "hdr_${section.instituteName}_${section.directionName}",
+                            ) {
+                                AssignmentSectionHeader(
+                                    instituteName = section.instituteName,
+                                    directionName = section.directionName,
+                                )
+                            }
+                            items(
+                                items = section.rows,
+                                key = { it.id },
+                            ) { row ->
+                                AssignmentRowCard(
+                                    row = row,
+                                    onDelete = { viewModel.deleteAssignment(row.id) },
+                                )
+                            }
                         }
                     }
                 }
@@ -342,6 +312,64 @@ fun AdminTeacherAssignmentScreen(
                 viewModel = viewModel,
                 onDismiss = { viewModel.dismissAssignmentSheet() },
             )
+        }
+    }
+}
+
+@Composable
+private fun CurrentAssignmentsIntroCard(
+    enabled: Boolean,
+    onEditClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        ),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(Dimens.spaceM),
+            verticalArrangement = Arrangement.spacedBy(Dimens.spaceS),
+        ) {
+            Text(
+                "Текущие назначения",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                "Дисциплины по институтам и направлениям. Редактирование — в отдельном окне.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                FilledTonalButton(
+                    onClick = onEditClick,
+                    enabled = enabled,
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(10.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "Изменить назначения",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }
@@ -500,9 +528,7 @@ private fun AssignmentSectionHeader(
     directionName: String,
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = Dimens.spaceM),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f),
         ),

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,7 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import com.example.app_my_university.data.api.model.SubjectInDirectionResponse
 import com.example.app_my_university.data.api.model.UserProfileResponse
 import com.example.app_my_university.ui.components.common.MuEmptyState
+import com.example.app_my_university.ui.designsystem.AppLayout
 import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.viewmodel.AdminTeacherAssignmentUiState
 import com.example.app_my_university.ui.viewmodel.AdminTeacherAssignmentViewModel
@@ -70,46 +71,71 @@ fun AdminTeacherAssignmentSheet(
 
     Scaffold(
         bottomBar = {
-            Surface(tonalElevation = 2.dp, shadowElevation = 6.dp) {
-                Column(Modifier.navigationBarsPadding()) {
+            Surface(tonalElevation = AppLayout.bottomActionBarDividerElevation, shadowElevation = 6.dp) {
+                Column(
+                    Modifier
+                        .navigationBarsPadding()
+                        .padding(
+                            horizontal = AppLayout.bottomActionBarHorizontalPadding,
+                            vertical = AppLayout.bottomActionBarVerticalPadding,
+                        ),
+                ) {
                     HorizontalDivider()
+                    Spacer(Modifier.height(AppSpacing.s))
                     Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(AppSpacing.m),
-                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.s),
+                        Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         if (uiState.sheetStep != TeacherAssignmentSheetStep.PICK_INSTITUTE) {
-                            OutlinedButton(
+                            IconButton(
                                 onClick = { viewModel.goBackSheetStep() },
                                 enabled = !uiState.sheetSaving,
-                                modifier = Modifier.weight(1f),
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, Modifier.size(18.dp))
-                                Spacer(Modifier.size(4.dp))
-                                Text("Назад")
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Назад",
+                                    modifier = Modifier.size(AppLayout.barIconSize),
+                                )
                             }
+                        } else {
+                            Spacer(Modifier.size(48.dp))
                         }
-                        OutlinedButton(
+                        TextButton(
                             onClick = onDismiss,
                             enabled = !uiState.sheetSaving,
-                            modifier = Modifier.weight(1f),
-                        ) { Text("Отмена") }
-                        Button(
-                            onClick = { viewModel.saveAllDraftAssignments() },
-                            enabled = !uiState.sheetSaving,
-                            modifier = Modifier.weight(1.15f),
+                            contentPadding = PaddingValues(horizontal = AppSpacing.s, vertical = AppSpacing.xs),
                         ) {
-                            if (uiState.sheetSaving) {
-                                CircularProgressIndicator(
-                                    Modifier.size(22.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                )
-                            } else {
-                                Text("Сохранить всё", fontWeight = FontWeight.SemiBold)
-                            }
+                            Text(
+                                "Отмена",
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(AppSpacing.s))
+                    Button(
+                        onClick = { viewModel.saveAllDraftAssignments() },
+                        enabled = !uiState.sheetSaving,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = AppSpacing.m, vertical = AppSpacing.s),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        if (uiState.sheetSaving) {
+                            CircularProgressIndicator(
+                                Modifier.size(22.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Text(
+                                "Сохранить всё",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
                     }
                 }
@@ -575,7 +601,7 @@ private fun friendlyAssignmentError(raw: String?): String {
         m.contains("409", ignoreCase = true) ||
             m.contains("Conflict", ignoreCase = true) ||
             m.lowercase().contains("optimistic") ->
-            "Список назначений изменился (конфликт версии). Закройте окно, откройте «Добавить / изменить» снова и повторите сохранение."
+            "Список назначений изменился (конфликт версии). Закройте окно, откройте «Изменить назначения» снова и повторите сохранение."
         else -> m
     }
 }
