@@ -144,7 +144,7 @@ fun AdminTeacherAssignmentScreen(
             MuLoadingState(Modifier.fillMaxSize().padding(padding))
             return@RoleShellScaffold
         }
-        if (uiState.adminUniversityId == null && !uiState.isLoading) {
+        if (!uiState.isSuperAdmin && uiState.adminUniversityId == null && !uiState.isLoading) {
             MuEmptyState(
                 title = "Нет доступа к вузу",
                 subtitle = uiState.error ?: "Проверьте профиль администратора.",

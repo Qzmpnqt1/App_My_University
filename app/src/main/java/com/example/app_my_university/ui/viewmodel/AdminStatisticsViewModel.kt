@@ -12,6 +12,7 @@ import com.example.app_my_university.data.api.model.ScheduleStatisticsResponse
 import com.example.app_my_university.data.api.model.StudyDirectionResponse
 import com.example.app_my_university.data.api.model.UniversityStatisticsResponse
 import com.example.app_my_university.data.api.model.UserProfileResponse
+import com.example.app_my_university.data.auth.TokenManager
 import com.example.app_my_university.data.repository.EducationRepository
 import com.example.app_my_university.data.repository.ProfileRepository
 import com.example.app_my_university.data.repository.StatisticsRepository
@@ -57,6 +58,7 @@ class AdminStatisticsViewModel @Inject constructor(
     private val statisticsRepository: StatisticsRepository,
     private val educationRepository: EducationRepository,
     private val profileRepository: ProfileRepository,
+    private val tokenManager: TokenManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminStatisticsUiState())
@@ -87,10 +89,13 @@ class AdminStatisticsViewModel @Inject constructor(
             if (_uiState.value.catalogLoading) return@launch
             _uiState.update { it.copy(catalogLoading = true, catalogError = null) }
             val profile = profileRepository.getProfile().getOrNull()
-            val uni = profile?.adminProfile?.universityId
-            val uniName = profile?.adminProfile?.universityName
-
-            if (uni == null) {
+            val isSuper = profile?.userType.equals("SUPER_ADMIN", ignoreCase = true)
+            val uni = if (isSuper) {
+                tokenManager.getSuperAdminScopeUniversityId()
+            } else {
+                profile?.adminProfile?.universityId
+            }
+            if (!isSuper && uni == null) {
                 _uiState.update {
                     it.copy(
                         catalogLoading = false,
@@ -109,18 +114,25 @@ class AdminStatisticsViewModel @Inject constructor(
             }
 
             val institutes = educationRepository.getInstitutes(uni).getOrElse { emptyList() }
-            // API ожидает instituteId / directionId: без них списки часто пустые.
             val directions = institutes.flatMap { inst ->
-                educationRepository.getDirections(inst.id).getOrElse { emptyList() }
+                educationRepository.getDirections(inst.id, uni).getOrElse { emptyList() }
             }.distinctBy { it.id }
 
             val groups = directions.flatMap { dir ->
-                educationRepository.getGroups(dir.id).getOrElse { emptyList() }
+                educationRepository.getGroups(dir.id, uni).getOrElse { emptyList() }
             }.distinctBy { it.id }
 
             val classrooms = educationRepository.getClassrooms(uni).getOrElse { emptyList() }
             val teachers = educationRepository.getUsers(userType = "TEACHER", universityId = uni)
                 .getOrElse { emptyList() }
+
+            val fromProfile = profile?.adminProfile?.universityName
+            val displayName = when {
+                isSuper && uni == null -> "Все вузы"
+                !fromProfile.isNullOrBlank() -> fromProfile
+                isSuper && uni != null -> educationRepository.getUniversity(uni).getOrNull()?.name ?: "Выбранный вуз"
+                else -> fromProfile
+            }
 
             _uiState.update {
                 it.copy(
@@ -128,7 +140,7 @@ class AdminStatisticsViewModel @Inject constructor(
                     catalogLoaded = true,
                     catalogError = null,
                     adminUniversityId = uni,
-                    adminUniversityName = uniName,
+                    adminUniversityName = displayName,
                     groups = groups,
                     directions = directions,
                     institutes = institutes,

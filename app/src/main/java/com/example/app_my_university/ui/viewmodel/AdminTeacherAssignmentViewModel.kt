@@ -9,6 +9,7 @@ import com.example.app_my_university.data.api.model.SubjectInDirectionResponse
 import com.example.app_my_university.data.api.model.TeacherSubjectReplaceRequest
 import com.example.app_my_university.data.api.model.TeacherSubjectResponse
 import com.example.app_my_university.data.api.model.UserProfileResponse
+import com.example.app_my_university.data.auth.TokenManager
 import com.example.app_my_university.data.repository.EducationRepository
 import com.example.app_my_university.data.repository.ProfileRepository
 import com.example.app_my_university.ui.components.profile.teacherWorkplaceSummary
@@ -30,6 +31,8 @@ data class AdminTeacherAssignmentUiState(
     val error: String? = null,
     val actionSuccess: Boolean = false,
     val actionMessage: String? = null,
+    /** Для SUPER_ADMIN в режиме «все вузы» может быть null — это не ошибка. */
+    val isSuperAdmin: Boolean = false,
     val adminUniversityId: Long? = null,
     val teacherSearchQuery: String = "",
     val allTeachers: List<UserProfileResponse> = emptyList(),
@@ -49,12 +52,19 @@ data class AdminTeacherAssignmentUiState(
     val draftAssignments: List<TeacherAssignmentDraftUi> = emptyList(),
     val expectedCountForOptimisticLock: Int? = null,
     val sheetSaving: Boolean = false,
+    /**
+     * Вуз для справочников в листе назначений (институты/направления).
+     * Берётся из профиля выбранного преподавателя, а не из scope супера, чтобы в глобальном режиме
+     * не подгружать институты всех ВУЗов.
+     */
+    val sheetCatalogUniversityId: Long? = null,
 )
 
 @HiltViewModel
 class AdminTeacherAssignmentViewModel @Inject constructor(
     private val educationRepository: EducationRepository,
     private val profileRepository: ProfileRepository,
+    private val tokenManager: TokenManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminTeacherAssignmentUiState())
@@ -64,8 +74,13 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             val profile = profileRepository.getProfile().getOrNull()
-            val uni = profile?.adminProfile?.universityId
-            if (uni == null) {
+            val isSuper = profile?.userType.equals("SUPER_ADMIN", ignoreCase = true)
+            val uni = if (isSuper) {
+                tokenManager.getSuperAdminScopeUniversityId()
+            } else {
+                profile?.adminProfile?.universityId
+            }
+            if (!isSuper && uni == null) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     adminUniversityId = null,
@@ -73,7 +88,10 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
                 )
                 return@launch
             }
-            _uiState.value = _uiState.value.copy(adminUniversityId = uni)
+            _uiState.value = _uiState.value.copy(
+                adminUniversityId = uni,
+                isSuperAdmin = isSuper,
+            )
             educationRepository.getUsers(userType = "TEACHER", universityId = uni).fold(
                 onSuccess = { teachers ->
                     _uiState.value = _uiState.value.copy(isLoading = false, allTeachers = teachers)
@@ -137,6 +155,24 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
         if (t != null) selectTeacher(t)
     }
 
+    /**
+     * Вуз, в рамках которого нужно показывать институты/направления для выбранного преподавателя.
+     */
+    private suspend fun resolveTeacherWorkUniversityId(teacher: UserProfileResponse): Long? {
+        val tp = teacher.teacherProfile
+        tp?.universityId?.let { return it }
+        val profileInstituteId = tp?.instituteId
+        if (profileInstituteId != null) {
+            educationRepository.getInstitute(profileInstituteId).getOrNull()?.universityId?.let { return it }
+        }
+        val assignmentInstituteId =
+            _uiState.value.assignments.firstOrNull { it.instituteId != null }?.instituteId
+        if (assignmentInstituteId != null) {
+            educationRepository.getInstitute(assignmentInstituteId).getOrNull()?.universityId?.let { return it }
+        }
+        return _uiState.value.adminUniversityId
+    }
+
     private fun loadAssignmentsForSelected() {
         val teacher = _uiState.value.selectedTeacher ?: return
         val tpId = teacher.teacherProfile?.teacherProfileId ?: return
@@ -163,11 +199,16 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(catalogsLoading = true, error = null)
-            val uni = _uiState.value.adminUniversityId ?: run {
-                _uiState.value = _uiState.value.copy(catalogsLoading = false, error = "Неизвестен вуз")
+            val catalogUni = resolveTeacherWorkUniversityId(teacher)
+            if (catalogUni == null) {
+                _uiState.value = _uiState.value.copy(
+                    catalogsLoading = false,
+                    error = "Не удалось определить вуз преподавателя для списка институтов. " +
+                        "Проверьте профиль преподавателя (вуз/институт) или выберите вуз в главной панели администратора.",
+                )
                 return@launch
             }
-            educationRepository.getInstitutes(uni).fold(
+            educationRepository.getInstitutes(catalogUni).fold(
                 onSuccess = { inst ->
                     val draft = _uiState.value.assignments.mapNotNull { a ->
                         val sid = a.subjectDirectionId ?: return@mapNotNull null
@@ -184,6 +225,7 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
                         catalogsLoading = false,
                         assignmentSheetOpen = true,
                         sheetStep = TeacherAssignmentSheetStep.PICK_INSTITUTE,
+                        sheetCatalogUniversityId = catalogUni,
                         institutes = inst,
                         directionsForSheet = emptyList(),
                         subjectsForSheet = emptyList(),
@@ -207,6 +249,7 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
             assignmentSheetOpen = false,
             sheetStep = TeacherAssignmentSheetStep.PICK_INSTITUTE,
             pickedSubjectDirectionIds = emptySet(),
+            sheetCatalogUniversityId = null,
             error = null,
         )
     }
@@ -220,7 +263,9 @@ class AdminTeacherAssignmentViewModel @Inject constructor(
                 subjectsForSheet = emptyList(),
                 sheetStep = TeacherAssignmentSheetStep.PICK_DIRECTION,
             )
-            educationRepository.getDirections(id).fold(
+            val catalogUni = _uiState.value.sheetCatalogUniversityId
+                ?: _uiState.value.adminUniversityId
+            educationRepository.getDirections(id, catalogUni).fold(
                 onSuccess = { dirs ->
                     _uiState.value = _uiState.value.copy(directionsForSheet = dirs)
                 },

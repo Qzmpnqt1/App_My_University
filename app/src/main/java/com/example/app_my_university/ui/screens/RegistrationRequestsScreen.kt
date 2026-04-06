@@ -82,8 +82,8 @@ fun RegistrationRequestsScreen(
     LaunchedEffect(Unit) {
         viewModel.loadAdminContext()
     }
-    LaunchedEffect(uiState.adminUniversityId) {
-        if (uiState.adminUniversityId != null) {
+    LaunchedEffect(uiState.adminUniversityId, uiState.isSuperAdmin) {
+        if (uiState.isSuperAdmin || uiState.adminUniversityId != null) {
             viewModel.loadRegistrationRequests()
         }
     }
@@ -170,7 +170,7 @@ fun RegistrationRequestsScreen(
                     }
                 }
             }
-            uiState.adminUniversityId == null -> {
+            !uiState.isSuperAdmin && uiState.adminUniversityId == null -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

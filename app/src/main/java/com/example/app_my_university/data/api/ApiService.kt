@@ -94,7 +94,10 @@ interface ApiService {
 
     // ── Directions ────────────────────────────────────────────────
     @GET("api/v1/directions")
-    suspend fun getDirections(@Query("instituteId") instituteId: Long? = null): Response<List<StudyDirectionResponse>>
+    suspend fun getDirections(
+        @Query("instituteId") instituteId: Long? = null,
+        @Query("universityId") universityId: Long? = null
+    ): Response<List<StudyDirectionResponse>>
 
     @GET("api/v1/directions/{id}")
     suspend fun getDirection(@Path("id") id: Long): Response<StudyDirectionResponse>
@@ -110,7 +113,10 @@ interface ApiService {
 
     // ── Groups ────────────────────────────────────────────────────
     @GET("api/v1/groups")
-    suspend fun getGroups(@Query("directionId") directionId: Long? = null): Response<List<AcademicGroupResponse>>
+    suspend fun getGroups(
+        @Query("directionId") directionId: Long? = null,
+        @Query("universityId") universityId: Long? = null
+    ): Response<List<AcademicGroupResponse>>
 
     @GET("api/v1/groups/{id}")
     suspend fun getGroup(@Path("id") id: Long): Response<AcademicGroupResponse>

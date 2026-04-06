@@ -100,8 +100,12 @@ fun AdminHomeScreen(
 
     val pending = adminState.pendingRegistrationCount
     val unread = adminState.unreadMessagesCount
-    val uniName = adminState.adminUniversityName
-        ?: if (adminState.isSuperAdmin) "Выберите вуз" else "Ваш вуз"
+    val uniName = when {
+        adminState.isSuperAdmin && adminState.adminUniversityId == null -> "Все вузы"
+        !adminState.adminUniversityName.isNullOrBlank() -> adminState.adminUniversityName!!
+        adminState.isSuperAdmin -> "Вуз не выбран"
+        else -> adminState.adminUniversityName ?: "Ваш вуз"
+    }
     val instituteCount = adminState.institutes.size
     var superAdminUniMenuExpanded by remember { mutableStateOf(false) }
 
@@ -131,7 +135,11 @@ fun AdminHomeScreen(
                     )
                     Text(
                         text = if (adminState.isSuperAdmin) {
-                            "Глобальный доступ: выберите вуз для работы с данными"
+                            if (adminState.adminUniversityId == null) {
+                                "Режим «Все вузы»: списки и заявки по всей системе. Выберите вуз ниже, чтобы ограничить область."
+                            } else {
+                                "Режим выбранного вуза: данные только этого вуза. Сбросьте выбор, чтобы снова видеть все вузы."
+                            }
                         } else {
                             "Панель управления данными вашего вуза"
                         },
@@ -162,6 +170,15 @@ fun AdminHomeScreen(
                                 expanded = superAdminUniMenuExpanded,
                                 onDismissRequest = { superAdminUniMenuExpanded = false },
                             ) {
+                                DropdownMenuItem(
+                                    text = { Text("Все вузы (глобальный режим)") },
+                                    onClick = {
+                                        superAdminUniMenuExpanded = false
+                                        adminViewModel.clearSuperAdminScope()
+                                        adminViewModel.loadMyUniversityAndInstitutes()
+                                        adminViewModel.refreshDashboardBadges()
+                                    },
+                                )
                                 adminState.universities.forEach { u ->
                                     DropdownMenuItem(
                                         text = { Text(u.name) },

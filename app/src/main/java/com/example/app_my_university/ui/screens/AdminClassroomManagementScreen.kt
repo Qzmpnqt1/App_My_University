@@ -70,8 +70,10 @@ fun AdminClassroomManagementScreen(
     LaunchedEffect(Unit) {
         viewModel.loadAdminContext()
     }
-    LaunchedEffect(uiState.adminUniversityId) {
-        uiState.adminUniversityId?.let { viewModel.loadClassrooms(it) }
+    LaunchedEffect(uiState.adminUniversityId, uiState.isSuperAdmin) {
+        if (uiState.isSuperAdmin || uiState.adminUniversityId != null) {
+            viewModel.loadClassrooms(uiState.adminUniversityId)
+        }
     }
 
     LaunchedEffect(uiState.actionSuccess) {
@@ -121,7 +123,7 @@ fun AdminClassroomManagementScreen(
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         when {
-            uniId == null && !uiState.isLoading -> {
+            uniId == null && !uiState.isSuperAdmin && !uiState.isLoading -> {
                 MuEmptyState(
                     title = "Вуз не определён",
                     subtitle = "Не удалось загрузить контекст администратора.",

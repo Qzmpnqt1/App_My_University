@@ -22,14 +22,16 @@ class EducationRepository @Inject constructor(private val apiService: ApiService
         safeApiCall { apiService.updateInstitute(id, request) }
     suspend fun deleteInstitute(id: Long): Result<Unit> = safeApiCall { apiService.deleteInstitute(id) }
 
-    suspend fun getDirections(instituteId: Long? = null): Result<List<StudyDirectionResponse>> = safeApiCall { apiService.getDirections(instituteId) }
+    suspend fun getDirections(instituteId: Long? = null, universityId: Long? = null): Result<List<StudyDirectionResponse>> =
+        safeApiCall { apiService.getDirections(instituteId, universityId) }
     suspend fun getDirection(id: Long): Result<StudyDirectionResponse> = safeApiCall { apiService.getDirection(id) }
     suspend fun createDirection(request: StudyDirectionRequest): Result<StudyDirectionResponse> = safeApiCall { apiService.createDirection(request) }
     suspend fun updateDirection(id: Long, request: StudyDirectionRequest): Result<StudyDirectionResponse> =
         safeApiCall { apiService.updateDirection(id, request) }
     suspend fun deleteDirection(id: Long): Result<Unit> = safeApiCall { apiService.deleteDirection(id) }
 
-    suspend fun getGroups(directionId: Long? = null): Result<List<AcademicGroupResponse>> = safeApiCall { apiService.getGroups(directionId) }
+    suspend fun getGroups(directionId: Long? = null, universityId: Long? = null): Result<List<AcademicGroupResponse>> =
+        safeApiCall { apiService.getGroups(directionId, universityId) }
     suspend fun getGroup(id: Long): Result<AcademicGroupResponse> = safeApiCall { apiService.getGroup(id) }
     suspend fun createGroup(request: AcademicGroupRequest): Result<AcademicGroupResponse> = safeApiCall { apiService.createGroup(request) }
     suspend fun updateGroup(id: Long, request: AcademicGroupRequest): Result<AcademicGroupResponse> =
