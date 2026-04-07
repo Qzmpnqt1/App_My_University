@@ -113,14 +113,6 @@ fun AdminStructureHubScreen(navController: NavHostController) {
             contentPadding = PaddingValues(AppSpacing.screen),
             verticalArrangement = Arrangement.spacedBy(Dimens.spaceM)
         ) {
-            item {
-                Text(
-                    "Разделы вашего вуза",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = Dimens.spaceS)
-                )
-            }
             items(entries, key = { it.route }) { e ->
                 StructureHubCard(entry = e) {
                     navController.openAdminNested(e.route)

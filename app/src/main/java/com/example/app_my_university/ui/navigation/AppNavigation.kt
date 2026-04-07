@@ -16,7 +16,6 @@ import com.example.app_my_university.ui.viewmodel.LoginViewModel
 
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
-    object UniversitySelection : Screen("university_selection")
     object Login : Screen("login")
     object Registration : Screen("registration")
     object StudentHome : Screen("student_home")
@@ -36,6 +35,10 @@ sealed class Screen(val route: String) {
     object AdminRequests : Screen("admin_requests")
     object AdminUsers : Screen("admin_users")
     object AdminUniversities : Screen("admin_universities")
+    /** Институты конкретного вуза (отдельный destination в стеке). */
+    object AdminUniversityInstitutes : Screen("admin_university_institutes/{universityId}") {
+        fun createRoute(universityId: Long): String = "admin_university_institutes/$universityId"
+    }
     object AdminSchedule : Screen("admin_schedule")
     object AdminSubjects : Screen("admin_subjects")
     /** Учебный план: предметы в направлениях (SubjectInDirection). */
@@ -65,25 +68,11 @@ fun AppNavigation() {
     ) {
         composable(Screen.Welcome.route) {
             OnboardingWelcomeScreen(
-                onNavigateToUniversitySelection = {
-                    navController.navigate(Screen.UniversitySelection.route)
-                },
                 onNavigateToLogin = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Welcome.route) { inclusive = true }
                     }
-                }
-            )
-        }
-
-        composable(Screen.UniversitySelection.route) {
-            UniversitySelectionScreen(
-                onNavigateBack = { navController.navigateUp() },
-                onContinueToLogin = {
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(Screen.Welcome.route) { inclusive = true }
-                    }
-                }
+                },
             )
         }
 
@@ -237,6 +226,19 @@ fun AppNavigation() {
             )
         }
 
+        composable(
+            route = Screen.AdminUniversityInstitutes.route,
+            arguments = listOf(navArgument("universityId") { type = NavType.LongType }),
+        ) { backStackEntry ->
+            val universityId = backStackEntry.arguments?.getLong("universityId") ?: 0L
+            UniversityInstitutesScreen(
+                navController = navController,
+                universityId = universityId,
+                onNavigateBack = { navController.navigateUp() },
+                viewModel = hiltViewModel(backStackEntry),
+            )
+        }
+
         composable(Screen.AdminSchedule.route) {
             ScheduleManagementScreen(
                 navController = navController,
@@ -322,7 +324,6 @@ fun AppNavigation() {
             val currentRoute = navController.currentDestination?.route
             val atAuthFlow = currentRoute == Screen.Login.route ||
                 currentRoute == Screen.Welcome.route ||
-                currentRoute == Screen.UniversitySelection.route ||
                 currentRoute == Screen.Registration.route
             if (atAuthFlow) {
                 val dest = when (loginState.userType) {

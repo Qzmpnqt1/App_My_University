@@ -7,7 +7,6 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.app_my_university.MainActivity
-import com.example.app_my_university.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -20,7 +19,8 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-        val title = message.notification?.title ?: message.data["title"] ?: getString(R.string.app_name)
+        val defaultTitle = packageManager.getApplicationLabel(applicationInfo).toString()
+        val title = message.notification?.title ?: message.data["title"] ?: defaultTitle
         val body = message.notification?.body ?: message.data["body"] ?: ""
         val deepLink = message.data["deepLink"]
 

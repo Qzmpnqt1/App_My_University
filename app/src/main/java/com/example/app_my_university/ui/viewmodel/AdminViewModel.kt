@@ -16,6 +16,8 @@ import javax.inject.Inject
 data class AdminUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
+    /** Завершена первичная подгрузка профиля в [loadAdminContext] (для экранов вроде вузов без мигания «вуз не найден»). */
+    val adminNavContextReady: Boolean = false,
     val isSuperAdmin: Boolean = false,
     /** Вуз текущего администратора (область видимости). */
     val adminUniversityId: Long? = null,
@@ -50,31 +52,56 @@ class AdminViewModel @Inject constructor(
     /** Загрузить universityId администратора из профиля (для фильтрации и экранов). */
     fun loadAdminContext() {
         viewModelScope.launch {
-            profileRepository.getProfile().fold(
-                onSuccess = { p ->
-                    val superUser = p.userType.equals("SUPER_ADMIN", ignoreCase = true)
-                    val (uid, uname) = if (superUser) {
-                        val saved = tokenManager.getSuperAdminScopeUniversityId()
-                        if (saved != null) {
-                            Pair(saved, _uiState.value.adminUniversityName)
-                        } else {
-                            Pair(null, null)
-                        }
-                    } else {
-                        Pair(p.adminProfile?.universityId, p.adminProfile?.universityName)
-                    }
-                    _uiState.value = _uiState.value.copy(
-                        isSuperAdmin = superUser,
-                        adminUniversityId = uid,
-                        adminUniversityName = uname
-                    )
-                    if (superUser) {
-                        loadUniversities()
-                        uid?.let { syncUniversityNameForScope(it) }
-                    }
-                },
-                onFailure = { /* оставляем null */ }
-            )
+            _uiState.value = _uiState.value.copy(adminNavContextReady = false)
+            try {
+                profileRepository.getProfile().getOrNull()?.let { applyAdminProfileFrom(it) }
+            } finally {
+                _uiState.value = _uiState.value.copy(adminNavContextReady = true)
+            }
+        }
+    }
+
+    /**
+     * Экран «Управление предметами»: у каждого маршрута свой [AdminViewModel], поэтому перед запросом
+     * списка нужно заново прочитать профиль и выбранный для SUPER_ADMIN вуз из [TokenManager].
+     * Иначе [loadSubjects] уходит с universityId=null, и сервер отдаёт глобальный справочник.
+     */
+    fun loadSubjectsForManagementScreen() {
+        viewModelScope.launch {
+            val r = profileRepository.getProfile()
+            val p = r.getOrNull()
+            if (p != null) {
+                applyAdminProfileFrom(p)
+                loadSubjects()
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = r.exceptionOrNull()?.message,
+                )
+            }
+        }
+    }
+
+    private suspend fun applyAdminProfileFrom(p: UserProfileResponse) {
+        val superUser = p.userType.equals("SUPER_ADMIN", ignoreCase = true)
+        val (uid, uname) = if (superUser) {
+            val saved = tokenManager.getSuperAdminScopeUniversityId()
+            if (saved != null) {
+                Pair(saved, _uiState.value.adminUniversityName)
+            } else {
+                Pair(null, null)
+            }
+        } else {
+            Pair(p.adminProfile?.universityId, p.adminProfile?.universityName)
+        }
+        _uiState.value = _uiState.value.copy(
+            isSuperAdmin = superUser,
+            adminUniversityId = uid,
+            adminUniversityName = uname,
+        )
+        if (superUser) {
+            loadUniversities()
+            uid?.let { syncUniversityNameForScope(it) }
         }
     }
 
@@ -562,17 +589,37 @@ class AdminViewModel @Inject constructor(
 
     /**
      * @param universityId только если [directionId] == null: для SUPER_ADMIN в scoped-режиме ограничить вузом.
+     * При непустом [directionId] включается индикатор загрузки (для экрана «Предметы в направлениях»);
+     * вызовы с [directionId] == null (например, расписание) на [isLoading] не влияют.
      */
     fun loadSubjectsInDirections(directionId: Long? = null, universityId: Long? = null) {
         viewModelScope.launch {
+            val trackLoading = directionId != null
+            if (trackLoading) {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            }
             val uni = if (directionId != null) null else (universityId ?: _uiState.value.adminUniversityId)
             educationRepository.getSubjectsInDirections(directionId, uni).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(subjectsInDirections = it)
+                onSuccess = { list ->
+                    val cur = _uiState.value
+                    _uiState.value = cur.copy(
+                        subjectsInDirections = list,
+                        isLoading = if (trackLoading) false else cur.isLoading,
+                    )
                 },
-                onFailure = { /* не блокируем экран расписания */ }
+                onFailure = { e ->
+                    val cur = _uiState.value
+                    _uiState.value = cur.copy(
+                        isLoading = if (trackLoading) false else cur.isLoading,
+                        error = if (trackLoading) e.message else cur.error,
+                    )
+                },
             )
         }
+    }
+
+    fun clearSubjectsInDirections() {
+        _uiState.value = _uiState.value.copy(subjectsInDirections = emptyList())
     }
 
     fun createDirection(request: StudyDirectionRequest) {

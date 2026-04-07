@@ -72,7 +72,7 @@ fun SubjectManagementScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
-        viewModel.loadSubjects()
+        viewModel.loadSubjectsForManagementScreen()
     }
 
     LaunchedEffect(uiState.actionSuccess) {

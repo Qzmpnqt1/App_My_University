@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,8 +25,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun OnboardingWelcomeScreen(
-    onNavigateToUniversitySelection: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -72,16 +70,7 @@ fun OnboardingWelcomeScreen(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(48.dp))
-            Button(
-                onClick = onNavigateToUniversitySelection,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text(text = "Начать работу", fontSize = 18.sp)
-            }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             TextButton(onClick = onNavigateToLogin) {
                 Text("Вход в аккаунт")
             }

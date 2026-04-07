@@ -51,7 +51,9 @@ object BottomNavTabMapping {
         if (currentRoute == null) return false
         if (currentRoute.startsWith("chat/")) return itemRoute == Screen.AdminMore.route
         return when (itemRoute) {
-            Screen.AdminStructure.route -> currentRoute in adminStructureRoutes
+            Screen.AdminStructure.route ->
+                currentRoute in adminStructureRoutes ||
+                    currentRoute.startsWith("admin_university_institutes/")
             Screen.AdminMore.route -> currentRoute in adminMoreRoutes
             else -> currentRoute == itemRoute
         }

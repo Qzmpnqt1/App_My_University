@@ -23,7 +23,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.example.app_my_university.data.api.model.StudyDirectionResponse
 import com.example.app_my_university.data.api.model.SubjectInDirectionRequest
 import com.example.app_my_university.data.api.model.SubjectInDirectionResponse
 import com.example.app_my_university.ui.components.common.MuEmptyState
@@ -69,8 +69,9 @@ fun SubjectInDirectionManagementScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var search by remember { mutableStateOf("") }
-    var filterAllDirections by remember { mutableStateOf(true) }
-    var filterDirectionId by remember { mutableStateOf<Long?>(null) }
+    /** Выбранное пользователем направление; список направлений зависит от вуза администрирования. */
+    var userDirectionId by remember { mutableStateOf<Long?>(null) }
+    var directionMenuExpanded by remember { mutableStateOf(false) }
     var showEditor by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<SubjectInDirectionResponse?>(null) }
     var deleting by remember { mutableStateOf<SubjectInDirectionResponse?>(null) }
@@ -80,22 +81,35 @@ fun SubjectInDirectionManagementScreen(
     var semester by remember { mutableStateOf("1") }
     var assessment by remember { mutableStateOf("EXAM") }
     var subjectMenuExpanded by remember { mutableStateOf(false) }
-    var directionMenuExpanded by remember { mutableStateOf(false) }
+    var directionMenuExpandedDialog by remember { mutableStateOf(false) }
     var assessmentMenuExpanded by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
+
+    val resolvedDirectionId = remember(userDirectionId, uiState.directions) {
+        val dirs = uiState.directions
+        when {
+            dirs.isEmpty() -> null
+            userDirectionId != null && dirs.any { it.id == userDirectionId } -> userDirectionId
+            else -> dirs.first().id
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadAdminContext()
     }
-    LaunchedEffect(uiState.adminUniversityId) {
+
+    LaunchedEffect(uiState.adminNavContextReady, uiState.adminUniversityId) {
+        if (!uiState.adminNavContextReady) return@LaunchedEffect
         viewModel.loadDirections(null)
         viewModel.loadSubjects(uiState.adminUniversityId)
     }
-    LaunchedEffect(filterAllDirections, filterDirectionId, uiState.adminUniversityId) {
-        if (filterAllDirections) {
-            viewModel.loadSubjectsInDirections(null, uiState.adminUniversityId)
+
+    LaunchedEffect(resolvedDirectionId) {
+        val id = resolvedDirectionId
+        if (id == null) {
+            viewModel.clearSubjectsInDirections()
         } else {
-            filterDirectionId?.let { viewModel.loadSubjectsInDirections(it, null) }
+            viewModel.loadSubjectsInDirections(id, null)
         }
     }
 
@@ -121,9 +135,7 @@ fun SubjectInDirectionManagementScreen(
         }
     }
 
-    val scopeUni = uiState.adminUniversityId
-    val reloadDirection = if (filterAllDirections) null else filterDirectionId
-    val reloadUni = if (filterAllDirections) scopeUni else null
+    val reloadDirection = resolvedDirectionId
 
     RoleShellScaffold(
         role = AppRole.Admin,
@@ -135,17 +147,19 @@ fun SubjectInDirectionManagementScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    editing = null
-                    subjectId = uiState.subjects.firstOrNull()?.id
-                    directionId = uiState.directions.firstOrNull()?.id
-                    course = "1"
-                    semester = "1"
-                    assessment = "EXAM"
-                    showEditor = true
-                },
-            ) { Icon(Icons.Default.Add, contentDescription = "Добавить связь") }
+            if (resolvedDirectionId != null) {
+                FloatingActionButton(
+                    onClick = {
+                        editing = null
+                        subjectId = uiState.subjects.firstOrNull()?.id
+                        directionId = resolvedDirectionId
+                        course = "1"
+                        semester = "1"
+                        assessment = "EXAM"
+                        showEditor = true
+                    },
+                ) { Icon(Icons.Default.Add, contentDescription = "Добавить связь") }
+            }
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
@@ -155,56 +169,25 @@ fun SubjectInDirectionManagementScreen(
                 .padding(padding)
                 .padding(horizontal = Dimens.screenPadding),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spaceS)) {
-                FilterChip(
-                    selected = filterAllDirections,
-                    onClick = {
-                        filterAllDirections = true
-                        filterDirectionId = null
-                    },
-                    label = { Text("Все направления (в области)") },
-                )
-                FilterChip(
-                    selected = !filterAllDirections,
-                    onClick = { filterAllDirections = false },
-                    label = { Text("Одно направление") },
-                )
+            val scopeHint = when {
+                uiState.isSuperAdmin && uiState.adminUniversityId == null ->
+                    "Направления всех вузов"
+                uiState.isSuperAdmin ->
+                    "Направления выбранного вуза"
+                else ->
+                    "Направления вашего вуза"
             }
-            if (!filterAllDirections) {
-                var dirPickExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = dirPickExpanded,
-                    onExpandedChange = { dirPickExpanded = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = Dimens.spaceS),
-                ) {
-                    OutlinedTextField(
-                        value = uiState.directions.find { it.id == filterDirectionId }?.name ?: "",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Направление") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dirPickExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = dirPickExpanded,
-                        onDismissRequest = { dirPickExpanded = false },
-                    ) {
-                        uiState.directions.forEach { d ->
-                            DropdownMenuItem(
-                                text = { Text(d.name) },
-                                onClick = {
-                                    filterDirectionId = d.id
-                                    dirPickExpanded = false
-                                },
-                            )
-                        }
-                    }
-                }
-            }
+            DirectionPickerField(
+                directions = uiState.directions,
+                selectedId = resolvedDirectionId,
+                expanded = directionMenuExpanded,
+                onExpandedChange = { directionMenuExpanded = it },
+                supportingLabel = scopeHint,
+                onSelect = { id ->
+                    userDirectionId = id
+                    directionMenuExpanded = false
+                },
+            )
             OutlinedTextField(
                 value = search,
                 onValueChange = { search = it },
@@ -214,6 +197,7 @@ fun SubjectInDirectionManagementScreen(
                 label = { Text("Поиск") },
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
             )
             Text(
                 "Найдено: ${filteredRows.size}",
@@ -222,13 +206,22 @@ fun SubjectInDirectionManagementScreen(
                 modifier = Modifier.padding(top = Dimens.spaceS, bottom = Dimens.spaceM),
             )
             when {
-                uiState.isLoading && uiState.subjectsInDirections.isEmpty() -> MuLoadingState(Modifier.fillMaxSize())
-                !filterAllDirections && filterDirectionId == null -> {
+                !uiState.adminNavContextReady || (uiState.isLoading && uiState.directions.isEmpty()) ->
+                    MuLoadingState(Modifier.fillMaxSize())
+                uiState.directions.isEmpty() -> {
                     MuEmptyState(
-                        title = "Выберите направление",
-                        subtitle = "Укажите направление в фильтре выше.",
+                        title = "Нет направлений",
+                        subtitle = "Создайте направления в разделе структуры или проверьте выбранный вуз.",
                     )
                 }
+                resolvedDirectionId == null -> {
+                    MuEmptyState(
+                        title = "Выберите направление",
+                        subtitle = "Укажите направление в списке выше.",
+                    )
+                }
+                uiState.isLoading && uiState.subjectsInDirections.isEmpty() ->
+                    MuLoadingState(Modifier.fillMaxSize())
                 filteredRows.isEmpty() -> {
                     MuEmptyState(
                         title = "Нет записей",
@@ -299,29 +292,31 @@ fun SubjectInDirectionManagementScreen(
                         }
                     }
                     ExposedDropdownMenuBox(
-                        expanded = directionMenuExpanded,
-                        onExpandedChange = { directionMenuExpanded = it },
+                        expanded = directionMenuExpandedDialog,
+                        onExpandedChange = { directionMenuExpandedDialog = it },
                     ) {
                         OutlinedTextField(
                             value = directions.find { it.id == directionId }?.name ?: "",
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Направление *") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = directionMenuExpanded) },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = directionMenuExpandedDialog)
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .menuAnchor(),
                         )
                         ExposedDropdownMenu(
-                            expanded = directionMenuExpanded,
-                            onDismissRequest = { directionMenuExpanded = false },
+                            expanded = directionMenuExpandedDialog,
+                            onDismissRequest = { directionMenuExpandedDialog = false },
                         ) {
                             directions.forEach { d ->
                                 DropdownMenuItem(
-                                    text = { Text(d.name) },
+                                    text = { Text(directionMenuLabel(d)) },
                                     onClick = {
                                         directionId = d.id
-                                        directionMenuExpanded = false
+                                        directionMenuExpandedDialog = false
                                     },
                                 )
                             }
@@ -350,7 +345,9 @@ fun SubjectInDirectionManagementScreen(
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Итоговый контроль") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = assessmentMenuExpanded) },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = assessmentMenuExpanded)
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .menuAnchor(),
@@ -386,10 +383,11 @@ fun SubjectInDirectionManagementScreen(
                             semester = sem,
                             finalAssessmentType = assessment,
                         )
+                        val rd = reloadDirection
                         if (editing == null) {
-                            viewModel.createSubjectInDirection(req, reloadDirection, reloadUni)
+                            viewModel.createSubjectInDirection(req, rd, null)
                         } else {
-                            viewModel.updateSubjectInDirection(editing!!.id, req, reloadDirection, reloadUni)
+                            viewModel.updateSubjectInDirection(editing!!.id, req, rd, null)
                         }
                         showEditor = false
                     },
@@ -409,13 +407,72 @@ fun SubjectInDirectionManagementScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.deleteSubjectInDirection(row.id, reloadDirection, reloadUni)
+                        viewModel.deleteSubjectInDirection(row.id, reloadDirection, null)
                         deleting = null
                     },
                 ) { Text("Удалить") }
             },
             dismissButton = { TextButton({ deleting = null }) { Text("Отмена") } },
         )
+    }
+}
+
+private fun directionMenuLabel(d: StudyDirectionResponse): String {
+    val inst = d.instituteName?.trim().orEmpty()
+    return if (inst.isNotEmpty()) "${d.name} ($inst)" else d.name
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DirectionPickerField(
+    directions: List<StudyDirectionResponse>,
+    selectedId: Long?,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    supportingLabel: String,
+    onSelect: (Long) -> Unit,
+) {
+    val selected = directions.find { it.id == selectedId }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = onExpandedChange,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        OutlinedTextField(
+            value = selected?.let { directionMenuLabel(it) } ?: "",
+            onValueChange = {},
+            readOnly = true,
+            enabled = directions.isNotEmpty(),
+            label = { Text("Направление") },
+            supportingText = { Text(supportingLabel) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(),
+            shape = RoundedCornerShape(12.dp),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandedChange(false) },
+        ) {
+            directions.forEach { d ->
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(d.name, style = MaterialTheme.typography.bodyLarge)
+                            d.instituteName?.takeIf { it.isNotBlank() }?.let { inst ->
+                                Text(
+                                    inst,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    },
+                    onClick = { onSelect(d.id) },
+                )
+            }
+        }
     }
 }
 
