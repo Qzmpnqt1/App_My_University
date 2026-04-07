@@ -1,0 +1,104 @@
+name: Android Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "HTTPS API base URL (например https://api.example.com/)"
+        required: true
+        type: string
+        default: "https://example.com/"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            *.gradle.kts
+            gradle/**/*.toml
+            gradle/wrapper/**
+            app/*.gradle.kts
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK components
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Resolve API base URL
+        id: api
+        env:
+          SECRET_URL: ${{ secrets.ANDROID_RELEASE_API_BASE_URL }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            URL="${{ github.event.inputs.api_base_url }}"
+          else
+            URL="$SECRET_URL"
+            if [ -z "$URL" ]; then
+              echo "::error::Для сборки по git-тегу v* задайте repository secret ANDROID_RELEASE_API_BASE_URL (только HTTPS)."
+              exit 1
+            fi
+          fi
+          case "$URL" in
+            https://*) ;;
+            *) echo "::error::api_base_url must start with https://"; exit 1 ;;
+          esac
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Decode release keystore (optional)
+        id: signing
+        env:
+          B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$B64" ]; then
+            echo "has=false" >> "$GITHUB_OUTPUT"
+            echo "Release будет без кастомного keystore (как в локальной сборке без ANDROID_SIGNING_*)."
+            exit 0
+          fi
+          echo "$B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          chmod 600 "$RUNNER_TEMP/release.keystore"
+          echo "has=true" >> "$GITHUB_OUTPUT"
+          echo "path=$RUNNER_TEMP/release.keystore" >> "$GITHUB_OUTPUT"
+
+      - name: Build release APK and AAB
+        env:
+          ANDROID_SIGNING_STORE_FILE: ${{ steps.signing.outputs.path }}
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:assembleRelease :app:bundleRelease \
+            -PapiBaseUrlRelease="${{ steps.api.outputs.url }}" \
+            --no-daemon
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-${{ github.ref_name }}
+          if-no-files-found: warn
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+            app/build/outputs/mapping/release/mapping.txt

@@ -27,6 +27,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        val storePath = System.getenv("ANDROID_SIGNING_STORE_FILE")?.trim().orEmpty()
+        if (storePath.isNotEmpty()) {
+            create("release") {
+                storeFile = file(storePath)
+                storePassword = System.getenv("ANDROID_SIGNING_STORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("ANDROID_SIGNING_KEY_ALIAS") ?: ""
+                keyPassword = System.getenv("ANDROID_SIGNING_KEY_PASSWORD") ?: ""
+            }
+        }
+    }
+
     fun normalizedHttpsApiBaseUrl(raw: String, fallbackHttps: String): String {
         val chosen = raw.trim().ifEmpty { fallbackHttps }
         val baseUrl = when {
@@ -43,6 +55,8 @@ android {
     buildTypes {
         // Релизная сборка (Release build)
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
+
             // Отключаем отладочную сборку
             isDebuggable = false
 

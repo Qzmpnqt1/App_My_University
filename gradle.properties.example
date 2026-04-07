@@ -1,0 +1,5 @@
+# Скопируйте в ~/.gradle/gradle.properties при необходимости.
+# org.gradle.java.home=C:/Program Files/Java/jdk-17
+#
+# Debug API (HTTPS), опционально:
+# apiBaseUrl=https://10.0.2.2:8443/
