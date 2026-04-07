@@ -227,9 +227,9 @@ class AdminStatisticsViewModel @Inject constructor(
         }
     }
 
-    fun loadClassroomSchedule(classroomId: Long) {
+    fun loadClassroomSchedule(classroomId: Long, weekNumber: Int? = null) {
         launchStats {
-            statisticsRepository.getClassroomScheduleStatistics(classroomId).fold(
+            statisticsRepository.getClassroomScheduleStatistics(classroomId, weekNumber).fold(
                 onSuccess = {
                     _uiState.update { s ->
                         s.copy(
@@ -246,9 +246,9 @@ class AdminStatisticsViewModel @Inject constructor(
         }
     }
 
-    fun loadTeacherSchedule(teacherId: Long) {
+    fun loadTeacherSchedule(teacherId: Long, weekNumber: Int? = null) {
         launchStats {
-            statisticsRepository.getTeacherScheduleStatistics(teacherId).fold(
+            statisticsRepository.getTeacherScheduleStatistics(teacherId, weekNumber).fold(
                 onSuccess = {
                     _uiState.update { s ->
                         s.copy(
@@ -265,9 +265,9 @@ class AdminStatisticsViewModel @Inject constructor(
         }
     }
 
-    fun loadGroupSchedule(groupId: Long) {
+    fun loadGroupSchedule(groupId: Long, weekNumber: Int? = null) {
         launchStats {
-            statisticsRepository.getGroupScheduleStatistics(groupId).fold(
+            statisticsRepository.getGroupScheduleStatistics(groupId, weekNumber).fold(
                 onSuccess = {
                     _uiState.update { s ->
                         s.copy(

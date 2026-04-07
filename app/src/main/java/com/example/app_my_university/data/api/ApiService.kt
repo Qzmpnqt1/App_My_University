@@ -380,10 +380,16 @@ interface ApiService {
     ): Response<StudentPerformanceSummaryResponse>
 
     @GET("api/v1/statistics/subject/{subjectDirectionId}")
-    suspend fun getSubjectStatistics(@Path("subjectDirectionId") subjectDirectionId: Long): Response<SubjectStatisticsResponse>
+    suspend fun getSubjectStatistics(
+        @Path("subjectDirectionId") subjectDirectionId: Long,
+        @Query("groupId") groupId: Long? = null,
+    ): Response<SubjectStatisticsResponse>
 
     @GET("api/v1/statistics/practices/{subjectDirectionId}")
-    suspend fun getPracticeStatistics(@Path("subjectDirectionId") subjectDirectionId: Long): Response<PracticeStatisticsResponse>
+    suspend fun getPracticeStatistics(
+        @Path("subjectDirectionId") subjectDirectionId: Long,
+        @Query("groupId") groupId: Long? = null,
+    ): Response<PracticeStatisticsResponse>
 
     @GET("api/v1/statistics/group/{groupId}")
     suspend fun getGroupStatistics(@Path("groupId") groupId: Long): Response<GroupStatisticsResponse>
@@ -398,13 +404,22 @@ interface ApiService {
     suspend fun getUniversityStatistics(@Path("universityId") universityId: Long): Response<UniversityStatisticsResponse>
 
     @GET("api/v1/statistics/schedule/teacher/{teacherId}")
-    suspend fun getTeacherScheduleStatistics(@Path("teacherId") teacherId: Long): Response<ScheduleStatisticsResponse>
+    suspend fun getTeacherScheduleStatistics(
+        @Path("teacherId") teacherId: Long,
+        @Query("weekNumber") weekNumber: Int? = null,
+    ): Response<ScheduleStatisticsResponse>
 
     @GET("api/v1/statistics/schedule/group/{groupId}")
-    suspend fun getGroupScheduleStatistics(@Path("groupId") groupId: Long): Response<ScheduleStatisticsResponse>
+    suspend fun getGroupScheduleStatistics(
+        @Path("groupId") groupId: Long,
+        @Query("weekNumber") weekNumber: Int? = null,
+    ): Response<ScheduleStatisticsResponse>
 
     @GET("api/v1/statistics/schedule/classroom/{classroomId}")
-    suspend fun getClassroomScheduleStatistics(@Path("classroomId") classroomId: Long): Response<ScheduleStatisticsResponse>
+    suspend fun getClassroomScheduleStatistics(
+        @Path("classroomId") classroomId: Long,
+        @Query("weekNumber") weekNumber: Int? = null,
+    ): Response<ScheduleStatisticsResponse>
 
     // ── Audit ─────────────────────────────────────────────────────
     @GET("api/v1/audit/logs")

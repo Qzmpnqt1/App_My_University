@@ -39,6 +39,7 @@ import com.example.app_my_university.ui.components.common.MuEmptyState
 import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminAuditViewModel
+import com.example.app_my_university.util.formatApiDateTimeForDisplay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -157,7 +158,9 @@ fun AdminAuditLogsScreen(
                                     )
                                     log.details?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                                     Text(
-                                        "userId=${log.userId} · ${log.createdAt ?: ""}",
+                                        "userId=${log.userId} · ${
+                                            log.createdAt?.let { formatApiDateTimeForDisplay(it) } ?: "—"
+                                        }",
                                         style = MaterialTheme.typography.labelSmall,
                                     )
                                 }

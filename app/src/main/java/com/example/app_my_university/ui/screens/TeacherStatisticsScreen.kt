@@ -211,6 +211,7 @@ fun TeacherStatisticsScreen(
                     onOpenInstitute = { institutePicker = true },
                     onOpenDirection = { directionPicker = true },
                     onOpenSubject = { subjectPicker = true },
+                    onOpenGroup = { groupPicker = true },
                     onLoad = { viewModel.loadSubjectAnalytics() },
                 )
                 TeacherStatsSection.GROUP -> TeacherGroupSection(
@@ -238,10 +239,44 @@ private fun TeacherOverviewSection(
     viewModel: TeacherStatisticsViewModel,
 ) {
     Text(
-        text = "Вся нагрузка по вашему расписанию (все недели в базе).",
+        text = "Нагрузка по расписанию. Можно сузить до недели 1 или 2 (как в учебном календаре).",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        FilterChip(
+            selected = state.scheduleWeekFilter == null,
+            onClick = {
+                viewModel.setScheduleWeekFilter(null)
+                viewModel.loadScheduleStatistics()
+            },
+            enabled = !state.isLoading && state.myUserId != null,
+            label = { Text("Все недели") },
+        )
+        FilterChip(
+            selected = state.scheduleWeekFilter == 1,
+            onClick = {
+                viewModel.setScheduleWeekFilter(1)
+                viewModel.loadScheduleStatistics()
+            },
+            enabled = !state.isLoading && state.myUserId != null,
+            label = { Text("Неделя 1") },
+        )
+        FilterChip(
+            selected = state.scheduleWeekFilter == 2,
+            onClick = {
+                viewModel.setScheduleWeekFilter(2)
+                viewModel.loadScheduleStatistics()
+            },
+            enabled = !state.isLoading && state.myUserId != null,
+            label = { Text("Неделя 2") },
+        )
+    }
     Button(
         onClick = { viewModel.loadScheduleStatistics() },
         enabled = !state.isLoading && state.myUserId != null,
@@ -297,6 +332,7 @@ private fun TeacherSubjectSection(
     onOpenInstitute: () -> Unit,
     onOpenDirection: () -> Unit,
     onOpenSubject: () -> Unit,
+    onOpenGroup: () -> Unit,
     onLoad: () -> Unit,
 ) {
     MuPickerField(
@@ -344,6 +380,21 @@ private fun TeacherSubjectSection(
             { Text("Загрузка…", style = MaterialTheme.typography.bodySmall) }
         } else null,
     )
+    MuPickerField(
+        label = "Группа (фильтр)",
+        valueText = state.groupLabel,
+        placeholder = "Не выбрано — по всему направлению",
+        enabled = state.canPickGroup && !state.groupsLoading && state.groups.isNotEmpty(),
+        onClick = onOpenGroup,
+        modifier = Modifier.fillMaxWidth(),
+        supportingText = {
+            Text(
+                "После выбора дисциплины. Необязательно: без группы — все студенты направления.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+    )
     Button(
         onClick = onLoad,
         enabled = state.selectedSubjectDirectionId != null && !state.isLoading,
@@ -360,11 +411,14 @@ private fun TeacherSubjectSection(
     state.subjectStats?.let { sub ->
         MuAnalyticsCard(
             title = sub.subjectName ?: "Дисциплина",
-            subtitle = "Тип итога: ${sub.assessmentType ?: "—"} · Студентов: ${sub.totalStudents}",
+            subtitle = buildString {
+                append("Тип итога: ${sub.assessmentType ?: "—"} · Обязанных студентов: ${sub.totalStudents}")
+                sub.samplingScope?.let { append(" · Область: $it") }
+            },
         ) {
             if (sub.assessmentType.equals("CREDIT", ignoreCase = true)) {
                 Text(
-                    "Доля зачётов среди выставленных: ${String.format("%.1f", sub.creditRate)}%",
+                    "Доля зачётов среди обязанных: ${String.format("%.1f", sub.creditRate)}%",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                 )
@@ -395,7 +449,7 @@ private fun TeacherSubjectSection(
     state.practiceStats?.let { pr ->
         MuAnalyticsCard(
             title = "Практики: ${pr.subjectName ?: ""}",
-            subtitle = "Прогресс по работам (по числу практик с результатом)",
+            subtitle = "Доля заполненных «слотов» (обязанные студенты × практики). ${pr.samplingScope ?: ""}",
         ) {
             MuLabeledProgressMetric(
                 label = "Заполненность практик",
@@ -403,10 +457,17 @@ private fun TeacherSubjectSection(
                 valueDescription = String.format("%.1f%%", pr.overallProgress),
             )
             Text(
-                "Средний по нормированным оценкам: ${String.format("%.2f", pr.totalScoreAverage)}",
+                "Средний сырой балл по оценочным практикам: ${String.format("%.2f", pr.totalScoreAverage)}",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 8.dp),
             )
+            pr.averageNormalizedPercentAcrossNumericPractices?.let { np ->
+                Text(
+                    "Средний нормированный процент (2.4): ${String.format("%.1f", np)}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             pr.practices?.takeIf { it.isNotEmpty() }?.forEach { p ->
                 PracticeDetailBlock(p)
             }
@@ -418,25 +479,35 @@ private fun TeacherSubjectSection(
 private fun PracticeDetailBlock(p: PracticeStatisticsDetail) {
     val title = p.practiceTitle?.takeIf { it.isNotBlank() }
         ?: "Практика ${p.practiceNumber}"
+    val denom = p.totalRequiredStudents.takeIf { it > 0 } ?: p.totalRecords
     Column(Modifier.padding(vertical = 6.dp)) {
         Text(title, style = MaterialTheme.typography.labelLarge)
         MuLabeledProgressMetric(
             label = "Заполнено",
             value = (p.completionRate / 100.0).toFloat().coerceIn(0f, 1f),
-            valueDescription = "${p.withResult} / ${p.totalRecords}",
+            valueDescription = "${p.withResult} / $denom",
         )
         if (p.creditRate != null) {
             Text(
-                "Зачёт: ${String.format("%.1f", p.creditRate)}% положительных среди выставленных",
+                "Зачёт: ${String.format("%.1f", p.creditRate)}% зачтено среди обязанных",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        } else if (p.normalizedAverage != null) {
-            Text(
-                "Средняя (норм.): ${String.format("%.2f", p.normalizedAverage)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        } else {
+            p.averageNormalizedPercent?.let { np ->
+                Text(
+                    "Средний % (оценка/max×100): ${String.format("%.1f", np)}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (p.normalizedAverage != null) {
+                Text(
+                    "Средняя в шкале 0–5 (совместимость): ${String.format("%.2f", p.normalizedAverage)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

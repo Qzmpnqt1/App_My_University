@@ -12,11 +12,27 @@ data class StudentPerformanceSummaryResponse(
     val totalPractices: Int,
     val practicesWithResult: Int,
     val subjectCompletionPercent: Double,
-    val practiceCompletionPercent: Double
+    val practiceCompletionPercent: Double,
+    val subjectPracticeProgressByDiscipline: List<SubjectPracticeProgressItem>? = null,
+)
+
+data class SubjectPracticeProgressItem(
+    val subjectDirectionId: Long?,
+    val subjectName: String?,
+    val course: Int?,
+    val semester: Int?,
+    val totalPractices: Int,
+    val practicesWithResult: Int,
+    val practiceProgressPercent: Double,
+    val sumNumericPracticePoints: Int? = null,
 )
 
 data class SubjectStatisticsResponse(
     val subjectDirectionId: Long?,
+    val directionId: Long? = null,
+    val groupIdFilter: Long? = null,
+    val samplingScope: String? = null,
+    val averagePerformanceScope: String? = null,
     val subjectName: String?,
     val assessmentType: String? = null,
     val averageGrade: Double,
@@ -30,9 +46,14 @@ data class SubjectStatisticsResponse(
 
 data class PracticeStatisticsResponse(
     val subjectDirectionId: Long?,
+    val directionId: Long? = null,
+    val groupIdFilter: Long? = null,
+    val samplingScope: String? = null,
+    val totalRequiredStudents: Int = 0,
     val subjectName: String?,
     val overallProgress: Double,
     val totalScoreAverage: Double,
+    val averageNormalizedPercentAcrossNumericPractices: Double? = null,
     val completionPercentage: Double,
     val totalPractices: Int,
     val countedValues: Int,
@@ -45,16 +66,19 @@ data class PracticeStatisticsDetail(
     val practiceNumber: Int,
     val practiceTitle: String?,
     val totalRecords: Int,
+    val totalRequiredStudents: Int = 0,
     val withResult: Int,
     val completionRate: Double,
     val averageGrade: Double,
     val creditRate: Double?,
-    val normalizedAverage: Double?
+    val normalizedAverage: Double?,
+    val averageNormalizedPercent: Double? = null,
 )
 
 data class GroupStatisticsResponse(
     val groupId: Long?,
     val groupName: String?,
+    val averagePerformanceScope: String? = null,
     val averagePerformance: Double,
     val debtRate: Double,
     val studentCount: Int,
@@ -68,6 +92,7 @@ data class GroupStatisticsResponse(
 data class DirectionStatisticsResponse(
     val directionId: Long?,
     val directionName: String?,
+    val averagePerformanceScope: String? = null,
     val averagePerformance: Double,
     val debtRate: Double,
     val totalStudents: Int,
@@ -87,6 +112,7 @@ data class DirectionGroupSummary(
 data class InstituteStatisticsResponse(
     val instituteId: Long?,
     val instituteName: String?,
+    val averagePerformanceScope: String? = null,
     val averagePerformance: Double,
     val debtRate: Double,
     val totalStudents: Int,
@@ -105,6 +131,7 @@ data class InstituteDirectionSummary(
 data class UniversityStatisticsResponse(
     val universityId: Long?,
     val universityName: String?,
+    val averagePerformanceScope: String? = null,
     val averagePerformance: Double,
     val debtRate: Double,
     val totalStudents: Int,
@@ -123,6 +150,7 @@ data class UniversityInstituteSummary(
 data class ScheduleStatisticsResponse(
     val scope: String?,
     val entityId: Long?,
+    val weekNumberFilter: Int? = null,
     val totalLessons: Int,
     val totalHours: Double,
     @SerializedName("byDayOfWeek") val byDayOfWeek: Map<String, Long>?,

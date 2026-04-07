@@ -46,6 +46,8 @@ data class TeacherStatisticsUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val scheduleStats: ScheduleStatisticsResponse? = null,
+    /** null — все недели; 1 или 2 — фильтр для API расписания. */
+    val scheduleWeekFilter: Int? = null,
     val subjectStats: SubjectStatisticsResponse? = null,
     val practiceStats: PracticeStatisticsResponse? = null,
     val groupStats: GroupStatisticsResponse? = null,
@@ -236,12 +238,17 @@ class TeacherStatisticsViewModel @Inject constructor(
         }
     }
 
+    fun setScheduleWeekFilter(week: Int?) {
+        _uiState.update { it.copy(scheduleWeekFilter = week) }
+    }
+
     fun loadScheduleStatistics() {
         val uid = _uiState.value.myUserId ?: return
+        val week = _uiState.value.scheduleWeekFilter
         statsJob?.cancel()
         statsJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null, scheduleStats = null) }
-            statisticsRepository.getTeacherScheduleStatistics(uid).fold(
+            statisticsRepository.getTeacherScheduleStatistics(uid, week).fold(
                 onSuccess = { res ->
                     _uiState.update { s -> s.copy(isLoading = false, scheduleStats = res, error = null) }
                 },
@@ -254,6 +261,7 @@ class TeacherStatisticsViewModel @Inject constructor(
 
     fun loadSubjectAnalytics() {
         val sid = _uiState.value.selectedSubjectDirectionId ?: return
+        val groupId = _uiState.value.selectedGroupId
         statsJob?.cancel()
         statsJob = viewModelScope.launch {
             _uiState.update {
@@ -264,8 +272,8 @@ class TeacherStatisticsViewModel @Inject constructor(
                     practiceStats = null,
                 )
             }
-            val sub = statisticsRepository.getSubjectStatistics(sid)
-            val pr = statisticsRepository.getPracticeStatistics(sid)
+            val sub = statisticsRepository.getSubjectStatistics(sid, groupId)
+            val pr = statisticsRepository.getPracticeStatistics(sid, groupId)
             if (sub.isFailure) {
                 _uiState.update { s ->
                     s.copy(isLoading = false, error = sub.exceptionOrNull()?.message)

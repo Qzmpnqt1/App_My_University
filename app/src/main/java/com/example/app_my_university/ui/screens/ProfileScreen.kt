@@ -58,6 +58,7 @@ import com.example.app_my_university.ui.components.profile.ProfileDestructiveAct
 import com.example.app_my_university.ui.components.profile.ProfileExpandableAction
 import com.example.app_my_university.ui.components.profile.ProfileHeroHeader
 import com.example.app_my_university.ui.components.profile.ProfileReadOnlyField
+import com.example.app_my_university.util.formatApiDateTimeForDisplay
 import com.example.app_my_university.ui.components.profile.ProfileSectionCard
 import com.example.app_my_university.ui.components.profile.fullDisplayName
 import com.example.app_my_university.ui.components.profile.heroContextLines
@@ -445,8 +446,7 @@ fun ProfileScreen(
                         ) {
                             ProfileReadOnlyField(
                                 label = "Дата создания учётной записи",
-                                value = profile.createdAt.orEmpty(),
-                                hint = "Формат данных приходит с сервера"
+                                value = formatApiDateTimeForDisplay(profile.createdAt),
                             )
                         }
                     }

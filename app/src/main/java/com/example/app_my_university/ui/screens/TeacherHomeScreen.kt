@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -426,7 +427,7 @@ private fun TeacherDashboardBody(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(Icons.Default.School, null, tint = MaterialTheme.colorScheme.primary)
-                        Text("Расписание", style = MaterialTheme.typography.labelMedium)
+                        TeacherQuickNavLabel("Расписание")
                     }
                 }
                 Card(
@@ -444,7 +445,7 @@ private fun TeacherDashboardBody(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(Icons.Default.Grade, null, tint = MaterialTheme.colorScheme.primary)
-                        Text("Оценки", style = MaterialTheme.typography.labelMedium)
+                        TeacherQuickNavLabel("Оценки")
                     }
                 }
                 Card(
@@ -462,12 +463,25 @@ private fun TeacherDashboardBody(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(Icons.Default.BarChart, null, tint = MaterialTheme.colorScheme.secondary)
-                        Text("Аналитика", style = MaterialTheme.typography.labelMedium)
+                        TeacherQuickNavLabel("Аналитика")
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun TeacherQuickNavLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 private fun teacherLessonWord(n: Int): String = when {

@@ -28,6 +28,7 @@ import com.example.app_my_university.ui.components.picker.MuPickerField
 import com.example.app_my_university.ui.components.picker.MuSearchablePickerSheet
 import com.example.app_my_university.ui.components.picker.PickerListItem
 import com.example.app_my_university.ui.viewmodel.RegistrationStatusViewModel
+import com.example.app_my_university.util.formatApiDateTimeForDisplay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +90,12 @@ fun RegistrationStatusScreen(
                         Text("Статус: ${s.status ?: "—"}", style = MaterialTheme.typography.titleMedium)
                         Text("Тип: ${s.userType ?: "—"}")
                         s.rejectionReason?.let { Text("Причина отказа: $it", color = MaterialTheme.colorScheme.error) }
-                        s.createdAt?.let { Text("Создана: $it", style = MaterialTheme.typography.bodySmall) }
+                        s.createdAt?.let {
+                            Text(
+                                "Создана: ${formatApiDateTimeForDisplay(it)}",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
                     }
                 }
                 if (s.status.equals("PENDING", ignoreCase = true)) {

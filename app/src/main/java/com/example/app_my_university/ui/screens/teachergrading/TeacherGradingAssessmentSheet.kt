@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +70,8 @@ fun TeacherGradingAssessmentSheet(
         }
     }
 
+    var showSaveConfirm by rememberSaveable { mutableStateOf(false) }
+
     Scaffold(
         bottomBar = {
             Surface(
@@ -88,10 +92,7 @@ fun TeacherGradingAssessmentSheet(
                             Text("Закрыть")
                         }
                         Button(
-                            onClick = {
-                                val fg = if (isCredit) null else finalNum.toIntOrNull()
-                                onSave(fg, finalCredit, HashMap(drafts))
-                            },
+                            onClick = { showSaveConfirm = true },
                             enabled = !saving,
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
@@ -146,11 +147,34 @@ fun TeacherGradingAssessmentSheet(
                         color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
+                Text(
+                    "Повторное нажатие на уже выбранный вариант отменяет выбор и возвращает ранее сохранённое значение.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Spacer(Modifier.height(Dimens.spaceS))
                 if (isCredit) {
-                    FinalCreditSegmented(finalCredit) { finalCredit = it }
+                    FinalCreditSegmented(
+                        value = finalCredit,
+                        onChange = { picked ->
+                            finalCredit = if (finalCredit == picked) {
+                                data.finalGrade?.creditStatus
+                            } else {
+                                picked
+                            }
+                        },
+                    )
                 } else {
-                    FinalExamSegmented(finalNum) { finalNum = it }
+                    FinalExamSegmented(
+                        current = finalNum,
+                        onPick = { g ->
+                            finalNum = if (finalNum == g) {
+                                data.finalGrade?.grade?.toString().orEmpty()
+                            } else {
+                                g
+                            }
+                        },
+                    )
                 }
             }
             item {
@@ -184,6 +208,49 @@ fun TeacherGradingAssessmentSheet(
                 }
             }
         }
+    }
+
+    if (showSaveConfirm) {
+        val summaryFinal = if (isCredit) {
+            when (finalCredit) {
+                true -> "итог: зачёт"
+                false -> "итог: незачёт"
+                null -> "итог: не выбран"
+            }
+        } else {
+            finalNum.toIntOrNull()?.let { "итоговая оценка: $it" } ?: "итоговая оценка: не выбрана"
+        }
+        AlertDialog(
+            onDismissRequest = { if (!saving) showSaveConfirm = false },
+            title = { Text("Сохранить изменения?") },
+            text = {
+                Text(
+                    "Будут отправлены на сервер: $summaryFinal, а также оценки по практикам (если менялись). " +
+                        "Продолжить?",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSaveConfirm = false
+                        val fg = if (isCredit) null else finalNum.toIntOrNull()
+                        onSave(fg, finalCredit, HashMap(drafts))
+                    },
+                    enabled = !saving,
+                ) {
+                    Text("Сохранить")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showSaveConfirm = false },
+                    enabled = !saving,
+                ) {
+                    Text("Отмена")
+                }
+            },
+        )
     }
 }
 

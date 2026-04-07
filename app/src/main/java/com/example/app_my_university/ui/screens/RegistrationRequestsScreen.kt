@@ -59,6 +59,7 @@ import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
+import com.example.app_my_university.util.formatApiDateTimeForDisplay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -368,6 +369,14 @@ private fun RegistrationRequestCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            request.createdAt?.takeIf { it.isNotBlank() }?.let { created ->
+                Text(
+                    text = "Дата подачи: ${formatApiDateTimeForDisplay(created)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SuggestionChip(

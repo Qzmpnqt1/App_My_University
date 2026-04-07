@@ -40,6 +40,7 @@ import com.example.app_my_university.ui.components.analytics.MuDonutChart
 import com.example.app_my_university.ui.components.analytics.MuDonutSegment
 import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
 import com.example.app_my_university.ui.components.analytics.MuLabeledProgressMetric
+import com.example.app_my_university.data.api.model.SubjectPracticeProgressItem
 import com.example.app_my_university.ui.viewmodel.StudentPerformanceViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -222,8 +223,45 @@ fun StudentPerformanceScreen(
                             )
                         }
                     }
+
+                    val byDisc = s.subjectPracticeProgressByDiscipline.orEmpty().filter { it.totalPractices > 0 }
+                    if (byDisc.isNotEmpty()) {
+                        MuAnalyticsCard(
+                            title = "Практики по дисциплинам",
+                            subtitle = "Прогресс и сумма баллов по оценочным практикам (без автосчёта экзамена)",
+                        ) {
+                            byDisc.forEach { row ->
+                                SubjectDisciplinePracticeRow(row)
+                            }
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SubjectDisciplinePracticeRow(row: SubjectPracticeProgressItem) {
+    val title = buildString {
+        append(row.subjectName ?: "Дисциплина")
+        row.course?.let { append(" · курс $it") }
+        row.semester?.let { append(" · сем $it") }
+    }
+    Column(Modifier.padding(vertical = 6.dp)) {
+        Text(title, style = MaterialTheme.typography.labelLarge)
+        MuLabeledProgressMetric(
+            label = "Практики с результатом",
+            value = (row.practiceProgressPercent / 100.0).toFloat().coerceIn(0f, 1f),
+            valueDescription = "${row.practicesWithResult} / ${row.totalPractices}",
+        )
+        val pts = row.sumNumericPracticePoints
+        if (pts != null) {
+            Text(
+                "Сумма баллов по оценочным практикам: $pts",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

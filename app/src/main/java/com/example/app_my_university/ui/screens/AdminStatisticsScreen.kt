@@ -78,6 +78,7 @@ fun AdminStatisticsScreen(
     var selectionId by remember { mutableStateOf<Long?>(null) }
     var selectionLabel by remember { mutableStateOf("") }
     var entityPickerOpen by remember { mutableStateOf(false) }
+    var scheduleWeekFilter by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(Unit) {
         AppLogger.screen("AdminStatistics")
@@ -91,6 +92,7 @@ fun AdminStatisticsScreen(
     LaunchedEffect(tab) {
         selectionId = null
         selectionLabel = ""
+        scheduleWeekFilter = null
         viewModel.clearStalePayload()
     }
 
@@ -248,6 +250,38 @@ fun AdminStatisticsScreen(
                             { Text("Нет записей для выбора в вашем вузе", color = MaterialTheme.colorScheme.error) }
                         } else null,
                     )
+                    val isScheduleTab = currentTab == AdminStatTab.SCHEDULE_ROOM
+                        || currentTab == AdminStatTab.SCHEDULE_TEACHER
+                        || currentTab == AdminStatTab.SCHEDULE_GROUP
+                    if (isScheduleTab) {
+                        Text(
+                            "Неделя расписания",
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            FilterChip(
+                                selected = scheduleWeekFilter == null,
+                                onClick = { scheduleWeekFilter = null },
+                                label = { Text("Все") },
+                            )
+                            FilterChip(
+                                selected = scheduleWeekFilter == 1,
+                                onClick = { scheduleWeekFilter = 1 },
+                                label = { Text("Неделя 1") },
+                            )
+                            FilterChip(
+                                selected = scheduleWeekFilter == 2,
+                                onClick = { scheduleWeekFilter = 2 },
+                                label = { Text("Неделя 2") },
+                            )
+                        }
+                    }
                     Button(
                         onClick = {
                             val id = selectionId ?: return@Button
@@ -257,9 +291,9 @@ fun AdminStatisticsScreen(
                                 AdminStatTab.DIRECTION -> viewModel.loadDirection(id)
                                 AdminStatTab.INSTITUTE -> viewModel.loadInstitute(id)
                                 AdminStatTab.UNIVERSITY -> Unit
-                                AdminStatTab.SCHEDULE_ROOM -> viewModel.loadClassroomSchedule(id)
-                                AdminStatTab.SCHEDULE_TEACHER -> viewModel.loadTeacherSchedule(id)
-                                AdminStatTab.SCHEDULE_GROUP -> viewModel.loadGroupSchedule(id)
+                                AdminStatTab.SCHEDULE_ROOM -> viewModel.loadClassroomSchedule(id, scheduleWeekFilter)
+                                AdminStatTab.SCHEDULE_TEACHER -> viewModel.loadTeacherSchedule(id, scheduleWeekFilter)
+                                AdminStatTab.SCHEDULE_GROUP -> viewModel.loadGroupSchedule(id, scheduleWeekFilter)
                             }
                         },
                         enabled = selectionId != null && !state.isLoading && state.catalogReady && pickerItems.isNotEmpty(),
@@ -492,9 +526,10 @@ private fun UniversityStatsVisuals(u: UniversityStatisticsResponse) {
 
 @Composable
 private fun ScheduleStatsVisuals(scopeTitle: String, s: ScheduleStatisticsResponse) {
+    val weekNote = s.weekNumberFilter?.let { " · только неделя $it" } ?: " · все недели"
     MuAnalyticsCard(
         title = "Расписание: $scopeTitle",
-        subtitle = "Всего занятий: ${s.totalLessons}, часов: ${String.format("%.1f", s.totalHours)}"
+        subtitle = "Всего занятий: ${s.totalLessons}, часов: ${String.format("%.1f", s.totalHours)}$weekNote"
     ) {
         val byDay = scheduleDaySeriesForChart(s.byDayOfWeek)
         if (byDay.isNotEmpty()) {

@@ -15,11 +15,11 @@ class StatisticsRepository @Inject constructor(private val api: ApiService) {
     suspend fun getMyStudentPerformance(course: Int? = null, semester: Int? = null): Result<StudentPerformanceSummaryResponse> =
         safeApiCall { api.getMyStudentStatistics(course, semester) }
 
-    suspend fun getSubjectStatistics(subjectDirectionId: Long): Result<SubjectStatisticsResponse> =
-        safeApiCall { api.getSubjectStatistics(subjectDirectionId) }
+    suspend fun getSubjectStatistics(subjectDirectionId: Long, groupId: Long? = null): Result<SubjectStatisticsResponse> =
+        safeApiCall { api.getSubjectStatistics(subjectDirectionId, groupId) }
 
-    suspend fun getPracticeStatistics(subjectDirectionId: Long): Result<PracticeStatisticsResponse> =
-        safeApiCall { api.getPracticeStatistics(subjectDirectionId) }.map { it.withSortedPracticeDetailsRu() }
+    suspend fun getPracticeStatistics(subjectDirectionId: Long, groupId: Long? = null): Result<PracticeStatisticsResponse> =
+        safeApiCall { api.getPracticeStatistics(subjectDirectionId, groupId) }.map { it.withSortedPracticeDetailsRu() }
 
     suspend fun getGroupStatistics(groupId: Long): Result<GroupStatisticsResponse> =
         safeApiCall { api.getGroupStatistics(groupId) }
@@ -33,12 +33,12 @@ class StatisticsRepository @Inject constructor(private val api: ApiService) {
     suspend fun getUniversityStatistics(universityId: Long): Result<UniversityStatisticsResponse> =
         safeApiCall { api.getUniversityStatistics(universityId) }.map { it.withSortedInstitutesRu() }
 
-    suspend fun getTeacherScheduleStatistics(teacherId: Long): Result<ScheduleStatisticsResponse> =
-        safeApiCall { api.getTeacherScheduleStatistics(teacherId) }
+    suspend fun getTeacherScheduleStatistics(teacherId: Long, weekNumber: Int? = null): Result<ScheduleStatisticsResponse> =
+        safeApiCall { api.getTeacherScheduleStatistics(teacherId, weekNumber) }
 
-    suspend fun getGroupScheduleStatistics(groupId: Long): Result<ScheduleStatisticsResponse> =
-        safeApiCall { api.getGroupScheduleStatistics(groupId) }
+    suspend fun getGroupScheduleStatistics(groupId: Long, weekNumber: Int? = null): Result<ScheduleStatisticsResponse> =
+        safeApiCall { api.getGroupScheduleStatistics(groupId, weekNumber) }
 
-    suspend fun getClassroomScheduleStatistics(classroomId: Long): Result<ScheduleStatisticsResponse> =
-        safeApiCall { api.getClassroomScheduleStatistics(classroomId) }
+    suspend fun getClassroomScheduleStatistics(classroomId: Long, weekNumber: Int? = null): Result<ScheduleStatisticsResponse> =
+        safeApiCall { api.getClassroomScheduleStatistics(classroomId, weekNumber) }
 }
