@@ -4,7 +4,6 @@ plugins {
     id("org.jetbrains.kotlin.android") version "2.0.21"
     id("com.google.dagger.hilt.android") version "2.51"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
-    alias(libs.plugins.google.services)
 }
 
 // При true задача :hiltAggregateDeps* падает с NoSuchMethodError на JavaPoet ClassName.canonicalName()
@@ -172,9 +171,6 @@ dependencies {
     
     // Core для работы с инсетами в Compose
     implementation("androidx.core:core-splashscreen:1.0.1")
-
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.messaging)
 
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)

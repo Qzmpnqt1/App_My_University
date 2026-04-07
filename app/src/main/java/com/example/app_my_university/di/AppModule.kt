@@ -8,7 +8,6 @@ import com.example.app_my_university.core.database.CacheDao
 import com.example.app_my_university.data.api.ApiService
 import com.example.app_my_university.data.network.ApiBaseUrlValidator
 import com.example.app_my_university.data.network.AuthInterceptor
-import com.example.app_my_university.data.network.HttpsOnlyInterceptor
 import com.example.app_my_university.data.network.UnauthorizedResponseInterceptor
 import dagger.Module
 import dagger.Provides

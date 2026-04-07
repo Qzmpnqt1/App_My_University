@@ -3,25 +3,7 @@
   <component name="AppInsightsSettings">
     <option name="selectedTabId" value="Android Vitals" />
     <option name="tabSettings">
-      <map>
-        <entry key="Firebase Crashlytics">
-          <value>
-            <InsightsFilterSettings>
-              <option name="connection">
-                <ConnectionSetting>
-                  <option name="appId" value="com.example.app_my_university" />
-                  <option name="mobileSdkAppId" value="1:100000000001:android:placeholder" />
-                  <option name="projectId" value="moi-vuz-android-placeholder" />
-                  <option name="projectNumber" value="100000000001" />
-                </ConnectionSetting>
-              </option>
-              <option name="signal" value="SIGNAL_UNSPECIFIED" />
-              <option name="timeIntervalDays" value="THIRTY_DAYS" />
-              <option name="visibilityType" value="ALL" />
-            </InsightsFilterSettings>
-          </value>
-        </entry>
-      </map>
+      <map />
     </option>
   </component>
 </project>
