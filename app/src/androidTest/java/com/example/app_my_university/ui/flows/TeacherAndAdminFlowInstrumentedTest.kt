@@ -1,6 +1,7 @@
 package com.example.app_my_university.ui.flows
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -86,12 +87,14 @@ class TeacherAndAdminFlowInstrumentedTest {
                 composable(Screen.TeacherHome.route) {
                     TeacherHomeScreen(
                         navController = nav,
-                        profileViewModel = teacherProfileVm(),
-                        dashboardViewModel = HomeDashboardViewModel(
-                            mockScheduleRepository(),
-                            mockGradeRepository(),
-                            mockStatisticsRepository(),
-                        ),
+                        profileViewModel = remember { teacherProfileVm() },
+                        dashboardViewModel = remember {
+                            HomeDashboardViewModel(
+                                mockScheduleRepository(),
+                                mockGradeRepository(),
+                                mockStatisticsRepository(),
+                            )
+                        },
                     )
                 }
             }
@@ -112,7 +115,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                     TeacherGradesScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = TeacherGradingViewModel(mockGradeRepository()),
+                        viewModel = remember { TeacherGradingViewModel(mockGradeRepository()) },
                     )
                 }
             }
@@ -135,11 +138,13 @@ class TeacherAndAdminFlowInstrumentedTest {
                     TeacherStatisticsScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = TeacherStatisticsViewModel(
-                            mockProfileRepository(TestModelFixtures.teacherUserProfile()),
-                            mockGradeRepository(),
-                            mockStatisticsRepository(),
-                        ),
+                        viewModel = remember {
+                            TeacherStatisticsViewModel(
+                                mockProfileRepository(TestModelFixtures.teacherUserProfile()),
+                                mockGradeRepository(),
+                                mockStatisticsRepository(),
+                            )
+                        },
                     )
                 }
             }
@@ -159,7 +164,7 @@ class TeacherAndAdminFlowInstrumentedTest {
             val nav = rememberNavController()
             NavHost(nav, Screen.AdminHome.route) {
                 composable(Screen.AdminHome.route) {
-                    AdminHomeScreen(navController = nav, adminViewModel = adminViewModelCampusAdmin())
+                    AdminHomeScreen(navController = nav, adminViewModel = remember { adminViewModelCampusAdmin() })
                 }
             }
         }
@@ -177,7 +182,7 @@ class TeacherAndAdminFlowInstrumentedTest {
             val nav = rememberNavController()
             NavHost(nav, Screen.AdminHome.route) {
                 composable(Screen.AdminHome.route) {
-                    AdminHomeScreen(navController = nav, adminViewModel = adminViewModelSuperAdmin())
+                    AdminHomeScreen(navController = nav, adminViewModel = remember { adminViewModelSuperAdmin() })
                 }
             }
         }
@@ -195,7 +200,10 @@ class TeacherAndAdminFlowInstrumentedTest {
             val nav = rememberNavController()
             NavHost(nav, Screen.AdminHome.route) {
                 composable(Screen.AdminHome.route) {
-                    AdminHomeScreen(navController = nav, adminViewModel = adminViewModelSuperAdminScoped(1L))
+                    AdminHomeScreen(
+                        navController = nav,
+                        adminViewModel = remember { adminViewModelSuperAdminScoped(1L) },
+                    )
                 }
             }
         }
@@ -311,7 +319,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                     UserManagementScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = adminViewModelCampusAdmin(),
+                        viewModel = remember { adminViewModelCampusAdmin() },
                     )
                 }
             }
@@ -334,7 +342,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                     UserManagementScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = adminViewModelSuperAdmin(),
+                        viewModel = remember { adminViewModelSuperAdmin() },
                     )
                 }
             }
@@ -356,7 +364,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                     UniversityManagementScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = adminViewModelSuperAdmin(),
+                        viewModel = remember { adminViewModelSuperAdmin() },
                     )
                 }
             }
@@ -379,7 +387,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                     UniversityManagementScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = adminViewModelSuperAdmin(),
+                        viewModel = remember { adminViewModelSuperAdmin() },
                     )
                 }
             }
@@ -406,7 +414,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                         navController = nav,
                         universityId = 1L,
                         onNavigateBack = {},
-                        viewModel = UniversityInstitutesViewModel(mockEducationRepository()),
+                        viewModel = remember { UniversityInstitutesViewModel(mockEducationRepository()) },
                     )
                 }
             }
@@ -429,12 +437,14 @@ class TeacherAndAdminFlowInstrumentedTest {
                     ScheduleManagementScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = ScheduleViewModel(
-                            mockScheduleRepository(),
-                            mockEducationRepository(),
-                            mockTokenManager("ADMIN", 1L),
-                        ),
-                        adminViewModel = adminViewModelCampusAdmin(),
+                        viewModel = remember {
+                            ScheduleViewModel(
+                                mockScheduleRepository(),
+                                mockEducationRepository(),
+                                mockTokenManager("ADMIN", 1L),
+                            )
+                        },
+                        adminViewModel = remember { adminViewModelCampusAdmin() },
                     )
                 }
             }
@@ -457,7 +467,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                     AdminClassroomManagementScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = adminViewModelCampusAdmin(),
+                        viewModel = remember { adminViewModelCampusAdmin() },
                     )
                 }
             }
@@ -480,11 +490,13 @@ class TeacherAndAdminFlowInstrumentedTest {
                     AdminTeacherAssignmentScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = AdminTeacherAssignmentViewModel(
-                            mockEducationRepository(),
-                            mockProfileRepository(TestModelFixtures.adminUserProfile()),
-                            mockTokenManager("ADMIN", 1L),
-                        ),
+                        viewModel = remember {
+                            AdminTeacherAssignmentViewModel(
+                                mockEducationRepository(),
+                                mockProfileRepository(TestModelFixtures.adminUserProfile()),
+                                mockTokenManager("ADMIN", 1L),
+                            )
+                        },
                     )
                 }
             }
@@ -507,7 +519,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                     SubjectManagementScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = adminViewModelCampusAdmin(),
+                        viewModel = remember { adminViewModelCampusAdmin() },
                     )
                 }
             }
@@ -530,7 +542,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                     SubjectInDirectionManagementScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = adminViewModelCampusAdmin(),
+                        viewModel = remember { adminViewModelCampusAdmin() },
                     )
                 }
             }
@@ -553,7 +565,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                     DirectionManagementScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = adminViewModelCampusAdmin(),
+                        viewModel = remember { adminViewModelCampusAdmin() },
                     )
                 }
             }
@@ -576,7 +588,7 @@ class TeacherAndAdminFlowInstrumentedTest {
                     GroupManagementScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = adminViewModelCampusAdmin(),
+                        viewModel = remember { adminViewModelCampusAdmin() },
                     )
                 }
             }
@@ -599,7 +611,9 @@ class TeacherAndAdminFlowInstrumentedTest {
                     AdminAuditLogsScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = AdminAuditViewModel(mockAuditRepository(), mockTokenManager("ADMIN", 1L)),
+                        viewModel = remember {
+                            AdminAuditViewModel(mockAuditRepository(), mockTokenManager("ADMIN", 1L))
+                        },
                     )
                 }
             }
@@ -622,12 +636,14 @@ class TeacherAndAdminFlowInstrumentedTest {
                     AdminStatisticsScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = AdminStatisticsViewModel(
-                            mockStatisticsRepository(),
-                            mockEducationRepository(),
-                            mockProfileRepository(TestModelFixtures.adminUserProfile()),
-                            mockTokenManager("ADMIN", 1L),
-                        ),
+                        viewModel = remember {
+                            AdminStatisticsViewModel(
+                                mockStatisticsRepository(),
+                                mockEducationRepository(),
+                                mockProfileRepository(TestModelFixtures.adminUserProfile()),
+                                mockTokenManager("ADMIN", 1L),
+                            )
+                        },
                     )
                 }
             }
@@ -658,12 +674,14 @@ class TeacherAndAdminFlowInstrumentedTest {
                     AdminStatisticsScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = AdminStatisticsViewModel(
-                            mockStatisticsRepository(),
-                            mockEducationRepository(),
-                            mockProfileRepository(TestModelFixtures.superAdminUserProfile()),
-                            mockTokenManager("SUPER_ADMIN", 2L, null),
-                        ),
+                        viewModel = remember {
+                            AdminStatisticsViewModel(
+                                mockStatisticsRepository(),
+                                mockEducationRepository(),
+                                mockProfileRepository(TestModelFixtures.superAdminUserProfile()),
+                                mockTokenManager("SUPER_ADMIN", 2L, null),
+                            )
+                        },
                     )
                 }
             }

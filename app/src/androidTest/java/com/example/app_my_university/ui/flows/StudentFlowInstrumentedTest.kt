@@ -2,6 +2,7 @@ package com.example.app_my_university.ui.flows
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
@@ -79,8 +80,8 @@ class StudentFlowInstrumentedTest {
                 composable(Screen.StudentHome.route) {
                     HomeScreen(
                         navController = nav,
-                        profileViewModel = studentProfileVm(),
-                        dashboardViewModel = studentDashboardVm(),
+                        profileViewModel = remember { studentProfileVm() },
+                        dashboardViewModel = remember { studentDashboardVm() },
                     )
                 }
                 composable(Screen.Schedule.route) {
@@ -112,8 +113,8 @@ class StudentFlowInstrumentedTest {
                 composable(Screen.StudentHome.route) {
                     HomeScreen(
                         navController = nav,
-                        profileViewModel = studentProfileVm(),
-                        dashboardViewModel = studentDashboardVm(badSchedule),
+                        profileViewModel = remember { studentProfileVm() },
+                        dashboardViewModel = remember { studentDashboardVm(badSchedule) },
                     )
                 }
             }
@@ -138,11 +139,13 @@ class StudentFlowInstrumentedTest {
                     ScheduleScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = ScheduleViewModel(
-                            mockScheduleRepository(),
-                            mockEducationRepository(),
-                            mockTokenManager("STUDENT", 10L),
-                        ),
+                        viewModel = remember {
+                            ScheduleViewModel(
+                                mockScheduleRepository(),
+                                mockEducationRepository(),
+                                mockTokenManager("STUDENT", 10L),
+                            )
+                        },
                     )
                 }
             }
@@ -171,7 +174,7 @@ class StudentFlowInstrumentedTest {
                     GradeBookScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = GradeBookViewModel(mockGradeRepository(), mockStatisticsRepository()),
+                        viewModel = remember { GradeBookViewModel(mockGradeRepository(), mockStatisticsRepository()) },
                     )
                 }
             }
@@ -205,7 +208,7 @@ class StudentFlowInstrumentedTest {
                     GradeBookScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = GradeBookViewModel(gradeRepo, mockStatisticsRepository()),
+                        viewModel = remember { GradeBookViewModel(gradeRepo, mockStatisticsRepository()) },
                     )
                 }
             }
@@ -233,7 +236,7 @@ class StudentFlowInstrumentedTest {
                     StudentPerformanceScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = StudentPerformanceViewModel(mockStatisticsRepository()),
+                        viewModel = remember { StudentPerformanceViewModel(mockStatisticsRepository()) },
                     )
                 }
             }
@@ -260,7 +263,9 @@ class StudentFlowInstrumentedTest {
                         onChatSelected = { _, _, _ -> },
                         onNavigateBack = {},
                         onStartNewChat = {},
-                        viewModel = ChatViewModel(mockChatRepository(), mockTokenManager("STUDENT", 10L)),
+                        viewModel = remember {
+                            ChatViewModel(mockChatRepository(), mockTokenManager("STUDENT", 10L))
+                        },
                     )
                 }
             }
@@ -300,7 +305,7 @@ class StudentFlowInstrumentedTest {
                         navController = nav,
                         onNavigateBack = {},
                         onContactSelected = { _, _ -> },
-                        viewModel = ChatContactsViewModel(chat),
+                        viewModel = remember { ChatContactsViewModel(chat) },
                     )
                 }
             }
@@ -330,7 +335,9 @@ class StudentFlowInstrumentedTest {
                         participantName = "Контакт",
                         participantId = 99L,
                         onNavigateBack = {},
-                        viewModel = ChatViewModel(mockChatRepository(), mockTokenManager("STUDENT", 10L)),
+                        viewModel = remember {
+                            ChatViewModel(mockChatRepository(), mockTokenManager("STUDENT", 10L))
+                        },
                     )
                 }
             }
@@ -368,7 +375,7 @@ class StudentFlowInstrumentedTest {
                     NotificationsScreen(
                         navController = nav,
                         onNavigateBack = {},
-                        viewModel = NotificationsViewModel(notifRepo),
+                        viewModel = remember { NotificationsViewModel(notifRepo) },
                     )
                 }
             }
@@ -395,7 +402,7 @@ class StudentFlowInstrumentedTest {
                         navController = nav,
                         onLogout = {},
                         onNavigateBack = {},
-                        viewModel = studentProfileVm(),
+                        viewModel = remember { studentProfileVm() },
                     )
                 }
             }

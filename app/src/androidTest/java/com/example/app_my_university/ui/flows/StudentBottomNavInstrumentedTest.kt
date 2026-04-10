@@ -2,6 +2,7 @@ package com.example.app_my_university.ui.flows
 
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -42,15 +43,19 @@ class StudentBottomNavInstrumentedTest {
                 composable(Screen.StudentHome.route) {
                     HomeScreen(
                         navController = nav,
-                        profileViewModel = ProfileViewModel(
-                            mockProfileRepository(TestModelFixtures.studentUserProfile()),
-                            mockThemePreferenceRepository(),
-                        ),
-                        dashboardViewModel = HomeDashboardViewModel(
-                            mockScheduleRepository(),
-                            mockGradeRepository(),
-                            mockStatisticsRepository(),
-                        ),
+                        profileViewModel = remember {
+                            ProfileViewModel(
+                                mockProfileRepository(TestModelFixtures.studentUserProfile()),
+                                mockThemePreferenceRepository(),
+                            )
+                        },
+                        dashboardViewModel = remember {
+                            HomeDashboardViewModel(
+                                mockScheduleRepository(),
+                                mockGradeRepository(),
+                                mockStatisticsRepository(),
+                            )
+                        },
                     )
                 }
                 composable(Screen.Schedule.route) {

@@ -1,6 +1,7 @@
 package com.example.app_my_university.ui.flows
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -54,7 +55,7 @@ class AuthFlowInstrumentedTest {
             coEvery { repo.isLoggedIn() } returns false
             muSetContent(composeRule, null) {
                 LoginScreen(
-                    viewModel = LoginViewModel(repo),
+                    viewModel = remember { LoginViewModel(repo) },
                     onNavigateToRegistration = {},
                     onNavigateToRegistrationStatus = {},
                     onLoginSuccess = {},
@@ -77,7 +78,7 @@ class AuthFlowInstrumentedTest {
             RegistrationScreen(
                 onNavigateBack = {},
                 onRegistrationSuccess = {},
-                viewModel = RegistrationViewModel(auth, edu),
+                viewModel = remember { RegistrationViewModel(auth, edu) },
             )
         }
         composeRule.waitUntil(timeoutMillis = 15_000) {
@@ -109,7 +110,7 @@ class AuthFlowInstrumentedTest {
             RegistrationScreen(
                 onNavigateBack = {},
                 onRegistrationSuccess = {},
-                viewModel = RegistrationViewModel(auth, edu),
+                viewModel = remember { RegistrationViewModel(auth, edu) },
             )
         }
         composeRule.waitUntil(timeoutMillis = 15_000) {
@@ -163,7 +164,7 @@ class AuthFlowInstrumentedTest {
         muSetContent(composeRule, null) {
             RegistrationStatusScreen(
                 onNavigateBack = {},
-                viewModel = RegistrationStatusViewModel(auth, edu),
+                viewModel = remember { RegistrationStatusViewModel(auth, edu) },
             )
         }
         composeRule.waitUntil(timeoutMillis = 15_000) {
