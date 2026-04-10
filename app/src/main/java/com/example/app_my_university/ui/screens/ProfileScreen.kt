@@ -1,5 +1,6 @@
 package com.example.app_my_university.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Settings
@@ -31,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -45,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -70,9 +74,11 @@ import com.example.app_my_university.ui.components.theme.AppThemeSelectorRow
 import com.example.app_my_university.ui.components.RoleShellScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.designsystem.AppLayout
+import com.example.app_my_university.ui.navigation.Screen
 import com.example.app_my_university.ui.navigation.rememberAppRole
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.ProfileViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -155,6 +161,7 @@ fun ProfileScreen(
     RoleShellScaffold(
         role = role,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.PROFILE,
         topBar = {
             UniformTopAppBar(
                 title = "Профиль",
@@ -233,6 +240,38 @@ fun ProfileScreen(
                         contextLines = profile.heroContextLines(),
                         isActive = profile.isActive
                     )
+
+                    OutlinedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { navController.navigate(Screen.Notifications.route) },
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(Dimens.spaceM),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                            Spacer(Modifier.width(Dimens.spaceM))
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    text = "Уведомления",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    text = "Оценки, расписание, сообщения, регистрация",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
 
                     ProfileSectionCard(
                         title = "Тема приложения",

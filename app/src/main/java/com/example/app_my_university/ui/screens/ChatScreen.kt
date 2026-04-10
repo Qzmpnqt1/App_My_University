@@ -39,6 +39,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -47,6 +48,7 @@ import com.example.app_my_university.ui.components.AppScaffold
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.designsystem.AppLayout
 import com.example.app_my_university.ui.designsystem.AppSpacing
+import com.example.app_my_university.ui.test.UiTestTags
 import com.example.app_my_university.ui.viewmodel.ChatViewModel
 import kotlinx.coroutines.launch
 
@@ -97,6 +99,7 @@ fun ChatScreen(
     }
 
     AppScaffold(
+        modifier = Modifier.testTag(UiTestTags.Screen.CHAT),
         topBar = {
             UniformTopAppBar(
                 title = participantName,

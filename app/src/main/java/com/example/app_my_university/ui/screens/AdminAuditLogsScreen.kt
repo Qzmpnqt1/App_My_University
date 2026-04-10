@@ -40,6 +40,7 @@ import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminAuditViewModel
 import com.example.app_my_university.util.formatApiDateTimeForDisplay
+import com.example.app_my_university.ui.test.UiTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +71,7 @@ fun AdminAuditLogsScreen(
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_AUDIT,
         topBar = {
             UniformTopAppBar(
                 title = "Журнал аудита",

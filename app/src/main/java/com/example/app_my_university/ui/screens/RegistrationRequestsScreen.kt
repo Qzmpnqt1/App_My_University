@@ -60,6 +60,7 @@ import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
 import com.example.app_my_university.util.formatApiDateTimeForDisplay
+import com.example.app_my_university.ui.test.UiTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,6 +132,7 @@ fun RegistrationRequestsScreen(
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_REQUESTS,
         topBar = {
             UniformTopAppBar(
                 title = "Заявки на регистрацию",

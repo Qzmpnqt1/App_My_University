@@ -49,6 +49,7 @@ import com.example.app_my_university.ui.components.picker.PickerListItem
 import com.example.app_my_university.ui.viewmodel.TeacherStatisticsUiState
 import com.example.app_my_university.ui.viewmodel.TeacherStatisticsViewModel
 import com.example.app_my_university.ui.viewmodel.TeacherStatsSection
+import com.example.app_my_university.ui.test.UiTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -159,6 +160,7 @@ fun TeacherStatisticsScreen(
     RoleShellScaffold(
         role = AppRole.Teacher,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.TEACHER_STATISTICS,
         topBar = {
             UniformTopAppBar(
                 title = "Аналитика",

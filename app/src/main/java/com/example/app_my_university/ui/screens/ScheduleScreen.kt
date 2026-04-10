@@ -54,6 +54,7 @@ import com.example.app_my_university.ui.components.schedule.ScheduleCompareSumma
 import com.example.app_my_university.ui.components.schedule.ScheduleLessonCard
 import com.example.app_my_university.ui.viewmodel.ScheduleScreenMode
 import com.example.app_my_university.ui.viewmodel.ScheduleViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 private val dayNames = mapOf(
     1 to "Пн",
@@ -145,6 +146,7 @@ fun ScheduleScreen(
     RoleShellScaffold(
         role = role,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.SCHEDULE,
         topBar = {
             UniformTopAppBar(
                 title = when (uiState.screenMode) {

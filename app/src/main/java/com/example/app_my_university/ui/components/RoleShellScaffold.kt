@@ -5,6 +5,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.navigation.NavHostController
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.navigation.switchAdminTab
@@ -21,6 +22,8 @@ fun RoleShellScaffold(
     navController: NavHostController,
     topBar: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    /** Корневой testTag экрана для Compose UI-тестов. */
+    screenTestTag: String? = null,
     showBottomBar: Boolean = true,
     snackbarHost: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
@@ -28,9 +31,11 @@ fun RoleShellScaffold(
     addBelowTopBarContentGap: Boolean = true,
     content: @Composable (PaddingValues) -> Unit,
 ) {
+    val shellModifier =
+        if (screenTestTag != null) modifier.testTag(screenTestTag) else modifier
     val currentRoute = navController.currentDestination?.route
     AppScaffold(
-        modifier = modifier,
+        modifier = shellModifier,
         topBar = topBar,
         bottomBar = {
             if (showBottomBar) {

@@ -35,6 +35,7 @@ import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.rememberAppRole
 import com.example.app_my_university.ui.viewmodel.ChatViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +65,7 @@ fun MessagesScreen(
     RoleShellScaffold(
         role = role,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.DIALOGS,
         topBar = {
             UniformTopAppBar(
                 title = "Сообщения",

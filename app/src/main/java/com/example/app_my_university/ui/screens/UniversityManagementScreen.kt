@@ -61,6 +61,7 @@ import com.example.app_my_university.ui.navigation.openAdminNested
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.AdminUiState
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 private val UniCardShape = RoundedCornerShape(16.dp)
 
@@ -119,6 +120,7 @@ fun UniversityManagementScreen(
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_UNIVERSITIES,
         topBar = {
             UniformTopAppBar(
                 title = if (uiState.isSuperAdmin) "ВУЗы" else "Вуз и институты",

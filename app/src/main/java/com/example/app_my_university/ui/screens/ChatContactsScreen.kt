@@ -39,6 +39,7 @@ import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.rememberAppRole
 import com.example.app_my_university.ui.viewmodel.ChatContactsViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 private fun displayName(c: ChatContactResponse): String {
     val parts = listOfNotNull(c.lastName, c.firstName, c.middleName).filter { it.isNotBlank() }
@@ -59,6 +60,7 @@ fun ChatContactsScreen(
     RoleShellScaffold(
         role = role,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.CHAT_CONTACTS,
         topBar = {
             UniformTopAppBar(
                 title = "Новое сообщение",

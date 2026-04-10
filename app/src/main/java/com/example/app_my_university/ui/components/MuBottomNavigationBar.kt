@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.app_my_university.ui.designsystem.AppLayout
@@ -21,6 +22,8 @@ data class MuBottomNavDestination(
     val contentDescription: String,
     /** Короткая подпись под иконкой (1 строка). */
     val label: String,
+    /** Стабильный testTag для UI-тестов (опционально). */
+    val testTag: String? = null,
 )
 
 @Composable
@@ -39,6 +42,7 @@ fun MuBottomNavigationBar(
         items.forEach { item ->
             val selected = isSelected(item, currentRoute)
             NavigationBarItem(
+                modifier = if (item.testTag != null) Modifier.testTag(item.testTag) else Modifier,
                 selected = selected,
                 onClick = { onNavigate(item.route) },
                 icon = {

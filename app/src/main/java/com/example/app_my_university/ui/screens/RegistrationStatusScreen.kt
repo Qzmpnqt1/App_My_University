@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.app_my_university.data.api.model.GuestRegistrationStatusResponse
@@ -27,6 +28,7 @@ import com.example.app_my_university.ui.designsystem.withBelowTopBarContentGap
 import com.example.app_my_university.ui.components.picker.MuPickerField
 import com.example.app_my_university.ui.components.picker.MuSearchablePickerSheet
 import com.example.app_my_university.ui.components.picker.PickerListItem
+import com.example.app_my_university.ui.test.UiTestTags
 import com.example.app_my_university.ui.viewmodel.RegistrationStatusViewModel
 import com.example.app_my_university.util.formatApiDateTimeForDisplay
 
@@ -45,6 +47,7 @@ fun RegistrationStatusScreen(
     }
 
     Scaffold(
+        modifier = Modifier.testTag(UiTestTags.Screen.REGISTRATION_STATUS),
         topBar = {
             UniformTopAppBar(
                 title = "Статус заявки",

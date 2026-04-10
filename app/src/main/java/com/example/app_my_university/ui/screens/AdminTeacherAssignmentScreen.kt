@@ -61,6 +61,7 @@ import com.example.app_my_university.ui.components.common.MuLoadingState
 import com.example.app_my_university.ui.screens.adminassignment.AdminTeacherAssignmentSheet
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.AdminTeacherAssignmentViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 private data class AssignmentSection(
     val instituteName: String,
@@ -129,6 +130,7 @@ fun AdminTeacherAssignmentScreen(
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_TEACHER_SUBJECTS,
         topBar = {
             UniformTopAppBar(
                 title = "Назначение дисциплин",

@@ -52,6 +52,7 @@ import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,6 +106,7 @@ fun DirectionManagementScreen(
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_DIRECTIONS,
         topBar = {
             UniformTopAppBar(
                 title = "Направления подготовки",

@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.designsystem.withBelowTopBarContentGap
+import com.example.app_my_university.ui.test.UiTestTags
 import com.example.app_my_university.ui.viewmodel.RegistrationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +58,7 @@ fun RegistrationScreen(
     }
 
     Scaffold(
+        modifier = Modifier.testTag(UiTestTags.Screen.REGISTRATION),
         topBar = {
             UniformTopAppBar(
                 title = "Регистрация",
@@ -105,6 +108,7 @@ fun RegistrationScreen(
                     .fillMaxSize()
                     .padding(contentPadding)
                     .verticalScroll(rememberScrollState())
+                    .testTag(UiTestTags.RegistrationForm.SCROLL_CONTAINER)
                     .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -113,7 +117,9 @@ fun RegistrationScreen(
                     onValueChange = { lastName = it },
                     label = { Text("Фамилия *") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(UiTestTags.RegistrationForm.LAST_NAME),
                 )
 
                 OutlinedTextField(
@@ -121,7 +127,9 @@ fun RegistrationScreen(
                     onValueChange = { firstName = it },
                     label = { Text("Имя *") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(UiTestTags.RegistrationForm.FIRST_NAME),
                 )
 
                 OutlinedTextField(
@@ -141,7 +149,9 @@ fun RegistrationScreen(
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(UiTestTags.RegistrationForm.EMAIL),
                 )
 
                 OutlinedTextField(
@@ -161,7 +171,9 @@ fun RegistrationScreen(
                         }
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(UiTestTags.RegistrationForm.PASSWORD),
                 )
 
                 Text(
@@ -338,7 +350,8 @@ fun RegistrationScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .height(48.dp)
+                        .testTag(UiTestTags.RegistrationForm.SUBMIT),
                     enabled = !uiState.isLoading
                 ) {
                     if (uiState.isLoading) {

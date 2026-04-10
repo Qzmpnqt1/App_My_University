@@ -37,6 +37,7 @@ import com.example.app_my_university.ui.screens.teachergrading.TeacherGradingPat
 import com.example.app_my_university.ui.screens.teachergrading.WizardSectionCard
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.TeacherGradingViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +72,7 @@ fun TeacherGradesScreen(
     RoleShellScaffold(
         role = AppRole.Teacher,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.TEACHER_GRADES,
         topBar = {
             UniformTopAppBar(
                 title = "Выставление оценок",

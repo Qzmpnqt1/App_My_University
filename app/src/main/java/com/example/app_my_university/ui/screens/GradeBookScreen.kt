@@ -44,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -73,6 +74,7 @@ import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.GradeBookListFilter
 import com.example.app_my_university.ui.viewmodel.GradeBookViewModel
 import com.example.app_my_university.ui.viewmodel.PracticeSlotsUiState
+import com.example.app_my_university.ui.test.UiTestTags
 
 private const val SORT_UNKNOWN_COURSE = 999
 
@@ -108,6 +110,7 @@ fun GradeBookScreen(
     RoleShellScaffold(
         role = AppRole.Student,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.GRADEBOOK,
         topBar = {
             UniformTopAppBar(
                 title = "Зачётная книжка",
@@ -256,7 +259,9 @@ fun GradeBookScreen(
                         OutlinedTextField(
                             value = uiState.searchQuery,
                             onValueChange = viewModel::onSearchQueryChange,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag(UiTestTags.Screen.GRADEBOOK_SEARCH),
                             placeholder = { Text("Поиск по названию предмета") },
                             singleLine = true,
                             shape = RoundedCornerShape(Dimens.spaceS),

@@ -40,6 +40,7 @@ import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.navigation.Screen
 import com.example.app_my_university.ui.navigation.openAdminNested
 import com.example.app_my_university.ui.theme.Dimens
+import com.example.app_my_university.ui.test.UiTestTags
 
 private data class StructureEntry(
     val title: String,
@@ -99,6 +100,7 @@ fun AdminStructureHubScreen(navController: NavHostController) {
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_STRUCTURE,
         topBar = {
             UniformTopAppBar(
                 title = "Учебная структура",

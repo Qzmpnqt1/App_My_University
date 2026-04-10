@@ -22,6 +22,7 @@ sealed class Screen(val route: String) {
     object TeacherHome : Screen("teacher_home")
     object AdminHome : Screen("admin_home")
     object Profile : Screen("profile")
+    object Notifications : Screen("notifications")
     object Schedule : Screen("schedule")
     object GradeBook : Screen("gradebook")
     object TeacherGrades : Screen("teacher_grades")
@@ -131,6 +132,13 @@ fun AppNavigation() {
                     }
                 },
                 onNavigateBack = { navController.navigateUp() }
+            )
+        }
+
+        composable(Screen.Notifications.route) {
+            NotificationsScreen(
+                navController = navController,
+                onNavigateBack = { navController.navigateUp() },
             )
         }
 

@@ -20,21 +20,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.app_my_university.ui.test.UiTestTags
 import com.example.app_my_university.ui.theme.AppMyUniversityTheme
 import com.example.app_my_university.ui.theme.Dimens
 
 @Composable
 fun MuLoadingState(
     modifier: Modifier = Modifier,
-    message: String? = "Загрузка…"
+    message: String? = "Загрузка…",
+    testTag: String = UiTestTags.State.LOADING,
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(Dimens.spaceL),
+            .padding(Dimens.spaceL)
+            .let { if (testTag.isNotEmpty()) it.testTag(testTag) else it },
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -61,12 +65,14 @@ fun MuEmptyState(
     subtitle: String? = null,
     modifier: Modifier = Modifier,
     actionLabel: String? = null,
-    onAction: (() -> Unit)? = null
+    onAction: (() -> Unit)? = null,
+    testTag: String = UiTestTags.State.EMPTY,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(Dimens.spaceXL),
+            .padding(Dimens.spaceXL)
+            .let { if (testTag.isNotEmpty()) it.testTag(testTag) else it },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -106,12 +112,15 @@ fun MuErrorState(
     message: String,
     modifier: Modifier = Modifier,
     onRetry: (() -> Unit)? = null,
-    retryLabel: String = "Повторить"
+    retryLabel: String = "Повторить",
+    testTag: String = UiTestTags.State.ERROR,
+    retryTestTag: String = UiTestTags.State.RETRY,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(Dimens.spaceXL),
+            .padding(Dimens.spaceXL)
+            .let { if (testTag.isNotEmpty()) it.testTag(testTag) else it },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -130,7 +139,10 @@ fun MuErrorState(
         )
         if (onRetry != null) {
             Spacer(Modifier.height(Dimens.spaceL))
-            OutlinedButton(onClick = onRetry) {
+            OutlinedButton(
+                onClick = onRetry,
+                modifier = if (retryTestTag.isNotEmpty()) Modifier.testTag(retryTestTag) else Modifier,
+            ) {
                 Text(retryLabel)
             }
         }

@@ -37,10 +37,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.app_my_university.data.api.model.TeacherPracticeSlotResponse
 import com.example.app_my_university.data.api.model.TeacherStudentAssessmentResponse
+import com.example.app_my_university.ui.test.UiTestTags
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.PracticeGradeDraft
 
@@ -73,6 +75,7 @@ fun TeacherGradingAssessmentSheet(
     var showSaveConfirm by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
+        modifier = Modifier.testTag(UiTestTags.Sheet.TEACHER_GRADING_ASSESSMENT),
         bottomBar = {
             Surface(
                 tonalElevation = 3.dp,

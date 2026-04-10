@@ -33,6 +33,7 @@ import com.example.app_my_university.ui.components.picker.MuSearchablePickerShee
 import com.example.app_my_university.ui.components.picker.PickerListItem
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -54,6 +55,7 @@ import com.example.app_my_university.ui.components.analytics.scheduleDaySeriesFo
 import com.example.app_my_university.ui.components.analytics.scheduleWeekSeriesForChart
 import com.example.app_my_university.ui.viewmodel.AdminStatisticsPayload
 import com.example.app_my_university.ui.viewmodel.AdminStatisticsViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 private enum class AdminStatTab(val label: String) {
     GROUP("Группа"),
@@ -161,6 +163,7 @@ fun AdminStatisticsScreen(
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_STATISTICS,
         topBar = {
             UniformTopAppBar(
                 title = "Аналитика",
@@ -198,9 +201,10 @@ fun AdminStatisticsScreen(
             ) {
                 tabs.forEachIndexed { i, t ->
                     FilterChip(
+                        modifier = Modifier.testTag("${UiTestTags.AdminStat.TAB_PREFIX}${t.name}"),
                         selected = tab == i,
                         onClick = { tab = i },
-                        label = { Text(t.label) }
+                        label = { Text(t.label) },
                     )
                 }
             }

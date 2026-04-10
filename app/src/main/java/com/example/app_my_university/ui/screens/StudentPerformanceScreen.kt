@@ -42,6 +42,7 @@ import com.example.app_my_university.ui.components.analytics.MuVerticalBarChart
 import com.example.app_my_university.ui.components.analytics.MuLabeledProgressMetric
 import com.example.app_my_university.data.api.model.SubjectPracticeProgressItem
 import com.example.app_my_university.ui.viewmodel.StudentPerformanceViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +63,7 @@ fun StudentPerformanceScreen(
     RoleShellScaffold(
         role = role,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.STUDENT_PERFORMANCE,
         topBar = {
             UniformTopAppBar(
                 title = "Успеваемость",

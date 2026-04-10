@@ -8,6 +8,7 @@ object BottomNavTabMapping {
     fun studentTabRouteForSelection(currentRoute: String?): String? {
         if (currentRoute == null) return null
         return when {
+            currentRoute == Screen.Notifications.route -> Screen.Profile.route
             currentRoute == Screen.StudentPerformance.route -> Screen.GradeBook.route
             currentRoute == Screen.ChatContacts.route -> Screen.Dialogs.route
             currentRoute.startsWith("chat/") -> Screen.Dialogs.route
@@ -18,6 +19,7 @@ object BottomNavTabMapping {
     fun teacherTabRouteForSelection(currentRoute: String?): String? {
         if (currentRoute == null) return null
         return when {
+            currentRoute == Screen.Notifications.route -> Screen.Profile.route
             currentRoute == Screen.TeacherStatistics.route -> Screen.TeacherHome.route
             currentRoute == Screen.ChatContacts.route -> Screen.Dialogs.route
             currentRoute.startsWith("chat/") -> Screen.Dialogs.route
@@ -40,6 +42,7 @@ object BottomNavTabMapping {
         Screen.AdminMore.route,
         Screen.Dialogs.route,
         Screen.Profile.route,
+        Screen.Notifications.route,
         Screen.AdminUsers.route,
         Screen.AdminAudit.route,
         Screen.AdminStatistics.route,

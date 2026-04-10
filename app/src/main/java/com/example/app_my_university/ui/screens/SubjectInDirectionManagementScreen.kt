@@ -54,6 +54,7 @@ import com.example.app_my_university.ui.components.UniformTopAppBar
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 private val assessmentOptions = listOf(
     "EXAM" to "Экзамен",
@@ -140,6 +141,7 @@ fun SubjectInDirectionManagementScreen(
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_SUBJECT_PLAN,
         topBar = {
             UniformTopAppBar(
                 title = "Предметы в направлениях",

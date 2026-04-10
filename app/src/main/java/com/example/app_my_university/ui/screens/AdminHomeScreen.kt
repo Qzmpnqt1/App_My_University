@@ -68,6 +68,7 @@ import com.example.app_my_university.ui.navigation.Screen
 import com.example.app_my_university.ui.navigation.openAdminNested
 import com.example.app_my_university.ui.navigation.switchAdminTab
 import com.example.app_my_university.ui.viewmodel.AdminViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,6 +118,7 @@ fun AdminHomeScreen(
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_HOME,
         topBar = {
             UniformTopAppBar(title = "Администрирование")
         },

@@ -48,6 +48,7 @@ import com.example.app_my_university.ui.viewmodel.AdminViewModel
 import com.example.app_my_university.ui.viewmodel.ScheduleScreenMode
 import com.example.app_my_university.ui.viewmodel.ScheduleUiState
 import com.example.app_my_university.ui.viewmodel.ScheduleViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 private enum class AdminScheduleMainTab { MANAGE, ANALYZE }
 
@@ -132,6 +133,7 @@ fun ScheduleManagementScreen(
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_SCHEDULE,
         topBar = {
             UniformTopAppBar(
                 title = when (mainTab) {

@@ -62,6 +62,7 @@ import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.navigation.AppRole
 import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.UniversityInstitutesViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 private val CardShape = RoundedCornerShape(16.dp)
 
@@ -114,6 +115,7 @@ fun UniversityInstitutesScreen(
     RoleShellScaffold(
         role = AppRole.Admin,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.ADMIN_UNIVERSITY_INSTITUTES,
         topBar = {
             UniformTopAppBar(
                 title = "Институты",

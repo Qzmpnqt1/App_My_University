@@ -58,6 +58,7 @@ import com.example.app_my_university.ui.theme.Dimens
 import com.example.app_my_university.ui.viewmodel.HomeDashboardTime
 import com.example.app_my_university.ui.viewmodel.HomeDashboardViewModel
 import com.example.app_my_university.ui.viewmodel.ProfileViewModel
+import com.example.app_my_university.ui.test.UiTestTags
 
 private val teacherDayShort = mapOf(
     1 to "Пн", 2 to "Вт", 3 to "Ср", 4 to "Чт",
@@ -80,6 +81,7 @@ fun TeacherHomeScreen(
     RoleShellScaffold(
         role = AppRole.Teacher,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.TEACHER_HOME,
         topBar = {
             UniformTopAppBar(title = "Мой ВУЗ", subtitle = "Преподаватель")
         },

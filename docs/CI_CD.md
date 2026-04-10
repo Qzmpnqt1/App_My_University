@@ -13,7 +13,8 @@
 
 | Workflow        | Файл                         | Назначение                                      |
 |-----------------|------------------------------|-------------------------------------------------|
-| Android CI      | `.github/workflows/android-ci.yml`     | `assembleDebug`, unit tests, `lintDebug`, артефакты |
+| Android CI      | `.github/workflows/android-ci.yml`     | `assembleDebug`, unit tests, `lintDebug`, артефакты (JaCoCo-отчёт unit — локально: `:app:jacocoAndroidUnitTestReport`) |
+| Android UI smoke | `.github/workflows/android-ui-smoke.yml` | Эмулятор API 35, `:app:connectedSmokeDebugAndroidTest` (PR при изменениях app + ручной запуск) |
 | Android Release | `.github/workflows/android-release.yml` | Release APK + AAB, `lintVitalRelease`, опциональная подпись |
 
 ---
@@ -92,6 +93,12 @@ export ANDROID_SIGNING_KEY_PASSWORD=...
 ```
 
 Путь к JDK локально: `~/.gradle/gradle.properties` → `org.gradle.java.home=...` (не коммитить).
+
+### Instrumented / UI (как в `android-ui-smoke.yml`)
+
+- Smoke на CI: `:app:connectedSmokeDebugAndroidTest` (один эмулятор — `ANDROID_SERIAL` не нужен).
+- Локально при **нескольких** `adb devices`: задайте `ANDROID_SERIAL` (сообщение об этом выдаёт `:app:muAssertConnectedDevice`).
+- Перед прогоном при ошибках установки APK из‑за места на AVD: `:app:muPrepareInstrumentedDevice` (uninstall debug app + test APK, затем install). Отключить снятие пакетов: `-Pmu.skipInstrumentedUninstall=true` (и для `:app:connectedDebugAndroidTest` не будет зависимости от uninstall).
 
 ---
 

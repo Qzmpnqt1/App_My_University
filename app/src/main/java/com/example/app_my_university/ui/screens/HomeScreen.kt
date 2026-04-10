@@ -72,6 +72,7 @@ import com.example.app_my_university.ui.components.analytics.examAverage
 import com.example.app_my_university.ui.components.analytics.pendingFinalCount
 import com.example.app_my_university.data.api.model.StudentPerformanceSummaryResponse
 import java.time.LocalTime
+import com.example.app_my_university.ui.test.UiTestTags
 
 private val dayShort = mapOf(
     1 to "Пн", 2 to "Вт", 3 to "Ср", 4 to "Чт",
@@ -94,6 +95,7 @@ fun HomeScreen(
     RoleShellScaffold(
         role = AppRole.Student,
         navController = navController,
+        screenTestTag = UiTestTags.Screen.STUDENT_HOME,
         topBar = {
             UniformTopAppBar(title = "Мой ВУЗ", subtitle = "Студент")
         },

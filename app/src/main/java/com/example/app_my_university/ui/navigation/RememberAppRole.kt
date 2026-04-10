@@ -10,6 +10,7 @@ import dagger.hilt.android.EntryPointAccessors
 
 @Composable
 fun rememberAppRole(): AppRole {
+    LocalAppRoleOverride.current?.let { return it }
     val context = LocalContext.current
     val entryPoint = remember {
         EntryPointAccessors.fromApplication(

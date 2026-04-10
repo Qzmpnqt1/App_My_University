@@ -43,12 +43,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.app_my_university.data.api.model.SubjectInDirectionResponse
 import com.example.app_my_university.data.api.model.UserProfileResponse
 import com.example.app_my_university.ui.components.common.MuEmptyState
+import com.example.app_my_university.ui.test.UiTestTags
 import com.example.app_my_university.ui.designsystem.AppLayout
 import com.example.app_my_university.ui.designsystem.AppSpacing
 import com.example.app_my_university.ui.viewmodel.AdminTeacherAssignmentUiState
@@ -70,6 +72,7 @@ fun AdminTeacherAssignmentSheet(
     val teacher = uiState.selectedTeacher
 
     Scaffold(
+        modifier = Modifier.testTag(UiTestTags.Sheet.ADMIN_TEACHER_ASSIGNMENT),
         bottomBar = {
             Surface(tonalElevation = AppLayout.bottomActionBarDividerElevation, shadowElevation = 6.dp) {
                 Column(

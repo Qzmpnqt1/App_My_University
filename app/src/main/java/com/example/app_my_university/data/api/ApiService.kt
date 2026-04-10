@@ -432,6 +432,19 @@ interface ApiService {
         @Query("universityId") universityId: Long? = null
     ): Response<List<AuditLogResponse>>
 
+    // ── In-app notifications (ТЗ: уведомления о ключевых операциях) ─
+    @GET("api/v1/notifications/my")
+    suspend fun getMyNotifications(): Response<List<InAppNotificationResponse>>
+
+    @GET("api/v1/notifications/unread-count")
+    suspend fun getUnreadNotificationsCount(): Response<UnreadNotificationsCountResponse>
+
+    @POST("api/v1/notifications/{id}/read")
+    suspend fun markNotificationRead(@Path("id") id: Long): Response<Unit>
+
+    @POST("api/v1/notifications/read-all")
+    suspend fun markAllNotificationsRead(): Response<Unit>
+
     // ── Chat ──────────────────────────────────────────────────────
     @GET("api/v1/chats")
     suspend fun getConversations(): Response<List<ConversationResponse>>
